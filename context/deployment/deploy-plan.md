@@ -55,7 +55,19 @@ Requests from the corporate network return `303 → blocked.teams.cloudflare.com
 2. Request an unblock at `links.ocado.com/site-unblock`.
 3. Put the app on a custom domain, which sidesteps the `workers.dev` category block entirely — worth considering early if day-to-day testing happens on the work machine.
 
-Server-side verification remains available regardless via `wrangler tail`, `wrangler deployments list`, and the Cloudflare dashboard, none of which are blocked.
+**`wrangler tail` is blocked too — same root cause.** Its WebSocket endpoint is `tail.developers.workers.dev`, which falls under the same category deny. Debugging this took two steps, both worth recording:
+
+1. First symptom was `Error: self-signed certificate in certificate chain` (`SELF_SIGNED_CERT_IN_CHAIN`). That is the corporate TLS-inspecting proxy, and it is *not* specific to Cloudflare — Node does not read the macOS keychain, so it rejects the Gateway/Ocado roots the OS already trusts. Fix:
+   ```bash
+   security find-certificate -a -p /Library/Keychains/System.keychain > ~/.config/certs/macos-system-roots.pem
+   security find-certificate -a -p /System/Library/Keychains/SystemRootCertificates.keychain >> ~/.config/certs/macos-system-roots.pem
+   export NODE_EXTRA_CA_CERTS=~/.config/certs/macos-system-roots.pem
+   ```
+   This bundle is already generated on the dev machine. Keep it in mind for **any** Node tool that hits the network from a corporate laptop, not just wrangler. Never reach for `NODE_TLS_REJECT_UNAUTHORIZED=0` instead — it disables verification globally.
+
+2. With TLS fixed, the tail WebSocket then returned `Unexpected server response: 303` — the Gateway block page. So the DNS deny is the real wall, and no client-side fix gets past it.
+
+**What still works from the corporate network:** `wrangler deploy`, `secret put/list`, `deployments list`, `kv namespace create`, and `versions upload` — these hit `api.cloudflare.com`, which is not blocked. Dashboard **Workers Logs**, **Metrics** and **Errors** also work in the browser, since the browser trusts the corporate CA. Only live `tail` and actually loading the app require an unblocked network.
 
 ## Purpose
 
