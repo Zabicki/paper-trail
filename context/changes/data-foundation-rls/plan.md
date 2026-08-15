@@ -122,7 +122,7 @@ Seed two deterministic test users and write the pgTAP suite that proves the isol
 
 #### 2. RLS pgTAP test suite
 
-**File**: `supabase/tests/database/categories_rls.test.sql` (generate via `supabase test new categories_rls`)
+**File**: `supabase/tests/categories_rls_test.sql` (generated via `supabase test new categories_rls` — the CLI's actual path convention, not `tests/database/*.test.sql` as originally assumed)
 
 **Intent**: Prove, per seeded user: they can insert and read only their own row, cannot see the other seeded user's row, cannot update or delete the other user's row, and cannot spoof `user_id` on insert to claim another user's identity.
 
@@ -221,22 +221,22 @@ No existing data to migrate — this is the first table in the project. `wrangle
 
 #### Automated
 
-- [x] 1.1 `supabase db reset` applies both migrations cleanly
-- [x] 1.2 `pg_policies` query returns exactly 4 rows for `categories`, all `roles = {authenticated}`
+- [x] 1.1 `supabase db reset` applies both migrations cleanly — 8db2788
+- [x] 1.2 `pg_policies` query returns exactly 4 rows for `categories`, all `roles = {authenticated}` — 8db2788
 
 #### Manual
 
-- [x] 1.3 Studio Table Editor confirms RLS enabled and all four policies listed with expected expressions
+- [x] 1.3 Studio Table Editor confirms RLS enabled and all four policies listed with expected expressions — 8db2788
 
 ### Phase 2: pgTAP verification suite
 
 #### Automated
 
-- [ ] 2.1 `supabase test db` reports 0 failures against a freshly reset database
+- [x] 2.1 `supabase test db` reports 0 failures against a freshly reset database
 
 #### Manual
 
-- [ ] 2.2 Studio Auth panel confirms both seeded users exist with the exact UUIDs used in tests
+- [x] 2.2 Studio Auth panel confirms both seeded users exist with the exact UUIDs used in tests
 
 ### Phase 3: End-to-end local verification and documentation
 
