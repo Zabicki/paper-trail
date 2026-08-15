@@ -15,13 +15,20 @@ interface MonthCalendarProps {
   selectedDate: string;
   onSelectDate: (date: string) => void;
   onMonthChange: (month: string) => void;
+  refreshKey?: number;
 }
 
 function pad(value: number): string {
   return value.toString().padStart(2, "0");
 }
 
-export default function MonthCalendar({ visibleMonth, selectedDate, onSelectDate, onMonthChange }: MonthCalendarProps) {
+export default function MonthCalendar({
+  visibleMonth,
+  selectedDate,
+  onSelectDate,
+  onMonthChange,
+  refreshKey,
+}: MonthCalendarProps) {
   const [missingDates, setMissingDates] = useState<Set<string>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -49,7 +56,7 @@ export default function MonthCalendar({ visibleMonth, selectedDate, onSelectDate
     return () => {
       cancelled.current = true;
     };
-  }, [visibleMonth]);
+  }, [visibleMonth, refreshKey]);
 
   const today = toLocalDateString(new Date());
   const totalDays = daysInMonth(visibleMonth);

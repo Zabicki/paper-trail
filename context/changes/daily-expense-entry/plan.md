@@ -372,32 +372,32 @@ Additive-only new table; no backfill needed since no entries exist yet anywhere.
 
 #### Automated
 
-- [x] 3.1 `npm run lint` passes
-- [x] 3.2 `npx astro check` passes
+- [x] 3.1 `npm run lint` passes — bdcf535
+- [x] 3.2 `npx astro check` passes — bdcf535
 
 #### Manual
 
-- [x] 3.3 Current month renders with today highlighted
-- [x] 3.4 Days with entries are not red; days without (within the account-creation-to-yesterday window) are
-- [x] 3.5 Paging before account creation shows no red marking
-- [x] 3.6 Clicking a day updates selection and visible month correctly across month boundaries
+- [x] 3.3 Current month renders with today highlighted — bdcf535
+- [x] 3.4 Days with entries are not red; days without (within the account-creation-to-yesterday window) are — bdcf535
+- [x] 3.5 Paging before account creation shows no red marking — bdcf535
+- [x] 3.6 Clicking a day updates selection and visible month correctly across month boundaries — bdcf535
 
 ### Phase 4: Entry form, day detail, and edge cases
 
 #### Automated
 
-- [ ] 4.1 `npm run lint` passes
-- [ ] 4.2 `npx astro check` passes
-- [ ] 4.3 `npm run build` succeeds
+- [x] 4.1 `npm run lint` passes
+- [x] 4.2 `npx astro check` passes
+- [x] 4.3 `npm run build` succeeds
 
 #### Manual
 
-- [ ] 4.4 Fresh (zero-category) user sees the block-and-redirect prompt
-- [ ] 4.5 Entry form works after adding a category, defaulted to today
-- [ ] 4.6 Same-day entry completes in ≤4 taps / ≤10s
-- [ ] 4.7 Category filter-as-you-type narrows the chip grid correctly
-- [ ] 4.8 Back-dating via a red day works; that day's list and red marking update immediately
-- [ ] 4.9 Form survives a simulated failed save without losing entered values
-- [ ] 4.10 Post-save clears the form with an inline confirmation, no navigation
-- [ ] 4.11 Signed-out visit to `/dashboard` redirects to `/auth/signin`
-- [ ] 4.12 Second user has zero visibility into the first user's entries/category ids
+- [x] 4.4 Fresh (zero-category) user sees the block-and-redirect prompt
+- [x] 4.5 Entry form works after adding a category, defaulted to today
+- [x] 4.6 Same-day entry completes in ≤4 taps / ≤10s
+- [x] 4.7 Category filter-as-you-type narrows the chip grid correctly
+- [x] 4.8 Back-dating via a red day works; that day's list and red marking update immediately
+- [x] 4.9 Form survives a simulated failed save without losing entered values
+- [x] 4.10 Post-save clears the form with an inline confirmation, no navigation
+- [x] 4.11 Signed-out visit to `/dashboard` redirects to `/auth/signin`
+- [x] 4.12 Second user has zero visibility into the first user's entries/category ids
