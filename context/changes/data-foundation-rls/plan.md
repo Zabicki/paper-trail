@@ -232,21 +232,21 @@ No existing data to migrate — this is the first table in the project. `wrangle
 
 #### Automated
 
-- [x] 2.1 `supabase test db` reports 0 failures against a freshly reset database
+- [x] 2.1 `supabase test db` reports 0 failures against a freshly reset database — 8116b18
 
 #### Manual
 
-- [x] 2.2 Studio Auth panel confirms both seeded users exist with the exact UUIDs used in tests
+- [x] 2.2 Studio Auth panel confirms both seeded users exist with the exact UUIDs used in tests — 8116b18
 
 ### Phase 3: End-to-end local verification and documentation
 
 #### Automated
 
-- [ ] 3.1 `supabase db reset && supabase test db` passes twice consecutively from a clean state
-- [ ] 3.2 `npm run lint` passes
+- [x] 3.1 `supabase db reset && supabase test db` passes twice consecutively from a clean state
+- [x] 3.2 `npm run lint` passes
 
 #### Manual
 
-- [ ] 3.3 Manual cross-user impersonation check confirms isolation independent of pgTAP
-- [ ] 3.4 `CLAUDE.md` data-layer section reads accurately against the new state
-- [ ] 3.5 Hosted-linking follow-up is clearly flagged as the user's next manual step
+- [x] 3.3 Manual cross-user impersonation check confirms isolation independent of pgTAP
+- [x] 3.4 `CLAUDE.md` data-layer section reads accurately against the new state
+- [x] 3.5 Hosted-linking follow-up is clearly flagged as the user's next manual step

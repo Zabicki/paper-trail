@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Hard rules
 
-- **RLS on day one.** Every new table gets row-level security enabled in the same migration that creates it, with granular per-operation, per-role policies. Per the tech-stack doc, the PRD's per-user data isolation guarantee **fails silently** otherwise — nothing errors, the data just leaks across users. See [Data layer](#data-layer-not-yet-built).
+- **RLS on day one.** Every new table gets row-level security enabled in the same migration that creates it, with granular per-operation, per-role policies. Per the tech-stack doc, the PRD's per-user data isolation guarantee **fails silently** otherwise — nothing errors, the data just leaks across users. See [Data layer](#data-layer).
 - **`createClient()` can return `null`.** `src/lib/supabase.ts` returns `null` when either Supabase env var is missing. Every caller must null-check — see `src/pages/api/auth/signin.ts` (redirects with an error) and `src/middleware.ts` (falls back to `locals.user = null`). Follow this pattern for any new Supabase-backed code path. See [Env vars](#env-vars-are-optional-by-design).
 - **Never add `export const prerender = false`.** It is a no-op under `output: "server"`. Use `prerender = true` only to opt a specific page *into* static generation.
 - **`Cache-Control: private, no-store` on every authenticated response.** `src/middleware.ts` sets it for protected routes and for any request with a signed-in user; keep it that way. RLS guards the *database* — it does nothing about a rendered SSR page cached at Cloudflare's edge and served to a different user. This is a second, independent path to the same isolation guarantee failing, and like the RLS failure it is **silent**. See [Deployment](#deployment).
@@ -56,9 +56,13 @@ Both vars are `context: "server", access: "secret"` — never reachable from cli
 - Endpoints: `src/pages/api/auth/{signin,signup,signout}.ts`. They read `FormData` and redirect with `?error=` rather than returning JSON, so the auth forms work without JS.
 - Pages: `src/pages/auth/{signin,signup,confirm-email}.astro`; `src/pages/dashboard.astro` is the protected-page example.
 
-### Data layer (not yet built)
+### Data layer
 
-No tables and no `supabase/migrations/` directory exist — only `supabase/config.toml`. Migrations go in `supabase/migrations/` named `YYYYMMDDHHmmss_short_description.sql`. The RLS requirement is in [Hard rules](#hard-rules).
+`supabase/migrations/` holds one migration per schema change, named `YYYYMMDDHHmmss_short_description.sql` (e.g. `20260815125827_create_categories_table.sql`, the `categories` table from F-01). Every new table's migration enables RLS in that same file — never a follow-up migration — with four granular per-operation policies scoped `to authenticated`, keyed on `(select auth.uid()) = user_id`. The `(select ...)` wrapping matters: it evaluates `auth.uid()` once per statement instead of once per row. `user_id` columns default to plain `auth.uid()` at the column level (no subquery wrapper there — Postgres column defaults can't contain one) and reference `auth.users(id) on delete cascade`. See `categories`' migration for the reference shape every later table copies.
+
+RLS is verified by an actual pgTAP suite (`supabase/tests/*_test.sql`, run via `npx supabase test db`), not assumed. Tests impersonate the two fixed seed users in `supabase/seed.sql` via `set local role authenticated; set local request.jwt.claim.sub = '<uuid>';` — a superuser session otherwise bypasses RLS entirely. This verification is local-only; it does not run in CI.
+
+**Hosted linking is still outstanding.** `supabase link --project-ref <ref>` has never been run against the hosted project (needs the DB password) — migrations exist only locally so far. Run `supabase link` then `supabase db push` before any slice needs a real signed-in user against production. See `context/deployment/deploy-plan.md` Phase 4.
 
 ## Conventions
 
