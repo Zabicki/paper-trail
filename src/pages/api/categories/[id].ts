@@ -34,7 +34,13 @@ export const PATCH: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  const body: unknown = await context.request.json();
+  let body: unknown;
+  try {
+    body = await context.request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400 });
+  }
+
   const parsed = updateCategorySchema.safeParse(body);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];

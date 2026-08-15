@@ -12,6 +12,10 @@ export const createCategorySchema = z.object({
   isRecurring: z.boolean().default(false),
 });
 
+// PATCH is full-replace, not a true partial update: color/isRecurring carry
+// defaults, so a caller must always send the full {name, color, isRecurring}
+// triple or those fields silently reset. Matches the only current caller
+// (CategoriesManager.tsx), which always submits all three.
 export const updateCategorySchema = createCategorySchema;
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;

@@ -269,6 +269,13 @@ Additive migration only; no backfill needed since F-01's `categories` table curr
 - Existing (non-followed) form convention for reference: `src/pages/api/auth/signin.ts`, `src/middleware.ts`
 - Roadmap slice: `context/foundation/roadmap.md` — S-01
 
+## Addendum
+
+Two files were changed during implementation beyond this plan's stated "Changes Required" lists — both surfaced and approved live during the corresponding phase, not silent:
+
+- **`src/pages/dashboard.astro`** (Phase 3, commit `7fdb6e0`): added `<Topbar />` so the new `/categories` page is actually reachable post-signin — without it, a signed-in user landing on `/dashboard` had no discoverable path to `/categories`.
+- **`supabase/seed.sql`** (Phase 2, commit `bc78f65`): fixed a pre-existing bug (from the already-archived F-01 change) where the seeded pgTAP test users couldn't sign in via real email/password — GoTrue 500'd scanning `NULL` into `confirmation_token`/`recovery_token`/etc. Fixed by setting those columns to `''`. Needed to manually verify Phase 2's API and Phase 3's UI end-to-end at all.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.

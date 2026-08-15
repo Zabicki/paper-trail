@@ -122,6 +122,8 @@ export default function CategoriesManager() {
       const created = (await response.json()) as Category;
       setCategories((prev) => sortByName([...(prev ?? []), created]));
       setAddForm(EMPTY_FORM);
+    } catch {
+      setAddError({ error: "Nie udało się połączyć z serwerem. Spróbuj ponownie." });
     } finally {
       setAdding(false);
     }
@@ -154,6 +156,8 @@ export default function CategoriesManager() {
       const updated = (await response.json()) as Category;
       setCategories((prev) => (prev ? sortByName(prev.map((c) => (c.id === id ? updated : c))) : prev));
       setEditingId(null);
+    } catch {
+      setEditError({ error: "Nie udało się połączyć z serwerem. Spróbuj ponownie." });
     } finally {
       setSaving(false);
     }
