@@ -160,21 +160,23 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                     | Suggested issue title                                        | Ready for `/10x-plan` | Notes                                           |
-| ---------- | ----------------------------- | ------------------------------------------------------------ | --------------------- | ----------------------------------------------- |
-| F-01       | `data-foundation-rls`         | Establish migration pipeline and per-user RLS pattern        | yes                   | Run `/10x-plan data-foundation-rls`             |
-| S-01       | `custom-categories`           | User-defined expense categories with recurring-cost flag     | no                    | Needs F-01                                      |
-| S-02       | `daily-expense-entry`         | Log an expense against today in ≤4 interactions              | no                    | North star. Needs F-01, S-01                    |
-| S-03       | `income-and-entry-management` | Log income; review, edit and delete entries                  | no                    | Needs S-02                                      |
-| S-04       | `date-range-spending-view`    | Quick-select date-range spending view with recurring filter  | no                    | Needs S-01, S-02                                |
-| S-05       | `category-distribution-view`  | Category distribution view, readable at any category count   | no                    | Needs S-04                                      |
-| S-06       | `receipt-parsing`             | Receipt upload, parsing and review into own categories       | no                    | Blocked on OQ-2 and OQ-3                        |
+Tracked as GitHub issues in [`Zabicki/paper-trail`](https://github.com/Zabicki/paper-trail/issues), all on the `MVP v1` milestone. The roadmap stays the source of truth for scope; the issues are the execution surface. `gh issue list --label status:ready` answers "what can I pick up now".
+
+| Roadmap ID | Change ID                     | Suggested issue title                                        | GitHub Issue | Ready for `/10x-plan` | Notes                                           |
+| ---------- | ----------------------------- | ------------------------------------------------------------ | ------------ | --------------------- | ----------------------------------------------- |
+| F-01       | `data-foundation-rls`         | Establish migration pipeline and per-user RLS pattern        | [#1](https://github.com/Zabicki/paper-trail/issues/1)  | yes                   | Run `/10x-plan data-foundation-rls`             |
+| S-01       | `custom-categories`           | User-defined expense categories with recurring-cost flag     | [#2](https://github.com/Zabicki/paper-trail/issues/2)  | no                    | Needs F-01                                      |
+| S-02       | `daily-expense-entry`         | Log an expense against today in ≤4 interactions              | [#3](https://github.com/Zabicki/paper-trail/issues/3)  | no                    | North star. Needs F-01, S-01                    |
+| S-03       | `income-and-entry-management` | Log income; review, edit and delete entries                  | [#4](https://github.com/Zabicki/paper-trail/issues/4)  | no                    | Needs S-02                                      |
+| S-04       | `date-range-spending-view`    | Quick-select date-range spending view with recurring filter  | [#5](https://github.com/Zabicki/paper-trail/issues/5)  | no                    | Needs S-01, S-02                                |
+| S-05       | `category-distribution-view`  | Category distribution view, readable at any category count   | [#6](https://github.com/Zabicki/paper-trail/issues/6)  | no                    | Needs S-04                                      |
+| S-06       | `receipt-parsing`             | Receipt upload, parsing and review into own categories       | [#7](https://github.com/Zabicki/paper-trail/issues/7)  | no                    | Blocked on OQ-2 and OQ-3                        |
 
 ## Open Roadmap Questions
 
-1. **Is bulk import of the existing Google Sheet really post-MVP?** — Owner: user. Block: `roadmap-wide` (does not gate planning, but changes S-04/S-05's value). The primary success criterion is retiring that sheet for 30 consecutive days, yet the history stays behind and the PRD's own non-goals concede that quick-select ranges "have little to range over in the first weeks." Carried from PRD OQ5 and *raised in priority here*, because sequencing has now made the consequence concrete: two of six slices ship into an empty dataset.
-2. **What carries out the receipt classification, and does its accuracy clear the Secondary bar?** — Owner: user. Block: S-06. Carried from PRD OQ4, still unresolved; the operator has confirmed no provider key is held yet.
-3. **The two quantitative NFR thresholds: parsing timeout and receipt-image retention window.** — Owner: user. Block: S-06. Carried from PRD OQ3. Note that `infrastructure.md` proposes the receipt image is *never stored* — displayed from an in-memory `File` during review, sent to the model, then discarded — which would dissolve the retention half by construction rather than requiring a number. The timeout half is unaffected and still needs one.
+1. **Is bulk import of the existing Google Sheet really post-MVP?** — Owner: user. Block: `roadmap-wide` (does not gate planning, but changes S-04/S-05's value). The primary success criterion is retiring that sheet for 30 consecutive days, yet the history stays behind and the PRD's own non-goals concede that quick-select ranges "have little to range over in the first weeks." Carried from PRD OQ5 and *raised in priority here*, because sequencing has now made the consequence concrete: two of six slices ship into an empty dataset. — tracked in [#8](https://github.com/Zabicki/paper-trail/issues/8)
+2. **What carries out the receipt classification, and does its accuracy clear the Secondary bar?** — Owner: user. Block: S-06. Carried from PRD OQ4, still unresolved; the operator has confirmed no provider key is held yet. — tracked in [#9](https://github.com/Zabicki/paper-trail/issues/9)
+3. **The two quantitative NFR thresholds: parsing timeout and receipt-image retention window.** — Owner: user. Block: S-06. Carried from PRD OQ3. Note that `infrastructure.md` proposes the receipt image is *never stored* — displayed from an in-memory `File` during review, sent to the model, then discarded — which would dissolve the retention half by construction rather than requiring a number. The timeout half is unaffected and still needs one. — tracked in [#10](https://github.com/Zabicki/paper-trail/issues/10)
 
 > PRD OQ1 (sign-in mechanism) and OQ2 (behaviour when an unauthenticated user hits a gated route) are **resolved by the baseline** and are not carried forward: email + password is shipped, and `src/middleware.ts` redirects to `/auth/signin`. Confirm these match intent; if not, they become new questions rather than reopened ones.
 
