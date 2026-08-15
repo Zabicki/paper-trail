@@ -28,3 +28,8 @@ pnpm-debug.log*
 .DS_Store
 # jetbrains setting folder
 .idea/
+# 10x-cli tooling (local-only)
+.claude/.10x-cli-manifest.json
+.claude/prompts/
+.claude/skills/
+supabase/snippets/
