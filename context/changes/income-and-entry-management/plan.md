@@ -357,8 +357,8 @@ One additive migration with a default value — no backfill, no data movement, a
 
 #### Manual
 
-- [ ] 1.5 Existing seeded categories all show `kind = 'expense'` in Studio
-- [ ] 1.6 Raw SQL can still change `kind`, confirming immutability is an app-layer rule
+- [x] 1.5 Existing seeded categories all show `kind = 'expense'` in Studio — 4e3107c
+- [x] 1.6 Raw SQL can still change `kind`, confirming immutability is an app-layer rule — 4e3107c
 
 ### Phase 2: Service layer + API write surface
 
@@ -394,16 +394,16 @@ One additive migration with a default value — no backfill, no data movement, a
 
 #### Automated
 
-- [x] 4.1 `npm run lint` passes
-- [x] 4.2 `npx astro check` reports 0 errors
-- [x] 4.3 `npm run build` passes
+- [x] 4.1 `npm run lint` passes — 246dfce
+- [x] 4.2 `npx astro check` reports 0 errors — 246dfce
+- [x] 4.3 `npm run build` passes — 246dfce
 
 #### Manual
 
-- [x] 4.4 Same-day expense still takes ≤4 taps and ≤10 seconds
-- [x] 4.5 Income takes exactly one extra tap; form resets to Wydatek after save
-- [x] 4.6 Editing amount and category updates the row and the day totals
-- [x] 4.7 Editing a date moves the entry and updates both days' calendar markings
-- [x] 4.8 Deleting the only expense on a past day makes that day red again
-- [x] 4.9 Editing mid-navigation does not splice a row into the wrong day (S-02 F1 regression)
-- [x] 4.10 A second user sees, edits and deletes none of the first user's data
+- [x] 4.4 Same-day expense still takes ≤4 taps and ≤10 seconds — 246dfce
+- [x] 4.5 Income takes exactly one extra tap; form resets to Wydatek after save — 246dfce
+- [x] 4.6 Editing amount and category updates the row and the day totals — 246dfce
+- [x] 4.7 Editing a date moves the entry and updates both days' calendar markings — 246dfce
+- [x] 4.8 Deleting the only expense on a past day makes that day red again — 246dfce
+- [x] 4.9 Editing mid-navigation does not splice a row into the wrong day (S-02 F1 regression) — 246dfce
+- [x] 4.10 A second user sees, edits and deletes none of the first user's data — 246dfce
