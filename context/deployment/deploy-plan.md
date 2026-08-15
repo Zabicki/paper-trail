@@ -15,27 +15,47 @@ sources:
 
 # First Deployment Plan — PaperTrail → Cloudflare Workers
 
-## Execution status — updated 2026-08-15
+## Execution status — first deploy completed 2026-08-15
+
+**Live: https://paper-trail.paper-trail.workers.dev** · account `fc458ce6796b08efb77e342a9a946906` · repo `github.com/Zabicki/paper-trail`
 
 | Phase | Status |
 |---|---|
-| 0 — Git baseline | ✅ Branch renamed to `master`; index cleaned; two commits on record (`b7f8aa9` scaffold baseline, `1bac427` deploy prep) |
+| 0 — Git baseline | ✅ Branch renamed to `master`; index cleaned; scaffold committed as rollback point (`b7f8aa9`) |
 | 1 — Rename to `paper-trail` | ✅ `package.json`, `package-lock.json`, `wrangler.jsonc`, `supabase/config.toml` |
-| 2a — Pin `SESSION` KV | ⛔ Blocked on Cloudflare login |
-| 2b — `assets.directory` | ✅ `./dist/client`, with the reason inline in `wrangler.jsonc` |
-| 2c — Images binding | ✅ Kept deliberately; rationale recorded in `astro.config.mjs` |
+| 2a — Pin `SESSION` KV | ✅ `df70b747…` (prod) + `ca58c768…` (preview). **A `previews` block was also required** — see below |
+| 2b — `assets.directory` | ✅ `./dist/client`, reason inline in `wrangler.jsonc` |
+| 2c — Images binding | ✅ Kept deliberately; rationale in `astro.config.mjs` |
 | 2d — `compatibility_date` | ✅ Left at `2026-05-08` |
 | 3 — Cache-Control guardrail | ✅ `src/middleware.ts`, covering the redirect path too |
-| 4 — Supabase project | ⛔ Blocked on operator |
-| 5 — Secrets | ⛔ Blocked; `.env.example` documentation done |
-| 6 — Pre-flight | ✅ Node 22.14.0 installed; lint clean; build OK; **391.09 KiB gzip**; startup 44.3 ms active (local) |
-| 7 — First deploy | ⛔ Blocked on Cloudflare login |
-| 8 — Post-deploy config | ⛔ Needs the deployed URL |
-| 9 — CI | ⛔ Needs a git remote |
-| 10 — Monitoring | ⛔ After first deploy |
+| 4 — Supabase project | ✅ Hosted project live and wired. `supabase link` **deferred** — it needs the DB password and buys nothing while `supabase/migrations/` is empty |
+| 5 — Secrets | ✅ `SUPABASE_URL` + `SUPABASE_KEY` set via `wrangler secret put`; `.dev.vars` and `.env.example` documented |
+| 6 — Pre-flight | ✅ Node 22.14.0 installed; lint clean; **391.09 KiB gzip**; startup **22 ms measured on Cloudflare** |
+| 7 — First deploy | ✅ Version `363f42fd`, then `42f87e27` auto-deployed on secret change |
+| 8 — Post-deploy config | ✅ `site` set, sitemap now emits. ⚠️ Supabase Site URL / Redirect URL **still to do** |
+| 9 — CI | ✅ Green on `master`. Repo secrets turned out **not** to be required |
+| 10 — Monitoring | ✅ `observability.enabled: true`; weekly cadence — see below |
 | 11 — Doc corrections | ✅ `CLAUDE.md`, `tech-stack.md`, `infrastructure.md` |
 
-Baseline moved from 390.44 → **391.09 KiB gzip** (+0.65 KiB, the Cache-Control guardrail). Use 391.09 KiB as the regression baseline from here.
+Bundle baseline moved 390.44 → **391.09 KiB gzip** (+0.65 KiB, the Cache-Control guardrail). Use 391.09 KiB as the regression baseline.
+
+### Findings from execution
+
+**Preview bindings are injected separately from top-level ones.** Pinning `kv_namespaces` was not enough — the adapter calls `getNonInheritableBindings(config.previews)` independently, so `wrangler versions upload` still received a bare id-less `SESSION` binding. A `previews.kv_namespaces` block in `wrangler.jsonc` is required as well. Both blockers predicted before execution were confirmed real.
+
+**`wrangler versions upload` cannot be the first deploy.** It fails with "You cannot upload a new version of a Worker that does not yet exist." The preview-first sequence in Phase 7 applies from the *second* deploy onward; the first must be `wrangler deploy`.
+
+**CI does not need the Supabase repo secrets.** Both env vars are `optional: true`, so `npm run build` passes with them unset — confirmed by two green runs made before any secret existed. `CLAUDE.md` previously claimed otherwise.
+
+### ⚠️ `*.workers.dev` is blocked on the Ocado corporate network
+
+Requests from the corporate network return `303 → blocked.teams.cloudflare.com` with `block_reason=DNS Default Deny [BLOCKED DOMAINS LIST]`. This is Cloudflare Gateway policy, unrelated to the deployment, and it means **the deployed app cannot be reached or tested from a work machine on that network.** Options, in rough order of effort:
+
+1. Test from an unblocked network (personal device off corporate DNS).
+2. Request an unblock at `links.ocado.com/site-unblock`.
+3. Put the app on a custom domain, which sidesteps the `workers.dev` category block entirely — worth considering early if day-to-day testing happens on the work machine.
+
+Server-side verification remains available regardless via `wrangler tail`, `wrangler deployments list`, and the Cloudflare dashboard, none of which are blocked.
 
 ## Purpose
 

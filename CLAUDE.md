@@ -85,7 +85,9 @@ No tables and no `supabase/migrations/` directory exist — only `supabase/confi
 
 ## CI
 
-`.github/workflows/ci.yml` runs `npm ci` → `npx astro sync` → lint → build on `master` (the working branch). It needs `SUPABASE_URL` / `SUPABASE_KEY` repo secrets, and a remote — the repo has none yet, so CI has not run.
+`.github/workflows/ci.yml` runs `npm ci` → `npx astro sync` → lint → build on `master` (the working branch). Remote: `github.com/Zabicki/paper-trail`. Verified green.
+
+The workflow passes `SUPABASE_URL` / `SUPABASE_KEY` from repo secrets, but **they are not required** — both are `optional: true`, so the build passes with them unset (confirmed on the first runs, which had no secrets configured). Set them only if a future build step genuinely needs to reach Supabase.
 
 ## Working docs (`context/`)
 
