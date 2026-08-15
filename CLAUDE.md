@@ -7,6 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **RLS on day one.** Every new table gets row-level security enabled in the same migration that creates it, with granular per-operation, per-role policies. Per the tech-stack doc, the PRD's per-user data isolation guarantee **fails silently** otherwise — nothing errors, the data just leaks across users. See [Data layer](#data-layer-not-yet-built).
 - **`createClient()` can return `null`.** `src/lib/supabase.ts` returns `null` when either Supabase env var is missing. Every caller must null-check — see `src/pages/api/auth/signin.ts` (redirects with an error) and `src/middleware.ts` (falls back to `locals.user = null`). Follow this pattern for any new Supabase-backed code path. See [Env vars](#env-vars-are-optional-by-design).
 - **Never add `export const prerender = false`.** It is a no-op under `output: "server"`. Use `prerender = true` only to opt a specific page *into* static generation.
+- **`Cache-Control: private, no-store` on every authenticated response.** `src/middleware.ts` sets it for protected routes and for any request with a signed-in user; keep it that way. RLS guards the *database* — it does nothing about a rendered SSR page cached at Cloudflare's edge and served to a different user. This is a second, independent path to the same isolation guarantee failing, and like the RLS failure it is **silent**. See [Deployment](#deployment).
+- **`Astro.locals.runtime` does not exist.** `@astrojs/cloudflare` v13 removed it; access bindings directly. Nearly every Astro-on-Cloudflare tutorial and snippet predates this, so it is the most likely wrong thing to reach for — and it fails at *runtime inside workerd*, not at type-check.
+- **No native modules on workerd.** `sharp` and friends cannot run. For image work use the Cloudflare Images binding (`env.IMAGES`, already bound — see `astro.config.mjs`) or resize client-side before upload.
+- **Use `astro dev`, never `wrangler dev`.** At adapter v13 `astro dev` already runs on workerd via the Cloudflare Vite plugin. Mixing the two produces confusing env-var behaviour, since workerd reads `.dev.vars` and not `.env`.
 
 ## What this project is
 
@@ -14,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Read `context/foundation/prd.md` before non-trivial feature work — it holds the numbered functional requirements (FR-xxx), non-goals, and success criteria. `context/foundation/tech-stack.md` records why this stack was chosen.
 
-**The repo is still the unmodified `10x-astro-starter` scaffold.** `package.json` `name`, `wrangler.jsonc` `name`, and `supabase/config.toml` `project_id` all still say `10x-astro-starter`; `README.md` is the starter's README; `src/pages/index.astro` and `src/components/Welcome.astro` are template content. None of the PaperTrail domain (expenses, categories, receipts) exists yet. Treat existing `src/` code as reference for conventions, not as product code.
+**The repo is still substantially the `10x-astro-starter` scaffold.** The project has been renamed to `paper-trail` (`package.json`, `wrangler.jsonc`, `supabase/config.toml` `project_id`), but `README.md` is still the starter's README, and `src/pages/index.astro` and `src/components/Welcome.astro` are template content. None of the PaperTrail domain (expenses, categories, receipts) exists yet. Treat existing `src/` code as reference for conventions, not as product code.
 
 ## Commands
 
@@ -69,16 +73,19 @@ No tables and no `supabase/migrations/` directory exist — only `supabase/confi
 
 ## Environment & deploy
 
-- Node v22.14.0 (`.nvmrc`).
+- Node v22.14.0 (`.nvmrc`) — `nvm use` before building; CI pins Node 22 too.
 - Local dev secrets: `.env` for Node tooling, **`.dev.vars` for Cloudflare workerd** (what `npm run dev` actually reads). Both gitignored; copy from `.env.example`.
 - Local Supabase: `npx supabase start` (needs Docker, ~7 GB RAM); Studio at `http://localhost:54323`. Turn off Authentication → Email → Confirm email locally to sign in immediately after signup.
-- Deploy: `npm run build` then `npx wrangler deploy`; set secrets via `npx wrangler secret put`.
+- Deploy: `npm run build` then `npx wrangler deploy`; set secrets via `npx wrangler secret put`. Production promotion is a **manual human action** — there is no CI deploy job by design.
+
+**`context/deployment/deploy-plan.md` is the deployment runbook.** Read it before touching `wrangler.jsonc`, deploy commands, or anything about secrets and monitoring. Two traps it documents:
+
+- **`assets.directory` must stay `./dist/client`.** The adapter writes its own config to `dist/server/wrangler.json`; wrangler bridges the two through the gitignored `.wrangler/deploy/config.json` that only a local build produces. Setting it to `./dist` would publish `dist/server/.dev.vars` as a public asset.
+- **A deploy with unset secrets succeeds and serves a silently auth-disabled site.** Both env vars are `optional: true` and `createClient()` returns `null`, so `/dashboard` just redirects forever with only the red config banner as a signal. A green deploy is not evidence that secrets resolved.
 
 ## CI
 
-`.github/workflows/ci.yml` runs `npm ci` → `npx astro sync` → lint → build. It needs `SUPABASE_URL` / `SUPABASE_KEY` repo secrets.
-
-⚠️ It triggers only on `master`, but the working branch is `main` — as configured, **CI never runs**. Fix the branch filter or rename the branch.
+`.github/workflows/ci.yml` runs `npm ci` → `npx astro sync` → lint → build on `master` (the working branch). It needs `SUPABASE_URL` / `SUPABASE_KEY` repo secrets, and a remote — the repo has none yet, so CI has not run.
 
 ## Working docs (`context/`)
 

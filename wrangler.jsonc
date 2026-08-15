@@ -1,12 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "10x-astro-starter",
+  "name": "paper-trail",
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-05-08",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "binding": "ASSETS",
-    "directory": "./dist",
+    // Must be ./dist/client, NOT ./dist. The Astro adapter writes its own
+    // config to dist/server/wrangler.json pointing at ../client, and wrangler
+    // bridges the two via the gitignored .wrangler/deploy/config.json that only
+    // a local build produces. If that redirect is ever missing, "./dist" would
+    // publish dist/server/.dev.vars as a public static asset — the .assetsignore
+    // that guards those files lives in dist/client/, not dist/.
+    "directory": "./dist/client",
     "not_found_handling": "404-page",
   },
   "observability": {

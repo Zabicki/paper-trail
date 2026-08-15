@@ -21,7 +21,7 @@ Start on the **Free plan**. Measured against this actual repo, the two irreversi
 
 ### Correction to the deployment target of record
 
-`context/foundation/tech-stack.md` records `deployment_target: cloudflare-pages`. **This is stale and should be corrected to `cloudflare-workers`.** `@astrojs/cloudflare` v13 removed Cloudflare Pages support outright — Pages is not an option at the pinned adapter version. Workers + Static Assets is Cloudflare's recommended path for all new projects; Workers Sites is deprecated. The existing `wrangler.jsonc` is already on the correct path.
+`context/foundation/tech-stack.md` recorded `deployment_target: cloudflare-pages`. **This was stale and has since been corrected to `cloudflare-workers` (2026-08-15).** `@astrojs/cloudflare` v13 removed Cloudflare Pages support outright — Pages is not an option at the pinned adapter version. Workers + Static Assets is Cloudflare's recommended path for all new projects; Workers Sites is deprecated. The existing `wrangler.jsonc` is already on the correct path.
 
 ## Platform Comparison
 
@@ -200,7 +200,9 @@ Commands validated against the versions pinned in this repo (`@astrojs/cloudflar
 
 6. **Turn on monitoring from the first deploy.** `observability.enabled: true` is already in `wrangler.jsonc`. Bookmark Metrics → CPU Time per execution and Errors → Invocation Statuses, and check weekly — Free-plan logs retain only 3 days.
 
-7. **Fix the CI branch filter.** `.github/workflows/ci.yml` triggers on `master`, but the working branch is `main`, so CI currently never runs. It also needs `SUPABASE_URL` / `SUPABASE_KEY` repo secrets.
+7. ~~**Fix the CI branch filter.**~~ **Resolved 2026-08-15** by renaming the working branch from `main` to `master`, which `.github/workflows/ci.yml` already targets — no workflow change was needed. CI still needs `SUPABASE_URL` / `SUPABASE_KEY` repo secrets and a git remote (the repo has none yet), so it has not run.
+
+> **Execution status.** Steps 1–4 and 6 are done; see `context/deployment/deploy-plan.md` for the runbook of record and the current phase status. Two first-deploy blockers not anticipated here were found during execution and are documented there: the adapter's auto-injected `SESSION` KV binding carries no `id`, and root vs. generated `assets.directory` disagree in a way that could publish `dist/server/.dev.vars`.
 
 ## Out of Scope
 
