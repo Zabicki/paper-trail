@@ -290,30 +290,30 @@ Additive migration only; no backfill needed since F-01's `categories` table curr
 
 #### Automated
 
-- [x] 2.1 `npm run lint` passes
-- [x] 2.2 `npx astro check` passes
+- [x] 2.1 `npm run lint` passes — bc78f65
+- [x] 2.2 `npx astro check` passes — bc78f65
 
 #### Manual
 
-- [x] 2.3 `GET /api/categories` returns `[]` for a fresh user
-- [x] 2.4 `POST` with a valid body creates a category, returns `201`
-- [x] 2.5 Duplicate name returns `409` with `field: "name"`
-- [x] 2.6 `PATCH`/`DELETE` on another user's id returns `404`
+- [x] 2.3 `GET /api/categories` returns `[]` for a fresh user — bc78f65
+- [x] 2.4 `POST` with a valid body creates a category, returns `201` — bc78f65
+- [x] 2.5 Duplicate name returns `409` with `field: "name"` — bc78f65
+- [x] 2.6 `PATCH`/`DELETE` on another user's id returns `404` — bc78f65
 
 ### Phase 3: Category management UI
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes
-- [ ] 3.2 `npx astro check` passes
-- [ ] 3.3 `npm run build` succeeds
+- [x] 3.1 `npm run lint` passes
+- [x] 3.2 `npx astro check` passes
+- [x] 3.3 `npm run build` succeeds
 
 #### Manual
 
-- [ ] 3.4 Fresh user sees Polish empty-state prompt
-- [ ] 3.5 Adding a category appears without full page reload
-- [ ] 3.6 Rename/recolor/toggle-recurring persist and reflect immediately
-- [ ] 3.7 Delete removes the category, with `window.confirm` first
-- [ ] 3.8 Duplicate name shows inline Polish error next to name field
-- [ ] 3.9 Signed-out visit to `/categories` redirects to `/auth/signin`
-- [ ] 3.10 Second user never sees first user's categories
+- [x] 3.4 Fresh user sees Polish empty-state prompt
+- [x] 3.5 Adding a category appears without full page reload
+- [x] 3.6 Rename/recolor/toggle-recurring persist and reflect immediately
+- [x] 3.7 Delete removes the category, with `window.confirm` first
+- [x] 3.8 Duplicate name shows inline Polish error next to name field
+- [x] 3.9 Signed-out visit to `/categories` redirects to `/auth/signin`
+- [x] 3.10 Second user never sees first user's categories
