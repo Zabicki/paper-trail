@@ -1,6 +1,12 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
-import { createEntrySchema, createEntry, listEntriesForDay, CategoryNotFoundError } from "@/lib/services/entries";
+import {
+  createEntrySchema,
+  createEntry,
+  listEntriesForDay,
+  CategoryNotFoundError,
+  CategoryKindMismatchError,
+} from "@/lib/services/entries";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -61,6 +67,12 @@ export const POST: APIRoute = async (context) => {
     if (error instanceof CategoryNotFoundError) {
       return new Response(JSON.stringify({ error: "Nie znaleziono kategorii", field: "categoryId" }), {
         status: 404,
+      });
+    }
+    // A category the caller does own, but of the wrong kind — safe to name.
+    if (error instanceof CategoryKindMismatchError) {
+      return new Response(JSON.stringify({ error: "Kategoria nie pasuje do typu wpisu", field: "categoryId" }), {
+        status: 400,
       });
     }
     throw error;

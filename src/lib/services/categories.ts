@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { createClient } from "@/lib/supabase";
-import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR, type Category, type CategoryColor } from "@/types";
+import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR, type Category, type CategoryColor, type CategoryKind } from "@/types";
 
 type SupabaseClient = NonNullable<ReturnType<typeof createClient>>;
 
@@ -10,13 +10,20 @@ export const createCategorySchema = z.object({
   name: z.string().trim().min(1, "Nazwa jest wymagana").max(100, "Nazwa może mieć maksymalnie 100 znaków"),
   color: z.enum(categoryColorValues).default(DEFAULT_CATEGORY_COLOR),
   isRecurring: z.boolean().default(false),
+  kind: z.enum(["expense", "income"]).default("expense"),
 });
 
 // PATCH is full-replace, not a true partial update: color/isRecurring carry
 // defaults, so a caller must always send the full {name, color, isRecurring}
 // triple or those fields silently reset. Matches the only current caller
 // (CategoriesManager.tsx), which always submits all three.
-export const updateCategorySchema = createCategorySchema;
+//
+// `kind` is deliberately omitted rather than inherited. This is the single
+// line that makes kind immutable: an entry's type must match its category's
+// kind, so a PATCH that flipped kind would silently invalidate every entry
+// already filed under it. The database has no such constraint — strip this
+// `.omit()` and a stray `kind` in a request body starts taking effect.
+export const updateCategorySchema = createCategorySchema.omit({ kind: true });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
@@ -40,10 +47,11 @@ interface CategoryRow {
   name: string;
   color: CategoryColor;
   is_recurring: boolean;
+  kind: CategoryKind;
   created_at: string;
 }
 
-const SELECT_COLUMNS = "id, name, color, is_recurring, created_at";
+const SELECT_COLUMNS = "id, name, color, is_recurring, kind, created_at";
 
 function toDto(row: CategoryRow): Category {
   return {
@@ -51,6 +59,7 @@ function toDto(row: CategoryRow): Category {
     name: row.name,
     color: row.color,
     isRecurring: row.is_recurring,
+    kind: row.kind,
     createdAt: row.created_at,
   };
 }
@@ -71,7 +80,7 @@ export async function listCategories(supabase: SupabaseClient): Promise<Category
 export async function createCategory(supabase: SupabaseClient, input: CreateCategoryInput): Promise<Category> {
   const { data, error } = await supabase
     .from("categories")
-    .insert({ name: input.name, color: input.color, is_recurring: input.isRecurring })
+    .insert({ name: input.name, color: input.color, is_recurring: input.isRecurring, kind: input.kind })
     .select(SELECT_COLUMNS)
     .single();
 

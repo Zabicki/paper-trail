@@ -350,10 +350,10 @@ One additive migration with a default value — no backfill, no data movement, a
 
 #### Automated
 
-- [x] 1.1 `npx supabase db reset` applies all five migrations cleanly
-- [x] 1.2 `npx supabase test db` passes with the raised plan counts (`Files=2`)
-- [x] 1.3 `npm run lint` passes
-- [x] 1.4 `npm run build` passes
+- [x] 1.1 `npx supabase db reset` applies all five migrations cleanly — 4e3107c
+- [x] 1.2 `npx supabase test db` passes with the raised plan counts (`Files=2`) — 4e3107c
+- [x] 1.3 `npm run lint` passes — 4e3107c
+- [x] 1.4 `npm run build` passes — 4e3107c
 
 #### Manual
 
@@ -364,17 +364,17 @@ One additive migration with a default value — no backfill, no data movement, a
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` passes
-- [ ] 2.2 `npx astro check` reports 0 errors
-- [ ] 2.3 `npm run build` passes
+- [x] 2.1 `npm run lint` passes
+- [x] 2.2 `npx astro check` reports 0 errors
+- [x] 2.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 2.4 `POST /api/entries` with mismatched type/category kind returns 400
-- [ ] 2.5 `PATCH /api/entries/<id>` against another user's entry returns 404
-- [ ] 2.6 `DELETE /api/entries/<id>` twice returns 204 then 404
-- [ ] 2.7 `PATCH /api/categories/<id>` cannot change `kind`
-- [ ] 2.8 An income-only day is still reported as missing by `/api/entries/days`
+- [x] 2.4 `POST /api/entries` with mismatched type/category kind returns 400
+- [x] 2.5 `PATCH /api/entries/<id>` against another user's entry returns 404
+- [x] 2.6 `DELETE /api/entries/<id>` twice returns 204 then 404
+- [x] 2.7 `PATCH /api/categories/<id>` cannot change `kind`
+- [x] 2.8 An income-only day is still reported as missing by `/api/entries/days`
 
 ### Phase 3: Categories manager — kind selection
 

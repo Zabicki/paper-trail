@@ -17,11 +17,18 @@ export type CategoryColor = (typeof CATEGORY_COLORS)[number]["value"];
 
 export const DEFAULT_CATEGORY_COLOR: CategoryColor = "#64748b";
 
+// Set once at creation and immutable thereafter — an entry's `type` must
+// match its category's `kind`, so letting a kind flip would retroactively
+// break every entry already pointing at it. Enforced by updateCategorySchema
+// omitting the field, not by the database.
+export type CategoryKind = "expense" | "income";
+
 export interface Category {
   id: number;
   name: string;
   color: CategoryColor;
   isRecurring: boolean;
+  kind: CategoryKind;
   createdAt: string;
 }
 
