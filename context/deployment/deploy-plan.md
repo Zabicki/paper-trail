@@ -298,7 +298,24 @@ Make these alongside the first deploy:
 
 ---
 
-## Verification
+## Verification — passed 2026-08-15 against version `42090844`
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `GET /` | **200** |
+| 2 | `GET /dashboard` | **302 → `/auth/signin`** with **`cache-control: private, no-store`** — Phase 3 guardrail confirmed live |
+| 3 | Signup → confirmation email URL | ⏳ pending the Supabase URL Configuration step |
+| 4 | Config banner absent | **absent** — proves secrets resolved (a green deploy does not) |
+| 5 | `/server/.dev.vars`, `/server/wrangler.json`, `/.dev.vars`, `/wrangler.json`, `/_worker.js` | **all 404** — Phase 2b confirmed |
+| 6 | `wrangler tail` | ❌ unavailable on the corporate network, see above |
+| 7 | `deployments list` / rollback target | **valid** |
+| — | `/sitemap-index.xml` | **200** |
+
+**The sitemap check initially failed (404)** because `site` was set *after* the previous deploy, so the live bundle predated it. Worth remembering as a general trap: a config change is not live until a rebuild **and** a redeploy, and `wrangler secret put` auto-deploying a version can create the illusion that the latest local build is already out there.
+
+The fix also exercised the real Phase 7 sequence for the first time: `versions upload` → verify the preview URL → `versions deploy --percentage 100`. That confirmed the `previews.kv_namespaces` pin works, since the upload had failed on an id-less binding before it.
+
+## Verification procedure
 
 Run against the deployed URL after Phase 7.
 
