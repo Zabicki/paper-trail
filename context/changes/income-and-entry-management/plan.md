@@ -380,30 +380,30 @@ One additive migration with a default value — no backfill, no data movement, a
 
 #### Automated
 
-- [x] 3.1 `npm run lint` passes
-- [x] 3.2 `npx astro check` reports 0 errors
-- [x] 3.3 `npm run build` passes
+- [x] 3.1 `npm run lint` passes — 93392da
+- [x] 3.2 `npx astro check` reports 0 errors — 93392da
+- [x] 3.3 `npm run build` passes — 93392da
 
 #### Manual
 
-- [x] 3.4 An income category lands in the income section and never appears in the expense picker
-- [x] 3.5 Editing shows kind as read-only text and preserves it on save
-- [x] 3.6 Both sections render their empty state on a fresh account
+- [x] 3.4 An income category lands in the income section and never appears in the expense picker — 93392da
+- [x] 3.5 Editing shows kind as read-only text and preserves it on save — 93392da
+- [x] 3.6 Both sections render their empty state on a fresh account — 93392da
 
 ### Phase 4: Dashboard — income entry and an editable day list
 
 #### Automated
 
-- [ ] 4.1 `npm run lint` passes
-- [ ] 4.2 `npx astro check` reports 0 errors
-- [ ] 4.3 `npm run build` passes
+- [x] 4.1 `npm run lint` passes
+- [x] 4.2 `npx astro check` reports 0 errors
+- [x] 4.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 4.4 Same-day expense still takes ≤4 taps and ≤10 seconds
-- [ ] 4.5 Income takes exactly one extra tap; form resets to Wydatek after save
-- [ ] 4.6 Editing amount and category updates the row and the day totals
-- [ ] 4.7 Editing a date moves the entry and updates both days' calendar markings
-- [ ] 4.8 Deleting the only expense on a past day makes that day red again
-- [ ] 4.9 Editing mid-navigation does not splice a row into the wrong day (S-02 F1 regression)
-- [ ] 4.10 A second user sees, edits and deletes none of the first user's data
+- [x] 4.4 Same-day expense still takes ≤4 taps and ≤10 seconds
+- [x] 4.5 Income takes exactly one extra tap; form resets to Wydatek after save
+- [x] 4.6 Editing amount and category updates the row and the day totals
+- [x] 4.7 Editing a date moves the entry and updates both days' calendar markings
+- [x] 4.8 Deleting the only expense on a past day makes that day red again
+- [x] 4.9 Editing mid-navigation does not splice a row into the wrong day (S-02 F1 regression)
+- [x] 4.10 A second user sees, edits and deletes none of the first user's data

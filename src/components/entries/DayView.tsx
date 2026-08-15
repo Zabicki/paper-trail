@@ -3,14 +3,24 @@ import MonthCalendar from "./MonthCalendar";
 import EntryForm from "./EntryForm";
 import DayEntriesList from "./DayEntriesList";
 import { monthOf, toLocalDateString } from "./date-utils";
-import type { Category, Entry } from "@/types";
+import type { Category, Entry, EntryType } from "@/types";
+
+const FORM_HEADINGS: Record<EntryType, string> = {
+  expense: "Dodaj wydatek",
+  income: "Dodaj przychód",
+};
 
 export default function DayView() {
   const [selectedDate, setSelectedDate] = useState(() => toLocalDateString(new Date()));
   const [visibleMonth, setVisibleMonth] = useState(() => monthOf(selectedDate));
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
-  const [categories, setCategories] = useState<Category[] | null>(null);
+  // Lives here rather than in EntryForm because the heading above the form
+  // follows it.
+  const [entryType, setEntryType] = useState<EntryType>("expense");
+
+  const [expenseCategories, setExpenseCategories] = useState<Category[] | null>(null);
+  const [incomeCategories, setIncomeCategories] = useState<Category[] | null>(null);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   const [entries, setEntries] = useState<Entry[] | null>(null);
@@ -21,18 +31,26 @@ export default function DayView() {
     selectedDateRef.current = selectedDate;
   }, [selectedDate]);
 
+  // Both lists up front, in parallel: switching to Przychód has to be instant.
+  // Fetching the income list on first toggle would put a visible wait on the
+  // one interaction income costs over an expense.
   useEffect(() => {
     const cancelled = { current: false };
 
     void (async () => {
       try {
-        const response = await fetch("/api/entries/categories");
-        if (!response.ok) {
+        const [expenseResponse, incomeResponse] = await Promise.all([
+          fetch("/api/entries/categories?kind=expense"),
+          fetch("/api/entries/categories?kind=income"),
+        ]);
+        if (!expenseResponse.ok || !incomeResponse.ok) {
           throw new Error("Nie udało się wczytać kategorii.");
         }
-        const data = (await response.json()) as Category[];
+        const expense = (await expenseResponse.json()) as Category[];
+        const income = (await incomeResponse.json()) as Category[];
         if (!cancelled.current) {
-          setCategories(data);
+          setExpenseCategories(expense);
+          setIncomeCategories(income);
         }
       } catch {
         if (!cancelled.current) {
@@ -81,12 +99,46 @@ export default function DayView() {
     }
   }
 
+  // All three mutation callbacks compare against selectedDateRef rather than
+  // selectedDate: a response can land after the user has moved to another day,
+  // and splicing it into that day's list is the S-02 F1 regression. The
+  // calendar key is bumped regardless — the *other* day's marking may have
+  // changed even when this list must not.
   function handleSaved(entry: Entry) {
     if (entry.occurredOn === selectedDateRef.current) {
       setEntries((prev) => [...(prev ?? []), entry]);
     }
     setCalendarRefreshKey((key) => key + 1);
   }
+
+  function handleUpdated(entry: Entry) {
+    if (entry.occurredOn === selectedDateRef.current) {
+      // Upsert: an edit that only changed the amount replaces the row in
+      // place, while one that moved an entry *onto* the day now being viewed
+      // has to add it.
+      setEntries((prev) => {
+        if (prev === null) {
+          return prev;
+        }
+        return prev.some((existing) => existing.id === entry.id)
+          ? prev.map((existing) => (existing.id === entry.id ? entry : existing))
+          : [...prev, entry];
+      });
+    } else {
+      // Moved to a different day — it belongs to that day's list now.
+      setEntries((prev) => (prev ? prev.filter((existing) => existing.id !== entry.id) : prev));
+    }
+    setCalendarRefreshKey((key) => key + 1);
+  }
+
+  // No date comparison needed: filtering by id is a no-op on any list that
+  // does not hold the row, so a late response cannot corrupt another day.
+  function handleDeleted(id: number) {
+    setEntries((prev) => (prev ? prev.filter((existing) => existing.id !== id) : prev));
+    setCalendarRefreshKey((key) => key + 1);
+  }
+
+  const categoriesLoaded = expenseCategories !== null && incomeCategories !== null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,17 +151,33 @@ export default function DayView() {
       />
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Dodaj wydatek</h2>
+        <h2 className="text-lg font-semibold">{FORM_HEADINGS[entryType]}</h2>
         {categoriesError && <p className="text-destructive text-sm">{categoriesError}</p>}
-        {categories === null && !categoriesError && (
+        {!categoriesLoaded && !categoriesError && (
           <p className="text-muted-foreground text-sm">Wczytywanie kategorii…</p>
         )}
-        {categories !== null && <EntryForm categories={categories} occurredOn={selectedDate} onSaved={handleSaved} />}
+        {categoriesLoaded && (
+          <EntryForm
+            expenseCategories={expenseCategories}
+            incomeCategories={incomeCategories}
+            type={entryType}
+            onTypeChange={setEntryType}
+            occurredOn={selectedDate}
+            onSaved={handleSaved}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Wpisy tego dnia</h2>
-        <DayEntriesList entries={entries} loadError={entriesError} />
+        <DayEntriesList
+          entries={entries}
+          loadError={entriesError}
+          expenseCategories={expenseCategories ?? []}
+          incomeCategories={incomeCategories ?? []}
+          onUpdated={handleUpdated}
+          onDeleted={handleDeleted}
+        />
       </div>
     </div>
   );
