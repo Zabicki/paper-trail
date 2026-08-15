@@ -82,7 +82,7 @@ Update this doc in place as deployment practice changes. Change-scoped work belo
 | Decision | Choice | Rationale |
 |---|---|---|
 | Timing | Deploy the current scaffold now, before feature work | Proves secrets, KV, bindings, and the URL while no real data is at risk; de-risks the 2026-09-04 deadline |
-| Deploy trigger | Manual `npx wrangler deploy` from the laptop | Matches `infrastructure.md`'s approval rule — a human promotes to production. No CI deploy job, no Cloudflare API token |
+| Deploy trigger | CI (`cloudflare/wrangler-action`) on push to `master`, gated by a required-reviewer approval on the `production` GitHub Environment | Added 2026-08-15: keeps a human promotion gate (per `infrastructure.md`'s approval rule) while removing the laptop as a single point of deploy. Manual `npx wrangler deploy` remains available for out-of-band fixes/rollback. See Phase 9 |
 | Supabase | New hosted project, EU region | Local `npx supabase start` remains the dev database |
 | Images binding | Keep, deliberately | Workerd-native receipt downscaling; `sharp` cannot run on workerd |
 | Git branch | `master` | `.github/workflows/ci.yml` already targets it |
@@ -259,13 +259,20 @@ npx wrangler deployments list
 - Complete the Supabase Site URL / Redirect URL step (Phase 4, step 3).
 - Optional cleanup: `dist/client/template.png` is a 1.27 MB starter asset uploaded on every deploy; it goes away with `Welcome.astro`.
 
-## Phase 9 — CI
+## Phase 9 — CI/CD
 
-`.github/workflows/ci.yml` triggers on `master`, which the Phase 0 rename now matches — **`ci.yml` needs no changes.** Leave both `branches: [master]` filters as written.
+`.github/workflows/ci.yml` has two jobs: `ci` (existing — lint/build on every push and PR to `master`) and `deploy` (added 2026-08-15 — `needs: ci`, `if: github.event_name == 'push'`, `environment: production`).
 
-- Add `SUPABASE_URL` / `SUPABASE_KEY` repo secrets once a GitHub remote exists.
-- Push `master` and confirm the workflow actually fires. It never has, so its first green run is itself unverified.
-- **No deploy job.** Production promotion stays a manual human action, matching `infrastructure.md`'s approval rule.
+The `deploy` job rebuilds and runs `cloudflare/wrangler-action@v3` (default `command: deploy`) with:
+
+- `apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}` — a `production`-environment secret (visible only to jobs targeting that environment), scoped to a Cloudflare API token with "Edit Cloudflare Workers" permissions on account `fc458ce6796b08efb77e342a9a946906`.
+- `accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}` — a repo-level variable (not secret; the account ID isn't sensitive), set to `fc458ce6796b08efb77e342a9a946906`.
+
+The `production` GitHub Environment has a required reviewer configured (Settings → Environments → production). This is what creates the approval gate: pushing to `master` starts the run, but the `deploy` job sits at "Waiting" until the reviewer approves it in the Actions UI — matching `infrastructure.md`'s human-promotes-to-production rule without requiring the promotion to happen from a specific laptop.
+
+This does **not** touch Worker secrets (`SUPABASE_URL`/`SUPABASE_KEY` as set via `wrangler secret put` in Phase 5) — those were set once against the live Worker and persist across deploys regardless of how the deploy was triggered.
+
+Manual `npx wrangler deploy` / `wrangler rollback` from the laptop remain valid for out-of-band fixes — see Rollback below.
 
 ## Phase 10 — Monitoring
 

@@ -80,18 +80,18 @@ RLS is verified by an actual pgTAP suite (`supabase/tests/*_test.sql`, run via `
 - Node v22.14.0 (`.nvmrc`) — `nvm use` before building; CI pins Node 22 too.
 - Local dev secrets: `.env` for Node tooling, **`.dev.vars` for Cloudflare workerd** (what `npm run dev` actually reads). Both gitignored; copy from `.env.example`.
 - Local Supabase: `npx supabase start` (needs Docker, ~7 GB RAM); Studio at `http://localhost:54323`. Turn off Authentication → Email → Confirm email locally to sign in immediately after signup.
-- Deploy: `npm run build` then `npx wrangler deploy`; set secrets via `npx wrangler secret put`. Production promotion is a **manual human action** — there is no CI deploy job by design.
+- Deploy: pushes to `master` deploy automatically via the `deploy` job in `.github/workflows/ci.yml`, gated by a required-reviewer approval on the `production` GitHub Environment — nothing reaches Cloudflare until that approval is given. Manual `npm run build` + `npx wrangler deploy` remains available for out-of-band fixes and rollback. Set Worker secrets via `npx wrangler secret put` — CI deploys never touch these; they're set once and persist across deploys.
 
 **`context/deployment/deploy-plan.md` is the deployment runbook.** Read it before touching `wrangler.jsonc`, deploy commands, or anything about secrets and monitoring. Two traps it documents:
 
 - **`assets.directory` must stay `./dist/client`.** The adapter writes its own config to `dist/server/wrangler.json`; wrangler bridges the two through the gitignored `.wrangler/deploy/config.json` that only a local build produces. Setting it to `./dist` would publish `dist/server/.dev.vars` as a public asset.
 - **A deploy with unset secrets succeeds and serves a silently auth-disabled site.** Both env vars are `optional: true` and `createClient()` returns `null`, so `/dashboard` just redirects forever with only the red config banner as a signal. A green deploy is not evidence that secrets resolved.
 
-## CI
+## CI/CD
 
-`.github/workflows/ci.yml` runs `npm ci` → `npx astro sync` → lint → build on `master` (the working branch). Remote: `github.com/Zabicki/paper-trail`. Verified green.
+`.github/workflows/ci.yml` has two jobs. `ci` runs `npm ci` → `npx astro sync` → lint → build on every push and PR to `master` (the working branch); it's the merge gate. `deploy` runs only on pushes to `master` (`needs: ci`), targets the `production` GitHub Environment, rebuilds, and runs `cloudflare/wrangler-action@v3` (`wrangler deploy`) using `CLOUDFLARE_API_TOKEN` (environment secret) and `CLOUDFLARE_ACCOUNT_ID` (repo variable). Because the job targets `environment: production`, GitHub pauses it for a required-reviewer approval in the Actions UI before the secret is injected and the deploy runs. Remote: `github.com/Zabicki/paper-trail`. Verified green.
 
-The workflow passes `SUPABASE_URL` / `SUPABASE_KEY` from repo secrets, but **they are not required** — both are `optional: true`, so the build passes with them unset (confirmed on the first runs, which had no secrets configured). Set them only if a future build step genuinely needs to reach Supabase.
+The workflow passes `SUPABASE_URL` / `SUPABASE_KEY` from repo secrets to both jobs' build steps, but **they are not required for the build** — both are `optional: true`, so the build passes with them unset. They matter at runtime, not build time; the actual Worker-side values are set once via `wrangler secret put` and are untouched by CI.
 
 ## Working docs (`context/`)
 
