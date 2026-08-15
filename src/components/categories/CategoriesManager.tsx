@@ -5,18 +5,88 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
-import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR, type Category, type CategoryColor } from "@/types";
+import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR, type Category, type CategoryColor, type CategoryKind } from "@/types";
 
 interface FormState {
   name: string;
   color: CategoryColor;
   isRecurring: boolean;
+  kind: CategoryKind;
 }
 
-const EMPTY_FORM: FormState = { name: "", color: DEFAULT_CATEGORY_COLOR, isRecurring: false };
+const EMPTY_FORM: FormState = {
+  name: "",
+  color: DEFAULT_CATEGORY_COLOR,
+  isRecurring: false,
+  kind: "expense",
+};
+
+const KINDS: CategoryKind[] = ["expense", "income"];
+
+const KIND_LABELS: Record<CategoryKind, string> = {
+  expense: "Wydatki",
+  income: "Przychody",
+};
+
+const KIND_DESCRIPTIONS: Record<CategoryKind, string> = {
+  expense: "Kategoria wydatków",
+  income: "Kategoria przychodów",
+};
+
+// The list is grouped rather than flat: an income source and a spending
+// category answer different questions, and mixing them makes neither list
+// scannable.
+const CATEGORY_GROUPS: { kind: CategoryKind; heading: string; empty: string }[] = [
+  {
+    kind: "expense",
+    heading: "Kategorie wydatków",
+    empty: "Nie masz jeszcze kategorii wydatków. Dodaj pierwszą powyżej, aby zacząć śledzić wydatki.",
+  },
+  {
+    kind: "income",
+    heading: "Kategorie przychodów",
+    empty: "Nie masz jeszcze kategorii przychodów. Dodaj pierwszą powyżej, aby zapisywać przychody.",
+  },
+];
 
 function sortByName(categories: Category[]): Category[] {
   return [...categories].sort((a, b) => a.name.localeCompare(b.name, "pl"));
+}
+
+// Only ever rendered on the add form. Kind is fixed at creation — see the
+// `.omit({ kind: true })` on updateCategorySchema — so the edit form shows it
+// as text instead.
+function KindPicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: CategoryKind;
+  onChange: (kind: CategoryKind) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex gap-2" role="radiogroup" aria-label="Rodzaj kategorii">
+      {KINDS.map((kind) => (
+        <button
+          key={kind}
+          type="button"
+          role="radio"
+          aria-checked={value === kind}
+          disabled={disabled}
+          onClick={() => {
+            onChange(kind);
+          }}
+          className={cn(
+            "min-h-11 flex-1 rounded-md border-2 px-3 py-2 text-sm transition-colors",
+            value === kind ? "border-foreground" : "border-input hover:bg-accent",
+          )}
+        >
+          {KIND_LABELS[kind]}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function ColorSwatchPicker({
@@ -119,7 +189,12 @@ export default function CategoriesManager() {
 
   function startEdit(category: Category) {
     setEditingId(category.id);
-    setEditForm({ name: category.name, color: category.color, isRecurring: category.isRecurring });
+    setEditForm({
+      name: category.name,
+      color: category.color,
+      isRecurring: category.isRecurring,
+      kind: category.kind,
+    });
     setEditError(null);
   }
 
@@ -135,7 +210,13 @@ export default function CategoriesManager() {
       const response = await fetch(`/api/categories/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        // Spelled out rather than sending editForm wholesale: kind is not
+        // part of the update contract and must not travel with the request.
+        body: JSON.stringify({
+          name: editForm.name,
+          color: editForm.color,
+          isRecurring: editForm.isRecurring,
+        }),
       });
       if (!response.ok) {
         setEditError(await parseErrorBody(response));
@@ -177,6 +258,11 @@ export default function CategoriesManager() {
     return <p className="text-muted-foreground">Wczytywanie kategorii…</p>;
   }
 
+  const groupedCategories: Record<CategoryKind, Category[]> = {
+    expense: sortByName(categories.filter((category) => category.kind === "expense")),
+    income: sortByName(categories.filter((category) => category.kind === "income")),
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <section>
@@ -199,6 +285,17 @@ export default function CategoriesManager() {
               disabled={adding}
             />
             {addError?.field === "name" && <p className="text-destructive text-sm">{addError.error}</p>}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Rodzaj</span>
+            <KindPicker
+              value={addForm.kind}
+              onChange={(kind) => {
+                setAddForm((f) => ({ ...f, kind }));
+              }}
+              disabled={adding}
+            />
+            <p className="text-muted-foreground text-sm">Rodzaju nie można zmienić po utworzeniu kategorii.</p>
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">Kolor</span>
@@ -228,108 +325,116 @@ export default function CategoriesManager() {
         </form>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Twoje kategorie</h2>
-        {categories.length === 0 ? (
-          <p className="text-muted-foreground">
-            Nie masz jeszcze żadnej kategorii. Dodaj swoją pierwszą powyżej, aby zacząć śledzić wydatki.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {categories.map((category) => (
-              <li key={category.id} className="rounded-lg border p-3">
-                {editingId === category.id ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor={`edit-name-${category.id}`}>Nazwa</Label>
-                      <Input
-                        id={`edit-name-${category.id}`}
-                        value={editForm.name}
-                        onChange={(event) => {
-                          setEditForm((f) => ({ ...f, name: event.target.value }));
+      {CATEGORY_GROUPS.map((group) => (
+        <section key={group.kind}>
+          <h2 className="mb-3 text-lg font-semibold">{group.heading}</h2>
+          {groupedCategories[group.kind].length === 0 ? (
+            <p className="text-muted-foreground">{group.empty}</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {groupedCategories[group.kind].map((category) => (
+                <li key={category.id} className="rounded-lg border p-3">
+                  {editingId === category.id ? (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor={`edit-name-${category.id}`}>Nazwa</Label>
+                        <Input
+                          id={`edit-name-${category.id}`}
+                          value={editForm.name}
+                          onChange={(event) => {
+                            setEditForm((f) => ({ ...f, name: event.target.value }));
+                          }}
+                          aria-invalid={editError?.field === "name"}
+                          disabled={saving}
+                        />
+                        {editError?.field === "name" && <p className="text-destructive text-sm">{editError.error}</p>}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm font-medium">Rodzaj</span>
+                        <p className="text-muted-foreground text-sm">
+                          {KIND_DESCRIPTIONS[category.kind]} — rodzaju nie można zmienić.
+                        </p>
+                      </div>
+                      <ColorSwatchPicker
+                        idPrefix={`edit-color-${category.id}`}
+                        value={editForm.color}
+                        onChange={(color) => {
+                          setEditForm((f) => ({ ...f, color }));
                         }}
-                        aria-invalid={editError?.field === "name"}
-                        disabled={saving}
                       />
-                      {editError?.field === "name" && <p className="text-destructive text-sm">{editError.error}</p>}
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`edit-recurring-${category.id}`}
+                          checked={editForm.isRecurring}
+                          onCheckedChange={(checked) => {
+                            setEditForm((f) => ({ ...f, isRecurring: checked === true }));
+                          }}
+                          disabled={saving}
+                        />
+                        <Label htmlFor={`edit-recurring-${category.id}`}>Duży koszt cykliczny</Label>
+                      </div>
+                      {editError && !editError.field && <p className="text-destructive text-sm">{editError.error}</p>}
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            void handleSaveEdit(category.id);
+                          }}
+                          disabled={saving || editForm.name.trim().length === 0}
+                        >
+                          {saving ? "Zapisywanie…" : "Zapisz"}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={cancelEdit} disabled={saving}>
+                          Anuluj
+                        </Button>
+                      </div>
                     </div>
-                    <ColorSwatchPicker
-                      idPrefix={`edit-color-${category.id}`}
-                      value={editForm.color}
-                      onChange={(color) => {
-                        setEditForm((f) => ({ ...f, color }));
-                      }}
-                    />
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id={`edit-recurring-${category.id}`}
-                        checked={editForm.isRecurring}
-                        onCheckedChange={(checked) => {
-                          setEditForm((f) => ({ ...f, isRecurring: checked === true }));
-                        }}
-                        disabled={saving}
-                      />
-                      <Label htmlFor={`edit-recurring-${category.id}`}>Duży koszt cykliczny</Label>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span
+                          aria-hidden="true"
+                          className="size-4 shrink-0 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span className="font-medium">{category.name}</span>
+                        {category.isRecurring && (
+                          <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs">
+                            cykliczny
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            startEdit(category);
+                          }}
+                        >
+                          Edytuj
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            void handleDelete(category.id);
+                          }}
+                          disabled={deletingId === category.id}
+                        >
+                          {deletingId === category.id ? "Usuwanie…" : "Usuń"}
+                        </Button>
+                      </div>
                     </div>
-                    {editError && !editError.field && <p className="text-destructive text-sm">{editError.error}</p>}
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          void handleSaveEdit(category.id);
-                        }}
-                        disabled={saving || editForm.name.trim().length === 0}
-                      >
-                        {saving ? "Zapisywanie…" : "Zapisz"}
-                      </Button>
-                      <Button type="button" variant="outline" onClick={cancelEdit} disabled={saving}>
-                        Anuluj
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        aria-hidden="true"
-                        className="size-4 shrink-0 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="font-medium">{category.name}</span>
-                      {category.isRecurring && (
-                        <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs">cykliczny</span>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          startEdit(category);
-                        }}
-                      >
-                        Edytuj
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          void handleDelete(category.id);
-                        }}
-                        disabled={deletingId === category.id}
-                      >
-                        {deletingId === category.id ? "Usuwanie…" : "Usuń"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))}
     </div>
   );
 }

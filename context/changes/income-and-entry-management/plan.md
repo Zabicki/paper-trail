@@ -364,31 +364,31 @@ One additive migration with a default value — no backfill, no data movement, a
 
 #### Automated
 
-- [x] 2.1 `npm run lint` passes
-- [x] 2.2 `npx astro check` reports 0 errors
-- [x] 2.3 `npm run build` passes
+- [x] 2.1 `npm run lint` passes — a20c35b
+- [x] 2.2 `npx astro check` reports 0 errors — a20c35b
+- [x] 2.3 `npm run build` passes — a20c35b
 
 #### Manual
 
-- [x] 2.4 `POST /api/entries` with mismatched type/category kind returns 400
-- [x] 2.5 `PATCH /api/entries/<id>` against another user's entry returns 404
-- [x] 2.6 `DELETE /api/entries/<id>` twice returns 204 then 404
-- [x] 2.7 `PATCH /api/categories/<id>` cannot change `kind`
-- [x] 2.8 An income-only day is still reported as missing by `/api/entries/days`
+- [x] 2.4 `POST /api/entries` with mismatched type/category kind returns 400 — a20c35b
+- [x] 2.5 `PATCH /api/entries/<id>` against another user's entry returns 404 — a20c35b
+- [x] 2.6 `DELETE /api/entries/<id>` twice returns 204 then 404 — a20c35b
+- [x] 2.7 `PATCH /api/categories/<id>` cannot change `kind` — a20c35b
+- [x] 2.8 An income-only day is still reported as missing by `/api/entries/days` — a20c35b
 
 ### Phase 3: Categories manager — kind selection
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes
-- [ ] 3.2 `npx astro check` reports 0 errors
-- [ ] 3.3 `npm run build` passes
+- [x] 3.1 `npm run lint` passes
+- [x] 3.2 `npx astro check` reports 0 errors
+- [x] 3.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 3.4 An income category lands in the income section and never appears in the expense picker
-- [ ] 3.5 Editing shows kind as read-only text and preserves it on save
-- [ ] 3.6 Both sections render their empty state on a fresh account
+- [x] 3.4 An income category lands in the income section and never appears in the expense picker
+- [x] 3.5 Editing shows kind as read-only text and preserves it on save
+- [x] 3.6 Both sections render their empty state on a fresh account
 
 ### Phase 4: Dashboard — income entry and an editable day list
 
