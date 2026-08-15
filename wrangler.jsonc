@@ -4,6 +4,29 @@
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-05-08",
   "compatibility_flags": ["nodejs_compat"],
+  // Astro sessions. @astrojs/cloudflare v13 auto-injects a { binding: "SESSION" }
+  // KV namespace with NO id, which is not deployable. Declaring it here with real
+  // ids short-circuits that injection (see withSessionKVBinding in the adapter)
+  // and keeps the binding deterministic, reviewable, and safe for non-interactive
+  // CI — rather than relying on wrangler's interactive auto-provisioning prompt.
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "id": "df70b747e9b848708dae2b7721fea1c2",
+      "preview_id": "ca58c7687d7542aebd43ded2da17cae7",
+    },
+  ],
+  // The adapter injects preview bindings separately from the top-level ones, so
+  // without this block `wrangler versions upload` gets its own id-less SESSION
+  // binding even though the one above is pinned.
+  "previews": {
+    "kv_namespaces": [
+      {
+        "binding": "SESSION",
+        "id": "ca58c7687d7542aebd43ded2da17cae7",
+      },
+    ],
+  },
   "assets": {
     "binding": "ASSETS",
     // Must be ./dist/client, NOT ./dist. The Astro adapter writes its own
