@@ -15,6 +15,16 @@ export default defineConfig({
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
+    // Without this, Vite's dep pre-bundling can produce two separate module
+    // instances of react-dom (the root export used by useFormStatus/useFormState
+    // vs. react-dom/client used internally for hydration), each with its own
+    // ReactSharedInternals singleton. The render loop sets the hook dispatcher
+    // on one copy; useFormStatus reads it from the other, unset, copy — which
+    // throws "Cannot read properties of null (reading 'useHostTransitionStatus')"
+    // and crashes hydration for any component that calls useFormStatus.
+    resolve: {
+      dedupe: ["react", "react-dom"],
+    },
   },
   // The Cloudflare Images binding (env.IMAGES) is KEPT DELIBERATELY.
   // Adapter v13 defaults imageService to "cloudflare-binding" and auto-provisions
