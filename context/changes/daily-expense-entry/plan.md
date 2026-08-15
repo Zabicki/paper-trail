@@ -343,30 +343,30 @@ Additive-only new table; no backfill needed since no entries exist yet anywhere.
 
 #### Automated
 
-- [x] 1.1 `npx supabase db reset` applies all migrations cleanly
-- [x] 1.2 `npx supabase test db` passes with the stated plan count
-- [x] 1.3 `npx astro check` / `npm run lint` pass
+- [x] 1.1 `npx supabase db reset` applies all migrations cleanly — fef8f20
+- [x] 1.2 `npx supabase test db` passes with the stated plan count — fef8f20
+- [x] 1.3 `npx astro check` / `npm run lint` pass — fef8f20
 
 #### Manual
 
-- [x] 1.4 `amount <= 0` fails the check constraint
-- [x] 1.5 Invalid `type` value fails the check constraint
-- [x] 1.6 Raw-SQL cross-user `category_id` insert confirms the FK alone accepts it (documents why Phase 2's service-layer check is load-bearing)
+- [x] 1.4 `amount <= 0` fails the check constraint — fef8f20
+- [x] 1.5 Invalid `type` value fails the check constraint — fef8f20
+- [x] 1.6 Raw-SQL cross-user `category_id` insert confirms the FK alone accepts it (documents why Phase 2's service-layer check is load-bearing) — fef8f20
 
 ### Phase 2: Service layer + JSON API
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` passes
-- [ ] 2.2 `npx astro check` passes
+- [x] 2.1 `npm run lint` passes
+- [x] 2.2 `npx astro check` passes
 
 #### Manual
 
-- [ ] 2.3 `GET /api/entries?date=<today>` returns `[]` for a fresh user
-- [ ] 2.4 `POST` with a valid body creates an entry, returns `201`
-- [ ] 2.5 Posting another user's `categoryId` returns `404`
-- [ ] 2.6 `GET /api/entries/days?month=<current>` correctly excludes today/future/pre-signup dates
-- [ ] 2.7 `GET /api/entries/categories` returns recently-used categories first
+- [x] 2.3 `GET /api/entries?date=<today>` returns `[]` for a fresh user
+- [x] 2.4 `POST` with a valid body creates an entry, returns `201`
+- [x] 2.5 Posting another user's `categoryId` returns `404`
+- [x] 2.6 `GET /api/entries/days?month=<current>` correctly excludes today/future/pre-signup dates
+- [x] 2.7 `GET /api/entries/categories` returns recently-used categories first
 
 ### Phase 3: Calendar & day navigation UI
 

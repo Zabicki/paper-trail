@@ -24,3 +24,14 @@ export interface Category {
   isRecurring: boolean;
   createdAt: string;
 }
+
+export type EntryType = "expense" | "income";
+
+export interface Entry {
+  id: number;
+  amount: number;
+  occurredOn: string;
+  type: EntryType;
+  category: Pick<Category, "id" | "name" | "color">;
+  createdAt: string;
+}
