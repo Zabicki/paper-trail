@@ -15,6 +15,28 @@ sources:
 
 # First Deployment Plan — PaperTrail → Cloudflare Workers
 
+## Execution status — updated 2026-08-15
+
+| Phase | Status |
+|---|---|
+| 0 — Git baseline | ✅ Branch renamed to `master`; index cleaned; two commits on record (`b7f8aa9` scaffold baseline, `1bac427` deploy prep) |
+| 1 — Rename to `paper-trail` | ✅ `package.json`, `package-lock.json`, `wrangler.jsonc`, `supabase/config.toml` |
+| 2a — Pin `SESSION` KV | ⛔ Blocked on Cloudflare login |
+| 2b — `assets.directory` | ✅ `./dist/client`, with the reason inline in `wrangler.jsonc` |
+| 2c — Images binding | ✅ Kept deliberately; rationale recorded in `astro.config.mjs` |
+| 2d — `compatibility_date` | ✅ Left at `2026-05-08` |
+| 3 — Cache-Control guardrail | ✅ `src/middleware.ts`, covering the redirect path too |
+| 4 — Supabase project | ⛔ Blocked on operator |
+| 5 — Secrets | ⛔ Blocked; `.env.example` documentation done |
+| 6 — Pre-flight | ✅ Node 22.14.0 installed; lint clean; build OK; **391.09 KiB gzip**; startup 44.3 ms active (local) |
+| 7 — First deploy | ⛔ Blocked on Cloudflare login |
+| 8 — Post-deploy config | ⛔ Needs the deployed URL |
+| 9 — CI | ⛔ Needs a git remote |
+| 10 — Monitoring | ⛔ After first deploy |
+| 11 — Doc corrections | ✅ `CLAUDE.md`, `tech-stack.md`, `infrastructure.md` |
+
+Baseline moved from 390.44 → **391.09 KiB gzip** (+0.65 KiB, the Cache-Control guardrail). Use 391.09 KiB as the regression baseline from here.
+
 ## Purpose
 
 `infrastructure.md` selected Cloudflare Workers and sketched a "Getting Started" sequence. Nothing has been deployed, and the repo is still the unmodified `10x-astro-starter` scaffold. This document is the executable runbook for the **first** deployment, and the living record of how PaperTrail is deployed thereafter.
