@@ -126,21 +126,34 @@ select is(
 );
 
 -- === Back to the superuser session role: confirm user A's rows survived ===
+-- These see EVERY row in the table, RLS included — so they are scoped to the
+-- two seed users. Left unqualified they also count whatever manual dev
+-- testing left behind, and a suite that goes red for environmental reasons
+-- trains you to ignore red. This is the only automated proof of the isolation
+-- guarantee and it does not run in CI, so it has to stay trustworthy on a
+-- database that was not freshly reset.
 reset role;
 
 select is(
-  (select count(*) from public.categories where name = 'Groceries')::int, 1,
+  (select count(*) from public.categories
+     where name = 'Groceries'
+       and user_id = '11111111-1111-1111-1111-111111111111')::int, 1,
   'user A''s original row still exists, untouched by user B''s update/delete attempts'
 );
 
 select is(
-  (select count(*) from public.categories where name = 'Utilities')::int, 2,
+  (select count(*) from public.categories
+     where name = 'Utilities'
+       and user_id in ('11111111-1111-1111-1111-111111111111',
+                       '22222222-2222-2222-2222-222222222222'))::int, 2,
   'exactly two Utilities rows exist — one per user — proving name uniqueness is per-user, not global'
 );
 
 select is(
-  (select count(*) from public.categories)::int, 4,
-  'exactly four rows exist total across both users, confirming no cross-user leakage or loss'
+  (select count(*) from public.categories
+     where user_id in ('11111111-1111-1111-1111-111111111111',
+                       '22222222-2222-2222-2222-222222222222'))::int, 4,
+  'exactly four rows exist total across both seed users, confirming no cross-user leakage or loss'
 );
 
 select * from finish();

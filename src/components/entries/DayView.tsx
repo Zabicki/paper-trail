@@ -106,7 +106,18 @@ export default function DayView() {
   // changed even when this list must not.
   function handleSaved(entry: Entry) {
     if (entry.occurredOn === selectedDateRef.current) {
-      setEntries((prev) => [...(prev ?? []), entry]);
+      setEntries((prev) => {
+        // Left null while the day's GET is still in flight — appending here
+        // would replace "Wczytywanie wpisów…" with a list of exactly one
+        // entry and a total covering only it.
+        if (prev === null) {
+          return prev;
+        }
+        // Dedupe: a POST can commit server-side before its response lands, so
+        // an intervening GET may already have returned this row. Appending it
+        // again duplicates the React key and double-counts the day's total.
+        return prev.some((existing) => existing.id === entry.id) ? prev : [...prev, entry];
+      });
     }
     setCalendarRefreshKey((key) => key + 1);
   }
@@ -170,7 +181,11 @@ export default function DayView() {
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Wpisy tego dnia</h2>
+        {/* Keyed on the day so the list remounts when you navigate: its edit
+            state is internal, and a half-typed correction must not survive a
+            day change and come back looking like a fresh form. */}
         <DayEntriesList
+          key={selectedDate}
           entries={entries}
           loadError={entriesError}
           expenseCategories={expenseCategories ?? []}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
@@ -102,12 +103,17 @@ export default function DayEntriesList({
     setDeletingId(id);
     try {
       const response = await fetch(`/api/entries/${id}`, { method: "DELETE" });
-      if (!response.ok) {
+      // 404 means it is already gone — deleted in another tab, most likely.
+      // The user asked for it gone, and it is: drop the row rather than
+      // leaving it stranded in the list behind an error.
+      if (!response.ok && response.status !== 404) {
         const body = await parseErrorBody(response);
         window.alert(body.error);
         return;
       }
       onDeleted(id);
+    } catch {
+      window.alert("Nie udało się połączyć z serwerem. Spróbuj ponownie.");
     } finally {
       setDeletingId(null);
     }
@@ -153,7 +159,8 @@ export default function DayEntriesList({
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor={`edit-amount-${entry.id}`}>Kwota</Label>
-                  <input
+                  {/* h-11 overrides the shared Input's h-9 for the 44px tap target. */}
+                  <Input
                     id={`edit-amount-${entry.id}`}
                     inputMode="decimal"
                     value={editForm.amountText}
@@ -162,7 +169,7 @@ export default function DayEntriesList({
                     }}
                     aria-invalid={editError?.field === "amount"}
                     disabled={saving}
-                    className="border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 h-11 min-h-11 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-none focus-visible:ring-[3px]"
+                    className="h-11 min-h-11"
                   />
                   {editError?.field === "amount" && <p className="text-destructive text-sm">{editError.error}</p>}
                 </div>
@@ -186,7 +193,7 @@ export default function DayEntriesList({
                   {/* A native date input rather than the month calendar above:
                       correcting a mis-dated entry is rare enough that it does
                       not warrant reusing the tap-optimised picker. */}
-                  <input
+                  <Input
                     id={`edit-date-${entry.id}`}
                     type="date"
                     value={editForm.occurredOn}
@@ -195,7 +202,7 @@ export default function DayEntriesList({
                     }}
                     aria-invalid={editError?.field === "occurredOn"}
                     disabled={saving}
-                    className="border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 h-11 min-h-11 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-none focus-visible:ring-[3px]"
+                    className="h-11 min-h-11"
                   />
                   {editError?.field === "occurredOn" && <p className="text-destructive text-sm">{editError.error}</p>}
                 </div>
@@ -236,6 +243,10 @@ export default function DayEntriesList({
                     type="button"
                     variant="outline"
                     size="sm"
+                    // The edit state is shared across rows, so opening a
+                    // second one mid-save would land the first row's error
+                    // (or its dismissal) on the wrong form.
+                    disabled={saving}
                     onClick={() => {
                       startEdit(entry);
                     }}

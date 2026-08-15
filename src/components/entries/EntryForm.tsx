@@ -1,5 +1,6 @@
 import { useEffect, useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
@@ -162,7 +163,9 @@ export default function EntryForm({
         <>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="entry-amount">Kwota</Label>
-            <input
+            {/* h-11 overrides the shared Input's h-9: 44px is the minimum
+                comfortable tap target, and this form is the tap-budgeted one. */}
+            <Input
               id="entry-amount"
               inputMode="decimal"
               value={amountText}
@@ -172,7 +175,7 @@ export default function EntryForm({
               placeholder="0.00"
               aria-invalid={error?.field === "amount"}
               disabled={submitting}
-              className="border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 h-11 min-h-11 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-none focus-visible:ring-[3px]"
+              className="h-11 min-h-11"
             />
             {error?.field === "amount" && <p className="text-destructive text-sm">{error.error}</p>}
           </div>

@@ -239,12 +239,16 @@ export default function CategoriesManager() {
     setDeletingId(id);
     try {
       const response = await fetch(`/api/categories/${id}`, { method: "DELETE" });
-      if (!response.ok) {
+      // 404 means it is already gone — deleted in another tab, most likely.
+      // Drop the row rather than leaving it stranded behind an error.
+      if (!response.ok && response.status !== 404) {
         const body = await parseErrorBody(response);
         window.alert(body.error);
         return;
       }
       setCategories((prev) => (prev ? prev.filter((c) => c.id !== id) : prev));
+    } catch {
+      window.alert("Nie udało się połączyć z serwerem. Spróbuj ponownie.");
     } finally {
       setDeletingId(null);
     }

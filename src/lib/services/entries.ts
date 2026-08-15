@@ -88,13 +88,22 @@ function toEntryType(value: unknown): EntryType {
 //      raw SQL insert can still pair an income with an expense category.
 //
 // Any future change here must re-verify both by hand.
-async function assertCategoryUsable(supabase: SupabaseClient, categoryId: number, type: EntryType): Promise<void> {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id, kind")
-    .eq("id", categoryId)
-    .is("deleted_at", null)
-    .maybeSingle();
+async function assertCategoryUsable(
+  supabase: SupabaseClient,
+  categoryId: number,
+  type: EntryType,
+  currentCategoryId?: number,
+): Promise<void> {
+  const query = supabase.from("categories").select("id, kind").eq("id", categoryId);
+
+  // A soft-deleted category stays usable for the entry already filed under
+  // it. Rejecting it would freeze that entry permanently: the edit form's
+  // chip picker only lists live categories, so it would come up with nothing
+  // selected, and even an amount-only correction would 404 until the user
+  // re-filed the entry somewhere else. Deleting a category hides it from
+  // *new* entries; it must not make history uncorrectable.
+  const { data, error } =
+    categoryId === currentCategoryId ? await query.maybeSingle() : await query.is("deleted_at", null).maybeSingle();
 
   if (error) {
     throw error;
@@ -135,7 +144,7 @@ export async function updateEntry(supabase: SupabaseClient, id: number, input: U
   // SQL, where the service layer could no longer own it.
   const { data: existing, error: existingError } = await supabase
     .from("entries")
-    .select("type")
+    .select("type, category_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -148,7 +157,7 @@ export async function updateEntry(supabase: SupabaseClient, id: number, input: U
     throw new NotFoundError();
   }
 
-  await assertCategoryUsable(supabase, input.categoryId, toEntryType(existing.type));
+  await assertCategoryUsable(supabase, input.categoryId, toEntryType(existing.type), Number(existing.category_id));
 
   const { data, error } = await supabase
     .from("entries")

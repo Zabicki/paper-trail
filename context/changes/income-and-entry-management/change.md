@@ -1,7 +1,7 @@
 ---
 change_id: income-and-entry-management
 title: Log income; review, edit and delete entries
-status: implemented
+status: impl_reviewed
 created: 2026-08-15
 updated: 2026-08-15
 archived_at: null
