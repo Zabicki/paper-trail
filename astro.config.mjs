@@ -9,6 +9,9 @@ import cloudflare from "@astrojs/cloudflare";
 // https://astro.build/config
 export default defineConfig({
   output: "server",
+  // Required by @astrojs/sitemap, which silently emits nothing without it.
+  // Update if a custom domain replaces the workers.dev URL.
+  site: "https://paper-trail.paper-trail.workers.dev",
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
