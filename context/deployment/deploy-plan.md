@@ -32,7 +32,7 @@ sources:
 | 5 — Secrets | ✅ `SUPABASE_URL` + `SUPABASE_KEY` set via `wrangler secret put`; `.dev.vars` and `.env.example` documented |
 | 6 — Pre-flight | ✅ Node 22.14.0 installed; lint clean; **391.09 KiB gzip**; startup **22 ms measured on Cloudflare** |
 | 7 — First deploy | ✅ Version `363f42fd`, then `42f87e27` auto-deployed on secret change |
-| 8 — Post-deploy config | ✅ `site` set, sitemap now emits. ⚠️ Supabase Site URL / Redirect URL **still to do** |
+| 8 — Post-deploy config | ✅ `site` set and sitemap emitting; Supabase Site URL / Redirect URLs set |
 | 9 — CI | ✅ Green on `master`. Repo secrets turned out **not** to be required |
 | 10 — Monitoring | ✅ `observability.enabled: true`; weekly cadence — see below |
 | 11 — Doc corrections | ✅ `CLAUDE.md`, `tech-stack.md`, `infrastructure.md` |
@@ -129,7 +129,7 @@ None of these can be derived from the repo. Items 1–4 block the first deploy.
 | 2 | `workers.dev` subdomain | Claimed on first deploy — account-wide and permanent. Decide the name before being prompted; the URL becomes `paper-trail.<subdomain>.workers.dev` | First deploy |
 | 3 | Supabase project URL + `anon` key | supabase.com → new EU project (e.g. `eu-central-1`) → Settings → API. Save the DB password separately | Working auth |
 | 4 | Supabase project ref | The `xxxx` in `https://xxxx.supabase.co` — needed for `supabase link` | Migrations |
-| 5 | LLM API key | Deferred; receipt parsing is not built and PRD Open Question 4 (provider) is unresolved | Nothing yet |
+| 5 | LLM API key | Deferred to the receipt-parsing feature — the operator does not hold a key yet, and PRD Open Question 4 (provider choice) is still open. When it lands: `npx wrangler secret put <KEY_NAME>`, add it to `astro.config.mjs` `env.schema` as `context: "server", access: "secret"`, and add an entry to `src/lib/config-status.ts` so a missing key surfaces in the banner instead of failing at request time | Nothing yet |
 
 Secrets are supplied via `npx wrangler secret put`, which reads them interactively and never echoes them. **Do not paste secret values into chat, into this doc, or into any tracked file.**
 
@@ -306,7 +306,7 @@ Make these alongside the first deploy:
 |---|---|---|
 | 1 | `GET /` | **200** |
 | 2 | `GET /dashboard` | **302 → `/auth/signin`** with **`cache-control: private, no-store`** — Phase 3 guardrail confirmed live |
-| 3 | Signup → confirmation email URL | ⏳ pending the Supabase URL Configuration step |
+| 3 | Signup → confirmation email URL | Site URL + Redirect URLs set to the Worker URL (operator, 2026-08-15). The end-to-end signup flow is the one step never exercised — confirm the email link points at the Worker and not `127.0.0.1:3000` on the first real signup |
 | 4 | Config banner absent | **absent** — proves secrets resolved (a green deploy does not) |
 | 5 | `/server/.dev.vars`, `/server/wrangler.json`, `/.dev.vars`, `/wrangler.json`, `/_worker.js` | **all 404** — Phase 2b confirmed |
 | 6 | `wrangler tail` | ❌ unavailable on the corporate network, see above |
