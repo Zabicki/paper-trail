@@ -1,5 +1,5 @@
 begin;
-select plan(15);
+select plan(20);
 
 -- Proves S-02's isolation guarantee on public.entries: a signed-in user can
 -- read and write only their own rows, mirroring categories_rls_test.sql's
@@ -15,6 +15,28 @@ select plan(15);
 -- context/foundation/lessons.md's soft-delete-and-app-layer-invariants entry
 -- for the same category of gap. Phase 1's manual verification step proves
 -- the FK-alone behavior this test suite cannot.
+--
+-- ALSO NOT covered (S-03, same reason): that an entry's `type` matches its
+-- category's `kind`. Nothing in the schema ties the two columns together — a
+-- raw SQL insert can pair an income with an expense-kind category and the
+-- database will accept it. The only enforcement is the pre-write check in
+-- createEntry/updateEntry (src/lib/services/entries.ts), which pgTAP cannot
+-- reach. Any future change to that module must re-verify the invariant by
+-- hand; see the plan's Testing Strategy.
+--
+-- S-03 additions below: the entries_update_own / entries_delete_own policies
+-- created by this table's migration were never exercised until now. They are
+-- asserted on *affected row count*, not throws_ok — RLS filters the rows out
+-- silently rather than raising, so a cross-user UPDATE/DELETE is a successful
+-- statement that touches nothing.
+
+-- Affected-row-count probe for the S-03 write-policy assertions. Postgres
+-- refuses a data-modifying CTE anywhere but the top level of a statement, so
+-- each UPDATE/DELETE attempt lands its RETURNING count in here first and is
+-- asserted afterwards. Created (and granted) as the superuser, before the
+-- role switch below.
+create temporary table rls_write_probe (label text primary key, affected int not null);
+grant select, insert on rls_write_probe to authenticated;
 
 -- === User A ===
 set local role authenticated;
@@ -115,6 +137,51 @@ select is(
   'user B has no visibility into user A''s remaining rows either'
 );
 
+-- entries_update_own / entries_delete_own, finally exercised. Counting what
+-- each statement actually touched is the only way to tell "RLS filtered every
+-- row" apart from "the statement ran fine" — both look identical to the
+-- caller, since neither raises.
+
+with attempted as (
+  update public.entries set amount = 999.99 where occurred_on = '2026-08-10' returning id
+)
+insert into rls_write_probe select 'b_updates_a', count(*)::int from attempted;
+
+select is(
+  (select affected from rls_write_probe where label = 'b_updates_a'), 0,
+  'entries_update_own: user B''s UPDATE against user A''s row affects zero rows'
+);
+
+with attempted as (
+  delete from public.entries where occurred_on = '2026-08-10' returning id
+)
+insert into rls_write_probe select 'b_deletes_a', count(*)::int from attempted;
+
+select is(
+  (select affected from rls_write_probe where label = 'b_deletes_a'), 0,
+  'entries_delete_own: user B''s DELETE against user A''s row affects zero rows'
+);
+
+with attempted as (
+  update public.entries set amount = 111.00 where occurred_on = '2026-08-12' returning id
+)
+insert into rls_write_probe select 'b_updates_own', count(*)::int from attempted;
+
+select is(
+  (select affected from rls_write_probe where label = 'b_updates_own'), 1,
+  'entries_update_own: user B can update their own row'
+);
+
+with attempted as (
+  delete from public.entries where occurred_on = '2026-08-12' returning id
+)
+insert into rls_write_probe select 'b_deletes_own', count(*)::int from attempted;
+
+select is(
+  (select affected from rls_write_probe where label = 'b_deletes_own'), 1,
+  'entries_delete_own: user B can delete their own row'
+);
+
 -- === Anon role: zero rows, zero writes ===
 reset role;
 set local role anon;
@@ -138,6 +205,12 @@ reset role;
 select is(
   (select count(*) from public.entries where occurred_on = '2026-08-10')::int, 1,
   'user A''s original row still exists, untouched by user B''s update/delete attempts'
+);
+
+select is(
+  (select amount from public.entries where occurred_on = '2026-08-10')::numeric,
+  12.50::numeric,
+  'user A''s row still carries its original amount — user B''s UPDATE changed nothing'
 );
 
 select * from finish();

@@ -32,7 +32,7 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | F-01  | `data-foundation-rls`         | (foundation) migration pipeline + per-user RLS pattern, proven on one table  | —             | FR-001, FR-002, Access Ctrl | done |
 | S-01  | `custom-categories`           | define, rename and delete own categories, and flag one as a recurring cost   | F-01          | FR-004, FR-005              | done |
 | S-02  | `daily-expense-entry`         | log an expense against today in ≤4 interactions; back-date as a first-class path | F-01, S-01 | US-01, FR-006, FR-007       | done |
-| S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | proposed |
+| S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | in-progress |
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | proposed |
 | S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | proposed |
 | S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | blocked |
@@ -115,7 +115,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Is deletion hard or soft? PRD challenged FR-009 on destroying the audit trail and let it stand without deciding. Owner: user. Block: no.
 - **Risk:** Income (FR-008) and entry management (FR-009) are combined because they share one outcome — *the ledger is trustworthy and correctable* — and because FR-008 alone is the entry form with a sign flip, which is not a meaningful slice on its own. The PRD's own reasoning supports pairing them: "uncorrectable errors would rebuild the distrust that killed the sheet." Sequenced after the north star because correction only matters once there is something to correct.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-04: Date-range spending view with recurring-cost filter
 

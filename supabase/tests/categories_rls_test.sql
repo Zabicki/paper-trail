@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(18);
 
 -- Proves F-01's isolation guarantee on public.categories: a signed-in user
 -- can read and write only their own rows. Impersonates the two fixed seed
@@ -11,6 +11,13 @@ select plan(16);
 -- Also proves S-01's schema additions: per-user case-insensitive name
 -- uniqueness (scoped so it never blocks a *different* user reusing a name),
 -- the fixed color palette check constraint, and is_recurring/color defaults.
+--
+-- ...and S-03's `kind` discriminant: its check constraint and its 'expense'
+-- default. NOT covered (and unprovable here): that kind is immutable after
+-- creation. That is enforced only by updateCategorySchema omitting the field
+-- in src/lib/services/categories.ts — a raw `update categories set kind = …`
+-- succeeds at the database layer. Same category of gap as the app-layer
+-- soft-delete filtering above; see context/foundation/lessons.md.
 
 -- === User A ===
 set local role authenticated;
@@ -41,6 +48,12 @@ select is(
   'is_recurring defaults to false when not specified'
 );
 
+select is(
+  (select kind from public.categories where name = 'Groceries')::text,
+  'expense',
+  'kind defaults to expense when not specified'
+);
+
 select throws_ok(
   $$ insert into public.categories (user_id, name) values ('22222222-2222-2222-2222-222222222222', 'Spoofed') $$,
   '42501',
@@ -60,6 +73,13 @@ select throws_ok(
   '23514',
   null,
   'a color outside the fixed 12-value palette is rejected by the check constraint'
+);
+
+select throws_ok(
+  $$ insert into public.categories (name, kind) values ('Not A Kind', 'transfer') $$,
+  '23514',
+  null,
+  'a kind outside expense/income is rejected by the check constraint'
 );
 
 insert into public.categories (name) values ('Utilities');
