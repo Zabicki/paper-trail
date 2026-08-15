@@ -29,9 +29,9 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 
 | ID    | Change ID                     | Outcome (user can …)                                                        | Prerequisites | PRD refs                    | Status   |
 | ----- | ----------------------------- | --------------------------------------------------------------------------- | ------------- | --------------------------- | -------- |
-| F-01  | `data-foundation-rls`         | (foundation) migration pipeline + per-user RLS pattern, proven on one table  | —             | FR-001, FR-002, Access Ctrl | ready    |
-| S-01  | `custom-categories`           | define, rename and delete own categories, and flag one as a recurring cost   | F-01          | FR-004, FR-005              | proposed |
-| S-02  | `daily-expense-entry`         | log an expense against today in ≤4 interactions; back-date as a first-class path | F-01, S-01 | US-01, FR-006, FR-007       | proposed |
+| F-01  | `data-foundation-rls`         | (foundation) migration pipeline + per-user RLS pattern, proven on one table  | —             | FR-001, FR-002, Access Ctrl | done |
+| S-01  | `custom-categories`           | define, rename and delete own categories, and flag one as a recurring cost   | F-01          | FR-004, FR-005              | done |
+| S-02  | `daily-expense-entry`         | log an expense against today in ≤4 interactions; back-date as a first-class path | F-01, S-01 | US-01, FR-006, FR-007       | done |
 | S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | proposed |
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | proposed |
 | S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | proposed |
@@ -73,7 +73,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** One setup step is outstanding but not gating: the hosted Supabase project is live, but `supabase link` has not been run — it needs the DB password. Deliberately scoped to the *pattern*, not the whole schema: migration tooling, the RLS policy shape, and one table proving it. Prebuilding the full data model here would be horizontal work masquerading as a foundation, and would front-load decisions the later slices should make. The reason it is a foundation rather than folded into S-01 is safety: an RLS mistake leaks one user's finances to another and nothing errors, so the pattern must be verified before any real data exists.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -88,7 +88,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Does renaming a category rewrite chart history, or is the rename versioned? PRD flagged this on FR-004 and let the FR stand without resolving it. Owner: user. Block: no — a first pass can rename in place; revisit if S-05 makes it visible.
 - **Risk:** Sequenced first among slices because every other slice references a category, and the PRD makes user-defined categories one of the three product insights. FR-005 (the recurring flag) rides along rather than getting its own slice: it is one boolean on this entity, and splitting it would produce a slice with no independent user-visible outcome. The flag is *defined* here and *consumed* in S-04.
-- **Status:** proposed
+- **Status:** done
 
 ### S-02: Daily expense entry — north star
 
@@ -102,7 +102,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - What counts as an "interaction" for the ≤4 budget — is opening the app one? The NFR measures "from app open to saved entry" but does not settle the unit. Owner: user. Block: no — pick a definition, record it, measure against it consistently.
 - **Risk:** This is the north star, so it is placed as early as F-01 and S-01 allow rather than being balanced against other slices. The real risk is that it ships *functionally* correct but misses the interaction budget, which would leave the product's one justifying claim unproven — so the ≤4/≤10s NFR should be treated as an acceptance criterion here, not as polish deferred to later. The durability guardrail ("never silently lost on crash, refresh, or connection drop") also lands here, since this is the first slice that writes user data.
-- **Status:** proposed
+- **Status:** done
 
 ### S-03: Income and entry management
 
@@ -195,4 +195,6 @@ Tracked as GitHub issues in [`Zabicki/paper-trail`](https://github.com/Zabicki/p
 
 ## Done
 
-(Empty on first generation — `/10x-archive` is the sole writer of this section.)
+- **F-01: (foundation) a migration pipeline exists and a per-user row-level-security pattern is established and proven end-to-end on the first real table — a signed-in user can read and write only their own rows, verified by test rather than assumed.** — Archived 2026-08-15 → `context/archive/2026-08-15-data-foundation-rls/`. Lesson: —.
+- **S-01: User can define, rename and delete their own expense categories, and flag a category as a large recurring cost.** — Archived 2026-08-15 → `context/archive/2026-08-15-custom-categories/`. Lesson: pgTAP can't verify app-layer-only invariants like soft-delete — see `context/foundation/lessons.md`.
+- **S-02: User can log an expense with amount, category and date against the current day without touching a date control, and can back-date to a recent day as a first-class path.** — Archived 2026-08-15 → `context/archive/2026-08-15-daily-expense-entry/`. Lesson: —.
