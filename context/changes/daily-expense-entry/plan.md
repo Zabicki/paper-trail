@@ -386,18 +386,18 @@ Additive-only new table; no backfill needed since no entries exist yet anywhere.
 
 #### Automated
 
-- [x] 4.1 `npm run lint` passes
-- [x] 4.2 `npx astro check` passes
-- [x] 4.3 `npm run build` succeeds
+- [x] 4.1 `npm run lint` passes — 6351330
+- [x] 4.2 `npx astro check` passes — 6351330
+- [x] 4.3 `npm run build` succeeds — 6351330
 
 #### Manual
 
-- [x] 4.4 Fresh (zero-category) user sees the block-and-redirect prompt
-- [x] 4.5 Entry form works after adding a category, defaulted to today
-- [x] 4.6 Same-day entry completes in ≤4 taps / ≤10s
-- [x] 4.7 Category filter-as-you-type narrows the chip grid correctly
-- [x] 4.8 Back-dating via a red day works; that day's list and red marking update immediately
-- [x] 4.9 Form survives a simulated failed save without losing entered values
-- [x] 4.10 Post-save clears the form with an inline confirmation, no navigation
-- [x] 4.11 Signed-out visit to `/dashboard` redirects to `/auth/signin`
-- [x] 4.12 Second user has zero visibility into the first user's entries/category ids
+- [x] 4.4 Fresh (zero-category) user sees the block-and-redirect prompt — 6351330
+- [x] 4.5 Entry form works after adding a category, defaulted to today — 6351330
+- [x] 4.6 Same-day entry completes in ≤4 taps / ≤10s — 6351330
+- [x] 4.7 Category filter-as-you-type narrows the chip grid correctly — 6351330
+- [x] 4.8 Back-dating via a red day works; that day's list and red marking update immediately — 6351330
+- [x] 4.9 Form survives a simulated failed save without losing entered values — 6351330
+- [x] 4.10 Post-save clears the form with an inline confirmation, no navigation — 6351330
+- [x] 4.11 Signed-out visit to `/dashboard` redirects to `/auth/signin` — 6351330
+- [x] 4.12 Second user has zero visibility into the first user's entries/category ids — 6351330
