@@ -1,7 +1,7 @@
 ---
 change_id: data-foundation-rls
 title: Establish migration pipeline and per-user RLS pattern
-status: implemented
+status: impl_reviewed
 created: 2026-08-15
 updated: 2026-08-15
 archived_at: null
