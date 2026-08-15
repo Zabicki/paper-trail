@@ -4,12 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
 import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR, type Category, type CategoryColor } from "@/types";
-
-interface ApiErrorBody {
-  error: string;
-  field?: string;
-}
 
 interface FormState {
   name: string;
@@ -21,14 +17,6 @@ const EMPTY_FORM: FormState = { name: "", color: DEFAULT_CATEGORY_COLOR, isRecur
 
 function sortByName(categories: Category[]): Category[] {
   return [...categories].sort((a, b) => a.name.localeCompare(b.name, "pl"));
-}
-
-async function parseErrorBody(response: Response): Promise<ApiErrorBody> {
-  try {
-    return (await response.json()) as ApiErrorBody;
-  } catch {
-    return { error: "Coś poszło nie tak. Spróbuj ponownie." };
-  }
 }
 
 function ColorSwatchPicker({

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MonthCalendar from "./MonthCalendar";
 import EntryForm from "./EntryForm";
 import DayEntriesList from "./DayEntriesList";
@@ -15,6 +15,11 @@ export default function DayView() {
 
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [entriesError, setEntriesError] = useState<string | null>(null);
+
+  const selectedDateRef = useRef(selectedDate);
+  useEffect(() => {
+    selectedDateRef.current = selectedDate;
+  }, [selectedDate]);
 
   useEffect(() => {
     const cancelled = { current: false };
@@ -77,7 +82,9 @@ export default function DayView() {
   }
 
   function handleSaved(entry: Entry) {
-    setEntries((prev) => [...(prev ?? []), entry]);
+    if (entry.occurredOn === selectedDateRef.current) {
+      setEntries((prev) => [...(prev ?? []), entry]);
+    }
     setCalendarRefreshKey((key) => key + 1);
   }
 

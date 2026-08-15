@@ -2,12 +2,8 @@ import { useEffect, useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import CategoryPicker from "./CategoryPicker";
+import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
 import type { Category, Entry } from "@/types";
-
-interface ApiErrorBody {
-  error: string;
-  field?: string;
-}
 
 interface EntryFormProps {
   categories: Category[];
@@ -16,14 +12,6 @@ interface EntryFormProps {
 }
 
 const CONFIRMATION_DISPLAY_MS = 2500;
-
-async function parseErrorBody(response: Response): Promise<ApiErrorBody> {
-  try {
-    return (await response.json()) as ApiErrorBody;
-  } catch {
-    return { error: "Coś poszło nie tak. Spróbuj ponownie." };
-  }
-}
 
 export default function EntryForm({ categories, occurredOn, onSaved }: EntryFormProps) {
   const [amountText, setAmountText] = useState("");

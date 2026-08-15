@@ -335,6 +335,16 @@ Additive-only new table; no backfill needed since no entries exist yet anywhere.
 - App-layer-only invariant lesson (soft-delete, now also category-ownership): `context/foundation/lessons.md`
 - Roadmap slice: `context/foundation/roadmap.md` — S-02
 
+## Addenda
+
+Three unplanned side-fixes landed within this change's commit range, discovered during implementation rather than scoped up front:
+
+- **`astro.config.mjs`** (b7fdc71) — added `vite.resolve.dedupe: ["react", "react-dom"]`. Vite's dependency pre-bundler was producing two separate `react-dom` module instances (one for `useFormStatus`/`useFormState`, one for `hydrateRoot`), each with its own `ReactSharedInternals` singleton, crashing hydration for any component using `useFormStatus` (S-01's `SignInForm`/`SignUpForm` submit buttons). Unrelated to `entries`, but the crash blocked manual verification of this slice's auth-gated `/dashboard` walkthrough, so it was fixed in place.
+- **`eslint.config.js`** (734b747) — scoped `checksVoidReturn: false` to `*.astro` files only, working around an `astro-eslint-parser`/`no-misused-promises` incompatibility surfaced by `index.astro`'s top-level `return Astro.redirect(...)`.
+- **`src/pages/index.astro`, `src/components/Welcome.astro` (deleted), `src/pages/api/auth/signin.ts`** (734b747) — `/` was still the `10x-astro-starter` marketing page; replaced with a signed-in → `/dashboard` / signed-out → `/auth/signin` redirect, since `/dashboard` is now this slice's real north-star screen rather than a placeholder. `signin.ts`'s success redirect was retargeted from `/` to `/dashboard` to match.
+
+Flagged by `/10x-impl-review`; recorded here so the plan stays an accurate record of what shipped in this change, without reopening or reverting any of the three (all independently verified safe/scoped).
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
