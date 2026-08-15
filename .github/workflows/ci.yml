@@ -40,6 +40,28 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+      # Schema before code. `supabase/migrations/*.sql` only reach the hosted
+      # database through this step — nothing else in the pipeline touches it, and
+      # a Worker deployed against an un-migrated schema 500s on every data route
+      # with "Could not find the table 'public.x' in the schema cache".
+      # Runs after the build so a build failure can't leave production migrated
+      # with no matching code deploy.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.114.0
+      - run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --yes
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      # No --include-seed: supabase/seed.sql inserts two fixed test users
+      # straight into auth.users and must never run against production.
+      - run: supabase db push --yes
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

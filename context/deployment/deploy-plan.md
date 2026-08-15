@@ -128,7 +128,9 @@ None of these can be derived from the repo. Items 1–4 block the first deploy.
 | 1 | Cloudflare account access | `npx wrangler login` (interactive, opens a browser) | Everything |
 | 2 | `workers.dev` subdomain | Claimed on first deploy — account-wide and permanent. Decide the name before being prompted; the URL becomes `paper-trail.<subdomain>.workers.dev` | First deploy |
 | 3 | Supabase project URL + `anon` key | supabase.com → new EU project (e.g. `eu-central-1`) → Settings → API. Save the DB password separately | Working auth |
-| 4 | Supabase project ref | The `xxxx` in `https://xxxx.supabase.co` — needed for `supabase link` | Migrations |
+| 4 | Supabase project ref | The `xxxx` in `https://xxxx.supabase.co` — needed for `supabase link`. Also set as the `SUPABASE_PROJECT_REF` `production` secret | Migrations |
+| 4a | Supabase DB password | Saved with input #3. Set as the `SUPABASE_DB_PASSWORD` `production` secret so CI can `db push` | Migrations in CI |
+| 4b | Supabase access token | supabase.com → Account → Access Tokens. Set as the `SUPABASE_ACCESS_TOKEN` `production` secret | Migrations in CI |
 | 5 | LLM API key | Deferred to the receipt-parsing feature — the operator does not hold a key yet, and PRD Open Question 4 (provider choice) is still open. When it lands: `npx wrangler secret put <KEY_NAME>`, add it to `astro.config.mjs` `env.schema` as `context: "server", access: "secret"`, and add an entry to `src/lib/config-status.ts` so a missing key surfaces in the banner instead of failing at request time | Nothing yet |
 
 Secrets are supplied via `npx wrangler secret put`, which reads them interactively and never echoes them. **Do not paste secret values into chat, into this doc, or into any tracked file.**
@@ -208,7 +210,35 @@ This is app code rather than infrastructure, but it must land before any deploy 
 3. **After Phase 7**, set Authentication → URL Configuration → **Site URL** to the deployed Worker URL and add it to Redirect URLs. Otherwise confirmation emails point at `http://127.0.0.1:3000`, per `supabase/config.toml`.
 4. Leave email confirmation **on** for the hosted project; it stays off locally.
 
-No migrations exist yet, so there is nothing to `db push`. When the first one lands, observe the standing caveat: **`wrangler rollback` reverts the Worker only — never the schema.** Write migrations to be backward-compatible with the previous code version, and treat any rollback following a migration deploy as requiring a matching manual database step.
+### Applying migrations
+
+> **This was the first-deploy failure.** The original version of this phase said "no migrations exist yet, so there is nothing to `db push`" — true when written, false once `20260815125827_create_categories_table.sql` and friends landed, and nobody circled back. The Worker shipped against an empty `public` schema. Auth still worked (the `auth.*` schema is provisioned by Supabase, not by our migrations), so sign-in succeeded and then every data route returned 500 with `Could not find the table 'public.categories' in the schema cache`. **A green deploy is not evidence that the schema matches the code** — the same class of soft failure as the unset-secrets trap in Phase 5.
+
+`supabase/migrations/*.sql` are applied to the *local* database by `supabase start` / `supabase db reset`. Reaching the hosted database is a separate action. It is now automated — the `deploy` job in `.github/workflows/ci.yml` runs `supabase link` + `supabase db push` between the build and `wrangler deploy`, so schema always lands before the code that depends on it. That needs three `production` environment secrets, in addition to the Cloudflare ones:
+
+| Secret | Where to get it |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | supabase.com → Account → Access Tokens |
+| `SUPABASE_DB_PASSWORD` | The database password saved with input #3 |
+| `SUPABASE_PROJECT_REF` | Input #4 |
+
+To apply migrations by hand (first-time catch-up, or an out-of-band fix):
+
+```bash
+npx supabase login
+npx supabase link --project-ref <ref>    # prompts for the DB password
+npx supabase migration list              # local vs remote, side by side
+npx supabase db push --dry-run           # confirm what will run
+npx supabase db push
+```
+
+No Worker redeploy is needed afterwards — PostgREST reloads its schema cache within seconds. If a 500 persists past ~30s, use Settings → API → *Reload schema cache*.
+
+Three standing rules:
+
+- **Never pass `--include-seed`.** `supabase/seed.sql` inserts two fixed test users directly into `auth.users`. It is for `db reset` locally and nothing else. `db push` leaves it alone by default; the flag is the only way to get it wrong.
+- **Never skip a migration on the remote.** The `supabase_migrations` history table tracks what has been applied; a gap desynchronises local and remote and every later push fights it. That includes `20260815125826_enable_pgtap.sql` — push it and drop the extension afterwards if you would rather not have pgTAP in production.
+- **`wrangler rollback` reverts the Worker only — never the schema.** Because migrations now land *before* the code, every migration must be backward-compatible with the *previous* Worker version: additive columns, no renames or drops in the same deploy as the code that stops using them. Any rollback following a migration deploy requires a matching manual database step.
 
 ## Phase 5 — Secrets
 
@@ -263,10 +293,14 @@ npx wrangler deployments list
 
 `.github/workflows/ci.yml` has two jobs: `ci` (existing — lint/build on every push and PR to `master`) and `deploy` (added 2026-08-15 — `needs: ci`, `if: github.event_name == 'push'`, `environment: production`).
 
-The `deploy` job rebuilds and runs `cloudflare/wrangler-action@v3` (default `command: deploy`) with:
+The `deploy` job rebuilds, applies pending Supabase migrations, then runs `cloudflare/wrangler-action@v3` (default `command: deploy`) with:
 
 - `apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}` — a `production`-environment secret (visible only to jobs targeting that environment), scoped to a Cloudflare API token with "Edit Cloudflare Workers" permissions on account `fc458ce6796b08efb77e342a9a946906`.
 - `accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}` — a repo-level variable (not secret; the account ID isn't sensitive), set to `fc458ce6796b08efb77e342a9a946906`.
+
+The migration steps (added 2026-08-15, after the schema-cache failure described in Phase 4) sit **between the build and the deploy**: `supabase/setup-cli@v1` pinned to CLI `2.114.0` — production schema changes are not a place for floating tooling — then `supabase link --project-ref` and `supabase db push`, both `--yes` for non-interactive use. They read `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and `SUPABASE_PROJECT_REF` from `production`-environment secrets; the CLI picks the first two up from the environment without flags. Ordering is deliberate in both directions: after the build so a compile failure cannot leave production migrated with no matching code, before the deploy so the Worker never serves against a schema it expects to exist.
+
+The `ci` job does **not** validate migrations on PRs — that would need Docker and a local Supabase stack in the runner. Migration correctness is still only proven locally (`supabase db reset`, `npx supabase test db`). A migration that is valid locally but fails against production will fail the `deploy` job *after* approval, leaving the previous Worker live and the schema partially applied at whatever statement errored.
 
 The `production` GitHub Environment has a required reviewer configured (Settings → Environments → production). This is what creates the approval gate: pushing to `master` starts the run, but the `deploy` job sits at "Waiting" until the reviewer approves it in the Actions UI — matching `infrastructure.md`'s human-promotes-to-production rule without requiring the promotion to happen from a specific laptop.
 
@@ -332,6 +366,7 @@ Run against the deployed URL after Phase 7.
 2. `curl -I .../dashboard` → 302 to `/auth/signin`, **and** `cache-control: private, no-store` present (Phase 3).
 3. Sign up through the deployed UI. The confirmation email link points at the Worker URL, not `127.0.0.1:3000`. Sign in and reach `/dashboard`.
 4. The red Polish config banner is **absent** — this is what proves secrets resolved, given the soft-failure trap in Phase 5.
+4a. `curl` an authenticated data route (or load `/dashboard` signed in) and confirm **no 500s** — this is what proves migrations reached the hosted schema, given the Phase 4 trap. Steps 1–4 all pass against a completely empty `public` schema.
 5. `curl .../dist/server/.dev.vars` and `.../server/wrangler.json` → 404, confirming Phase 2b.
 6. `npx wrangler tail --format pretty` shows invocations with CPU time logged while the above runs.
 7. `npx wrangler deployments list` shows exactly one production version, and `npx wrangler rollback` names a valid target.
@@ -347,4 +382,4 @@ Time-to-revert is seconds — it re-points to an already-uploaded version. **Thi
 
 ## Out of scope for the first deployment
 
-LLM provider and key (PRD Open Question 4) · Supabase migrations and RLS policies — none exist yet; the RLS-on-day-one rule binds the first table, not this deploy · custom domain · Cloudflare Access on preview URLs (revisit before real user data) · a CI deploy job · the receipt-storage decision (`infrastructure.md` proposes storing nothing — confirm during implementation).
+LLM provider and key (PRD Open Question 4) · ~~Supabase migrations and RLS policies — none exist yet; the RLS-on-day-one rule binds the first table, not this deploy~~ *(this exclusion is what caused the schema-cache failure — migrations are now part of the deploy, see Phase 4)* · custom domain · Cloudflare Access on preview URLs (revisit before real user data) · a CI deploy job · the receipt-storage decision (`infrastructure.md` proposes storing nothing — confirm during implementation).
