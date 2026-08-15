@@ -242,11 +242,11 @@ No existing data to migrate — this is the first table in the project. `wrangle
 
 #### Automated
 
-- [x] 3.1 `supabase db reset && supabase test db` passes twice consecutively from a clean state
-- [x] 3.2 `npm run lint` passes
+- [x] 3.1 `supabase db reset && supabase test db` passes twice consecutively from a clean state — 80e190b
+- [x] 3.2 `npm run lint` passes — 80e190b
 
 #### Manual
 
-- [x] 3.3 Manual cross-user impersonation check confirms isolation independent of pgTAP
-- [x] 3.4 `CLAUDE.md` data-layer section reads accurately against the new state
-- [x] 3.5 Hosted-linking follow-up is clearly flagged as the user's next manual step
+- [x] 3.3 Manual cross-user impersonation check confirms isolation independent of pgTAP — 80e190b
+- [x] 3.4 `CLAUDE.md` data-layer section reads accurately against the new state — 80e190b
+- [x] 3.5 Hosted-linking follow-up is clearly flagged as the user's next manual step — 80e190b
