@@ -357,30 +357,30 @@ Additive-only new table; no backfill needed since no entries exist yet anywhere.
 
 #### Automated
 
-- [x] 2.1 `npm run lint` passes
-- [x] 2.2 `npx astro check` passes
+- [x] 2.1 `npm run lint` passes — 489453b
+- [x] 2.2 `npx astro check` passes — 489453b
 
 #### Manual
 
-- [x] 2.3 `GET /api/entries?date=<today>` returns `[]` for a fresh user
-- [x] 2.4 `POST` with a valid body creates an entry, returns `201`
-- [x] 2.5 Posting another user's `categoryId` returns `404`
-- [x] 2.6 `GET /api/entries/days?month=<current>` correctly excludes today/future/pre-signup dates
-- [x] 2.7 `GET /api/entries/categories` returns recently-used categories first
+- [x] 2.3 `GET /api/entries?date=<today>` returns `[]` for a fresh user — 489453b
+- [x] 2.4 `POST` with a valid body creates an entry, returns `201` — 489453b
+- [x] 2.5 Posting another user's `categoryId` returns `404` — 489453b
+- [x] 2.6 `GET /api/entries/days?month=<current>` correctly excludes today/future/pre-signup dates — 489453b
+- [x] 2.7 `GET /api/entries/categories` returns recently-used categories first — 489453b
 
 ### Phase 3: Calendar & day navigation UI
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes
-- [ ] 3.2 `npx astro check` passes
+- [x] 3.1 `npm run lint` passes
+- [x] 3.2 `npx astro check` passes
 
 #### Manual
 
-- [ ] 3.3 Current month renders with today highlighted
-- [ ] 3.4 Days with entries are not red; days without (within the account-creation-to-yesterday window) are
-- [ ] 3.5 Paging before account creation shows no red marking
-- [ ] 3.6 Clicking a day updates selection and visible month correctly across month boundaries
+- [x] 3.3 Current month renders with today highlighted
+- [x] 3.4 Days with entries are not red; days without (within the account-creation-to-yesterday window) are
+- [x] 3.5 Paging before account creation shows no red marking
+- [x] 3.6 Clicking a day updates selection and visible month correctly across month boundaries
 
 ### Phase 4: Entry form, day detail, and edge cases
 
