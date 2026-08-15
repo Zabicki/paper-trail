@@ -1,7 +1,7 @@
 ---
 change_id: custom-categories
 title: Custom categories — define, rename, delete, flag recurring cost
-status: implementing
+status: implemented
 created: 2026-08-15
 updated: 2026-08-15
 archived_at: null

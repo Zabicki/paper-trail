@@ -304,16 +304,16 @@ Additive migration only; no backfill needed since F-01's `categories` table curr
 
 #### Automated
 
-- [x] 3.1 `npm run lint` passes
-- [x] 3.2 `npx astro check` passes
-- [x] 3.3 `npm run build` succeeds
+- [x] 3.1 `npm run lint` passes — 7fdb6e0
+- [x] 3.2 `npx astro check` passes — 7fdb6e0
+- [x] 3.3 `npm run build` succeeds — 7fdb6e0
 
 #### Manual
 
-- [x] 3.4 Fresh user sees Polish empty-state prompt
-- [x] 3.5 Adding a category appears without full page reload
-- [x] 3.6 Rename/recolor/toggle-recurring persist and reflect immediately
-- [x] 3.7 Delete removes the category, with `window.confirm` first
-- [x] 3.8 Duplicate name shows inline Polish error next to name field
-- [x] 3.9 Signed-out visit to `/categories` redirects to `/auth/signin`
-- [x] 3.10 Second user never sees first user's categories
+- [x] 3.4 Fresh user sees Polish empty-state prompt — 7fdb6e0
+- [x] 3.5 Adding a category appears without full page reload — 7fdb6e0
+- [x] 3.6 Rename/recolor/toggle-recurring persist and reflect immediately — 7fdb6e0
+- [x] 3.7 Delete removes the category, with `window.confirm` first — 7fdb6e0
+- [x] 3.8 Duplicate name shows inline Polish error next to name field — 7fdb6e0
+- [x] 3.9 Signed-out visit to `/categories` redirects to `/auth/signin` — 7fdb6e0
+- [x] 3.10 Second user never sees first user's categories — 7fdb6e0
