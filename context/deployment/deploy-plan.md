@@ -53,7 +53,9 @@ Requests from the corporate network return `303 → blocked.teams.cloudflare.com
 
 1. Test from an unblocked network (personal device off corporate DNS).
 2. Request an unblock at `links.ocado.com/site-unblock`.
-3. Put the app on a custom domain, which sidesteps the `workers.dev` category block entirely — worth considering early if day-to-day testing happens on the work machine.
+3. ~~Custom domain.~~ **Considered and declined 2026-08-15.** It would have cost ~$11/yr, was not guaranteed to help (newly-registered-domain policies commonly block fresh domains for ~30 days), and would not have fixed `wrangler tail` anyway, since tailing goes through `tail.developers.workers.dev` regardless of the app's domain. Revisit only if a domain is wanted for product reasons.
+
+**Working arrangement:** stay on `workers.dev` and **turn the VPN off when the deployed app or `wrangler tail` is needed.** The block is intermittent purely as a function of VPN state — it was observed flipping mid-session, which is also what turned one `wrangler versions deploy` into a bare `fetch failed`. If a Cloudflare command fails with `fetch failed`, a 303, or `SELF_SIGNED_CERT_IN_CHAIN`, check the VPN before debugging anything else.
 
 **`wrangler tail` is blocked too — same root cause.** Its WebSocket endpoint is `tail.developers.workers.dev`, which falls under the same category deny. Debugging this took two steps, both worth recording:
 
