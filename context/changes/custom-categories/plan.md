@@ -277,28 +277,28 @@ Additive migration only; no backfill needed since F-01's `categories` table curr
 
 #### Automated
 
-- [x] 1.1 `npx supabase db reset` applies all migrations cleanly
-- [x] 1.2 `npx supabase test db` passes with the updated plan count
-- [x] 1.3 `npx astro check` / `npm run lint` pass
+- [x] 1.1 `npx supabase db reset` applies all migrations cleanly — 83109b2
+- [x] 1.2 `npx supabase test db` passes with the updated plan count — 83109b2
+- [x] 1.3 `npx astro check` / `npm run lint` pass — 83109b2
 
 #### Manual
 
-- [x] 1.4 Studio insert without color/is_recurring shows expected defaults
-- [x] 1.5 Duplicate name (any case) for the same user fails with unique-violation
+- [x] 1.4 Studio insert without color/is_recurring shows expected defaults — 83109b2
+- [x] 1.5 Duplicate name (any case) for the same user fails with unique-violation — 83109b2
 
 ### Phase 2: Service layer + JSON API
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` passes
-- [ ] 2.2 `npx astro check` passes
+- [x] 2.1 `npm run lint` passes
+- [x] 2.2 `npx astro check` passes
 
 #### Manual
 
-- [ ] 2.3 `GET /api/categories` returns `[]` for a fresh user
-- [ ] 2.4 `POST` with a valid body creates a category, returns `201`
-- [ ] 2.5 Duplicate name returns `409` with `field: "name"`
-- [ ] 2.6 `PATCH`/`DELETE` on another user's id returns `404`
+- [x] 2.3 `GET /api/categories` returns `[]` for a fresh user
+- [x] 2.4 `POST` with a valid body creates a category, returns `201`
+- [x] 2.5 Duplicate name returns `409` with `field: "name"`
+- [x] 2.6 `PATCH`/`DELETE` on another user's id returns `404`
 
 ### Phase 3: Category management UI
 
