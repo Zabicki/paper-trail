@@ -8,7 +8,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/format";
-import { enumerateBuckets, formatBucketLabel } from "./range";
+import { addDays, enumerateBuckets, formatBucketLabel, inclusiveDayCount } from "./range";
 import type { EntriesSummary, RangeSummary, SummaryBucket } from "@/types";
 
 interface CumulativeChartProps {
@@ -32,19 +32,73 @@ function bucketLabel(value: unknown, bucket: SummaryBucket): string | null {
   return typeof value === "string" ? formatBucketLabel(value, bucket) : null;
 }
 
+interface CumulativePoint {
+  bucketStart: string;
+  // Days elapsed from the range's `from` to the last day this running total
+  // covers. This — not the bucket index — is what makes the two periods
+  // comparable; see the note above `sampleAt`.
+  elapsedDays: number;
+  total: number;
+}
+
 // Running expense total per bucket, accumulated over the already-exact
 // per-bucket sums entries_summary returns. No raw row is re-added here, so the
 // float drift S-02 flagged never re-enters through the back door.
 //
 // Enumerating the buckets rather than walking `points` matters: a period with a
 // spending gap must hold its running total flat across that gap, not skip it.
-function cumulativeExpense(range: RangeSummary, bucket: SummaryBucket): { bucketStart: string; total: number }[] {
+function cumulativeExpense(range: RangeSummary, bucket: SummaryBucket): CumulativePoint[] {
   const byBucket = new Map(range.points.map((point) => [point.bucketStart, point.expense]));
+  const starts = enumerateBuckets(range, bucket);
   let running = 0;
-  return enumerateBuckets(range, bucket).map((bucketStart) => {
+
+  return starts.map((bucketStart, index) => {
     running += byBucket.get(bucketStart) ?? 0;
-    return { bucketStart, total: running };
+    // The day this bucket's total is complete: the day before the next bucket
+    // opens, or the range's own last day for the final (often partial) one.
+    const coveredThrough = index + 1 < starts.length ? addDays(starts[index + 1], -1) : range.to;
+    return {
+      bucketStart,
+      elapsedDays: inclusiveDayCount({ from: range.from, to: coveredThrough }) - 1,
+      total: running,
+    };
   });
+}
+
+// The running total the series had reached `elapsedDays` into its period.
+//
+// Indexing the comparison by bucket POSITION looks equivalent and is not: the
+// two ranges are equal in days, not in buckets, because shifting back by N days
+// re-aligns the range against Monday and first-of-month boundaries. Sweeping
+// 2026, "Poprzedni miesiąc" disagrees on bucket count 91 days out of 365 — on
+// 2026-08-16 the current range holds 5 week-buckets and the previous holds 6.
+// Position indexing therefore silently dropped the previous period's last
+// bucket (understating it) or ran off the end of a shorter one.
+//
+// null means the previous period had not closed its first bucket yet at that
+// offset. Its spend there is genuinely unknown at this granularity, so the line
+// starts later rather than claiming a zero.
+function sampleAt(series: CumulativePoint[], elapsedDays: number): number | null {
+  let total: number | null = null;
+  for (const point of series) {
+    if (point.elapsedDays > elapsedDays) {
+      break;
+    }
+    total = point.total;
+  }
+  return total;
+}
+
+// Recharts hands the raw datum to the tooltip formatter, so a gap in the
+// previous-period series arrives as null — and Number(null) is 0, which would
+// render "0,00 zł" and assert the period spent nothing. Takes `unknown` so the
+// null check is honest rather than a condition TypeScript thinks is dead.
+function tooltipAmount(value: unknown): string | null {
+  if (typeof value !== "number" && typeof value !== "string") {
+    return null;
+  }
+  const amount = Number(value);
+  return Number.isFinite(amount) ? formatCurrency(amount) : null;
 }
 
 export default function CumulativeChart({ summary }: CumulativeChartProps) {
@@ -56,14 +110,14 @@ export default function CumulativeChart({ summary }: CumulativeChartProps) {
   const currentSeries = cumulativeExpense(summary.current, summary.bucket);
   const previousSeries = hasPrevious ? cumulativeExpense(summary.previous, summary.bucket) : [];
 
-  // Indexed by POSITION within the period, not by date: the two periods cover
-  // different calendar days, so day 1 vs day 1 is the only comparison that
-  // means anything. The axis labels come from the current period, which is the
-  // subject.
-  const data = currentSeries.map((point, index) => ({
+  // Indexed by elapsed days into each period, not by date and not by bucket
+  // index: the two periods cover different calendar days, so "the same distance
+  // into the period" is the only comparison that means anything. The axis
+  // labels come from the current period, which is the subject.
+  const data = currentSeries.map((point) => ({
     bucketStart: point.bucketStart,
     current: point.total,
-    previous: previousSeries[index]?.total ?? null,
+    previous: hasPrevious ? sampleAt(previousSeries, point.elapsedDays) : null,
   }));
 
   return (
@@ -88,14 +142,18 @@ export default function CumulativeChart({ summary }: CumulativeChartProps) {
             content={
               <ChartTooltipContent
                 labelFormatter={(value) => bucketLabel(value, summary.bucket)}
-                formatter={(value, name) => (
-                  <div className="flex flex-1 items-center justify-between gap-4 leading-none">
-                    <span className="text-muted-foreground">{seriesLabel(name)}</span>
-                    <span className="text-foreground font-mono font-medium tabular-nums">
-                      {formatCurrency(Number(value))}
-                    </span>
-                  </div>
-                )}
+                formatter={(value, name) => {
+                  const amount = tooltipAmount(value);
+                  if (amount === null) {
+                    return null;
+                  }
+                  return (
+                    <div className="flex flex-1 items-center justify-between gap-4 leading-none">
+                      <span className="text-muted-foreground">{seriesLabel(name)}</span>
+                      <span className="text-foreground font-mono font-medium tabular-nums">{amount}</span>
+                    </div>
+                  );
+                }}
               />
             }
           />

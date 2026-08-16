@@ -42,6 +42,23 @@ interface DateRange {
 // concrete dates the client already resolved. "Today" never enters here; see
 // src/components/entries/date-utils.ts for why that resolution has to stay in
 // the browser (Workers run UTC).
+//
+// ⚠ These are a deliberate second copy of the same helpers in
+// src/components/reports/range.ts (which owns the client half: preset → dates,
+// bucket derivation, zero-fill enumeration). Keeping them separate is
+// intentional — that module is browser-only — but the two are COUPLED and the
+// coupling is not visible from either file alone:
+//
+//   `previousRange` here defines the comparison period as an equal number of
+//   INCLUSIVE DAYS. Anything downstream that compares the two periods must
+//   measure in days too. Bucket counts are NOT equal — shifting back by N days
+//   re-aligns the range against Monday and first-of-month boundaries, so a
+//   month-long range can hold 5 week-buckets while its predecessor holds 6.
+//
+// That exact assumption broke CumulativeChart once (it indexed the comparison
+// by bucket position and silently dropped the previous period's last bucket).
+// If you change the definition of "previous period" here, re-check
+// range.ts's enumerateBuckets and CumulativeChart's sampleAt.
 function pad(value: number): string {
   return value.toString().padStart(2, "0");
 }

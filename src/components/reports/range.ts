@@ -7,6 +7,22 @@
 // date-utils.ts for why that resolution can never move to the server. Once
 // `today` is in hand every other calculation here is pure ISO-string
 // arithmetic done in UTC, which keeps it timezone-free and deterministic.
+//
+// ⚠ `pad` / `addDays` / `inclusiveDayCount` below are a deliberate second copy
+// of the same helpers in src/lib/services/reports.ts (`addMonths` a third, in
+// date-utils.ts). The split is intentional — this module is browser-only — but
+// the two halves are COUPLED in two ways that neither file shows on its own:
+//
+//   1. `enumerateBuckets` must produce exactly the bucket starts Postgres'
+//      date_trunc returns, or zero-filling invents an empty bucket beside
+//      every real one. See the startOfWeek note below.
+//   2. reports.ts's `previousRange` defines the comparison period as an equal
+//      number of INCLUSIVE DAYS, not an equal bucket count. Consumers must
+//      compare the two periods in days; CumulativeChart's `sampleAt` exists
+//      for exactly that reason.
+//
+// If you change the arithmetic here, re-check reports.ts's previousRange and
+// bucketCountUpperBound.
 
 import { POLISH_MONTH_NAMES } from "@/components/entries/date-utils";
 import type { SummaryBucket } from "@/types";

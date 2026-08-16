@@ -332,7 +332,9 @@ Ship a complete FR-013 + FR-015 outcome: the route, the URL-driven control bar, 
 **Contract**:
 
 - `RANGE_PRESETS` — an ordered const of `{ value, label }` pairs with Polish labels: `last-7-days` "Ostatnie 7 dni", `last-30-days` "Ostatnie 30 dni", `this-month` "Ten miesiąc", `last-month` "Poprzedni miesiąc", `last-3-months` "Ostatnie 3 miesiące", `ytd` "Od początku roku", `all-time` "Cały okres". `DEFAULT_RANGE_PRESET = "last-30-days"`.
-- `resolveRange(preset, today: string): { from: string; to: string }` — built on the existing local-date helpers. `all-time` resolves `from` to `1970-01-01`; the aggregate simply returns whatever exists, so no account-creation lookup is needed.
+- `resolveRange(preset, today: string): { from: string; to: string }` — built on the existing local-date helpers. `all-time` resolves `from` to a fixed number of years before `today` (20 in the implementation); the aggregate simply returns whatever exists, so no account-creation lookup is needed.
+
+  > **Corrected during implementation review (2026-08-16).** This clause originally read "`all-time` resolves `from` to `1970-01-01`", which contradicts the ≤400-bucket guard specified in Phase 2: 1970 → today is ~680 month buckets, so every "Cały okres" load would have returned 400. A relative floor caps the span (~252 month buckets) and never drifts into the guard as the years pass. S-05 builds on this module — use the corrected clause, not the original.
 - `previousRange({ from, to }): { from, to }` — same inclusive day count, ending the day before `from`.
 - `bucketFor({ from, to }): SummaryBucket` — `≤ 30` days → `day`, `≤ 92` days → `week`, else `month`. Not a user control, per the research doc: FR-013 stays a single preset picker.
 - `enumerateBuckets({ from, to }, bucket): string[]` — the full ordered bucket-start sequence, used to zero-fill.
