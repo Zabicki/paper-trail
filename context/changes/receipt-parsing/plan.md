@@ -523,23 +523,23 @@ The Gemini free tier is **contractually unavailable**: the Gemini API Additional
 
 #### Automated
 
-- [x] 3.1 Linting passes: `npm run lint`
-- [x] 3.2 Build passes: `npm run build`
+- [x] 3.1 Linting passes: `npm run lint` — 086504c
+- [x] 3.2 Build passes: `npm run build` — 086504c
 
 #### Manual
 
-- [x] 3.3 Photographing a real paragon produces a review panel within the timeout, with continuous progress
-- [x] 3.4 Editing an amount recomputes the delta live; editing a category updates that row only
-- [x] 3.5 Confirm writes every item to the selected day; list and calendar update without reload
-- [x] 3.6 Reload shows entries persisted with descriptions
-- [x] 3.7 Confirm is hard-blocked while any item lacks a category
-- [x] 3.8 Confirm is soft-blocked on a non-zero delta until acknowledged
-- [x] 3.9 Total-only button saves exactly one entry at the printed total
-- [x] 3.10 Changing the calendar day mid-review retargets the confirm correctly
-- [x] 3.11 Cancelling mid-parse returns to idle silently, with no timeout message
-- [x] 3.12 Network failure mid-parse shows a network error; the manual form still works
-- [x] 3.13 A faded or crumpled receipt tried and its behaviour noted
-- [x] 3.14 With secrets unset, the Paragon section explains unavailability rather than throwing
+- [x] 3.3 Photographing a real paragon produces a review panel within the timeout, with continuous progress — 086504c
+- [x] 3.4 Editing an amount recomputes the delta live; editing a category updates that row only — 086504c
+- [x] 3.5 Confirm writes every item to the selected day; list and calendar update without reload — 086504c
+- [x] 3.6 Reload shows entries persisted with descriptions — 086504c
+- [x] 3.7 Confirm is hard-blocked while any item lacks a category — 086504c
+- [x] 3.8 Confirm is soft-blocked on a non-zero delta until acknowledged — 086504c
+- [x] 3.9 Total-only button saves exactly one entry at the printed total — 086504c
+- [x] 3.10 Changing the calendar day mid-review retargets the confirm correctly — 086504c
+- [x] 3.11 Cancelling mid-parse returns to idle silently, with no timeout message — 086504c
+- [x] 3.12 Network failure mid-parse shows a network error; the manual form still works — 086504c
+- [x] 3.13 A faded or crumpled receipt tried and its behaviour noted — 086504c
+- [x] 3.14 With secrets unset, the Paragon section explains unavailability rather than throwing — 086504c
 
 ### Phase 4: Live accuracy assessment
 
