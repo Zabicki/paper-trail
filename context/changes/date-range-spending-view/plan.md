@@ -578,33 +578,33 @@ Rollback is `drop function public.entries_summary(date, date, text, boolean)` in
 
 #### Automated
 
-- [x] 2.1 `npm run lint` passes
-- [x] 2.2 `npx astro check` reports 0 errors
-- [x] 2.3 `npm run build` passes
+- [x] 2.1 `npm run lint` passes — e4ae841
+- [x] 2.2 `npx astro check` reports 0 errors — e4ae841
+- [x] 2.3 `npm run build` passes — e4ae841
 
 #### Manual
 
-- [x] 2.4 Endpoint returns `current` and `previous` with the correct preceding equal-length range
-- [x] 2.5 `recurring=hidden` lowers expense totals only
-- [x] 2.6 Signed-out request returns 401
-- [x] 2.7 `from` later than `to` returns 400 with a Polish message
-- [x] 2.8 `bucket=day` over five years returns 400, not a truncated result
-- [x] 2.9 Second seed user sees different totals for the same range
+- [x] 2.4 Endpoint returns `current` and `previous` with the correct preceding equal-length range — e4ae841
+- [x] 2.5 `recurring=hidden` lowers expense totals only — e4ae841
+- [x] 2.6 Signed-out request returns 401 — e4ae841
+- [x] 2.7 `from` later than `to` returns 400 with a Polish message — e4ae841
+- [x] 2.8 `bucket=day` over five years returns 400, not a truncated result — e4ae841
+- [x] 2.9 Second seed user sees different totals for the same range — e4ae841
 
 ### Phase 3: Presentation foundations
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes with the generated `chart.tsx` in the tree
-- [ ] 3.2 `npx astro check` reports 0 errors
-- [ ] 3.3 `npm run build` passes
-- [ ] 3.4 `package.json` records `recharts` at an exact version with no caret
+- [x] 3.1 `npm run lint` passes with the generated `chart.tsx` in the tree
+- [x] 3.2 `npx astro check` reports 0 errors
+- [x] 3.3 `npm run build` passes
+- [x] 3.4 `package.json` records `recharts` at an exact version with no caret
 
 #### Manual
 
-- [ ] 3.5 `/dashboard` renders `12,50 zł` and the ≤4-interaction / ≤10-second entry path is unaffected
-- [ ] 3.6 All four shipped pages read correctly with the dark token set active
-- [ ] 3.7 Recurring badge, category colour dots and emerald income amounts still read correctly
+- [x] 3.5 `/dashboard` renders `12,50 zł` and the ≤4-interaction / ≤10-second entry path is unaffected
+- [x] 3.6 All four shipped pages read correctly with the dark token set active
+- [x] 3.7 Recurring badge, category colour dots and emerald income amounts still read correctly
 
 ### Phase 4: `/reports` page — controls and KPI tiles
 

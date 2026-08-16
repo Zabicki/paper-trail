@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
+import { formatCurrency } from "@/lib/format";
 import type { Category, Entry } from "@/types";
 
 interface DayEntriesListProps {
@@ -22,15 +23,11 @@ interface EditFormState {
   occurredOn: string;
 }
 
-function formatAmount(amount: number): string {
-  return amount.toFixed(2);
-}
-
 // PostgREST hands back numeric(10,2) as a JS number, so these totals inherit
 // binary-float rounding. Acceptable here because the sum is bounded to one
-// day's rows; the real fix (aggregate in SQL, or carry integer minor units)
-// belongs with S-04/S-05's aggregation work. Flagged forward by S-02's review
-// finding F4.
+// day's rows. The range case this originally flagged forward (S-02 review
+// finding F4) is now summed in Postgres by public.entries_summary, so no
+// unbounded chain of JS float additions exists in the data path.
 function sumOf(entries: Entry[], type: Entry["type"]): number {
   return entries.filter((entry) => entry.type === type).reduce((total, entry) => total + entry.amount, 0);
 }
@@ -53,7 +50,9 @@ export default function DayEntriesList({
   function startEdit(entry: Entry) {
     setEditingId(entry.id);
     setEditForm({
-      amountText: formatAmount(entry.amount),
+      // Seeds a text input, so this stays a bare number — formatCurrency's
+      // "12,50 zł" would land in the field and fail the amount parse.
+      amountText: entry.amount.toFixed(2),
       categoryId: entry.category.id,
       occurredOn: entry.occurredOn,
     });
@@ -148,8 +147,8 @@ export default function DayEntriesList({
           question from "what came in", and subtracting one from the other
           answers neither. */}
       <div className="text-muted-foreground flex gap-4 text-sm">
-        <span>Wydatki: {formatAmount(expenseTotal)}</span>
-        <span>Przychody: {formatAmount(incomeTotal)}</span>
+        <span>Wydatki: {formatCurrency(expenseTotal)}</span>
+        <span>Przychody: {formatCurrency(incomeTotal)}</span>
       </div>
 
       <ul className="flex flex-col gap-2">
@@ -237,7 +236,7 @@ export default function DayEntriesList({
                 <div className="flex items-center gap-2">
                   <span className={cn("font-medium", entry.type === "income" && "text-emerald-400")}>
                     {entry.type === "income" && "+"}
-                    {formatAmount(entry.amount)}
+                    {formatCurrency(entry.amount)}
                   </span>
                   <Button
                     type="button"

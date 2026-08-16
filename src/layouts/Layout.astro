@@ -8,10 +8,17 @@ interface Props {
 }
 
 const { title = "10x Astro Starter" } = Astro.props;
+
+// `class="dark"` below is deliberate and app-wide: every page forces the dark
+// `bg-cosmic` surface, so the dark token set is the one that describes what
+// actually renders. Without it the light values apply and
+// `text-muted-foreground` reads as low-contrast grey on near-black — and
+// `var(--chart-*)` would resolve to light-mode series colours.
+// `lang="pl"` because the domain UI copy is Polish.
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="pl" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
