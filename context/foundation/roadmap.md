@@ -34,8 +34,8 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | S-02  | `daily-expense-entry`         | log an expense against today in ≤4 interactions; back-date as a first-class path | F-01, S-01 | US-01, FR-006, FR-007       | done |
 | S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | done |
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | done |
-| S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | proposed |
-| S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | blocked |
+| S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | planning |
+| S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | planning |
 
 ## Streams
 
@@ -139,9 +139,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-03, S-06
 - **Blockers:** —
 - **Unknowns:**
-  - What is the readability strategy at high category counts — grouping a long tail, capping slices, switching chart form? PRD amended FR-014 with a readability criterion and explicitly left the method "to downstream design." Owner: user/design. Block: no.
+  - What is the readability strategy at high category counts — grouping a long tail, capping slices, switching chart form? PRD amended FR-014 with a readability criterion and explicitly left the method "to downstream design." Owner: user/design. Block: no. **Resolved during planning 2026-08-16**: top 8 or above 2% of total (whichever gives fewer slices), tail collapsed into an expandable `Pozostałe (n)`, with an always-visible ranking list as the form that degrades gracefully to any count. See `context/changes/category-distribution-view/plan-brief.md`.
 - **Risk:** Depends on S-04 rather than running parallel to it, because it reuses that slice's recurring-cost filter and range selection. The named risk is the one the PRD already surfaced: freely-defined categories produce a long tail of small slices that becomes noise exactly when there is finally enough data to care, so the readability criterion is an acceptance condition, not a refinement.
-- **Status:** proposed
+- **Status:** planning
 
 ### S-06: Receipt parsing
 
@@ -156,7 +156,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which provider carries out the classification, and does its accuracy clear the Secondary success bar (a majority of line items correctly categorised without correction)? Owner: user. **Block: yes.**
   - What is the parsing timeout, and what is the receipt-image retention window? Owner: user. **Block: yes** for the timeout; the retention half may dissolve entirely — see OQ-3.
 - **Risk:** This is the product differentiator and the slice most likely to consume the schedule, which is why it is `blocked` rather than optimistically sequenced. `infrastructure.md`'s pre-mortem predicts exactly how it goes wrong: reaching for the Node recipe (`sharp` to downscale, a storage bucket, a signed upload, a retention job), none of which runs on workerd. The Cloudflare Images binding is already provisioned for this purpose. Note also that FR-011 has a *floor*: below the Secondary bar, auto-assignment is slower than typing, so the feature is failing rather than merely imperfect — worth a spike against real receipts before committing the slice.
-- **Status:** blocked
+- **Status:** planning
 
 ## Backlog Handoff
 
