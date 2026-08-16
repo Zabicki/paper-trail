@@ -1,7 +1,7 @@
 ---
 change_id: date-range-spending-view
 title: Date range spending view
-status: implementing
+status: implemented
 created: 2026-08-16
 updated: 2026-08-16
 archived_at: null

@@ -631,18 +631,18 @@ Rollback is `drop function public.entries_summary(date, date, text, boolean)` in
 
 #### Automated
 
-- [x] 5.1 `npm run lint` passes
-- [x] 5.2 `npx astro check` reports 0 errors
-- [x] 5.3 `npm run build` passes with a separate reports island chunk
+- [x] 5.1 `npm run lint` passes — b4cd30c
+- [x] 5.2 `npx astro check` reports 0 errors — b4cd30c
+- [x] 5.3 `npm run build` passes with a separate reports island chunk — b4cd30c
 
 #### Manual
 
-- [x] 5.4 Bucketing shifts day → week → month across presets with no extra control
-- [x] 5.5 Weeks start on Monday, matching the dashboard calendar
-- [x] 5.6 Tooltips show Polish series names and `zł` values; axis ticks do not overlap
-- [x] 5.7 The recurring toggle visibly changes both charts, not only the tiles
-- [x] 5.8 A3's previous-period line reads as subordinate
-- [x] 5.9 A range predating the account shows only the current line
-- [x] 5.10 Keyboard arrow keys move between data points; no `jsx-a11y` violation in lint
-- [x] 5.11 Charts render legibly on a narrow viewport at both 7-day and full-year ranges
-- [x] 5.12 Two seed users see charts derived only from their own entries
+- [x] 5.4 Bucketing shifts day → week → month across presets with no extra control — b4cd30c
+- [x] 5.5 Weeks start on Monday, matching the dashboard calendar — b4cd30c
+- [x] 5.6 Tooltips show Polish series names and `zł` values; axis ticks do not overlap — b4cd30c
+- [x] 5.7 The recurring toggle visibly changes both charts, not only the tiles — b4cd30c
+- [x] 5.8 A3's previous-period line reads as subordinate — b4cd30c
+- [x] 5.9 A range predating the account shows only the current line — b4cd30c
+- [x] 5.10 Keyboard arrow keys move between data points; no `jsx-a11y` violation in lint — b4cd30c
+- [x] 5.11 Charts render legibly on a narrow viewport at both 7-day and full-year ranges — b4cd30c
+- [x] 5.12 Two seed users see charts derived only from their own entries — b4cd30c
