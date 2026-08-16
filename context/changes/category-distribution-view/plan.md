@@ -564,42 +564,42 @@ Rollback is `drop function public.entries_category_summary(date, date, text, boo
 
 #### Automated
 
-- [x] 3.1 `npm run lint` passes
-- [x] 3.2 `npx astro check` reports 0 errors
-- [x] 3.3 `npm run build` passes
+- [x] 3.1 `npm run lint` passes — cf194f4
+- [x] 3.2 `npx astro check` reports 0 errors — cf194f4
+- [x] 3.3 `npm run build` passes — cf194f4
 
 #### Manual
 
-- [x] 3.4 Default load is still Przegląd / Ostatnie 30 dni / toggle off
-- [x] 3.5 Switching boards keeps range and toggle, updates the URL, and the back button reverses it
-- [x] 3.6 Reloading `?board=categories&range=ytd&recurring=hidden` restores exactly that view
-- [x] 3.7 Ranking shows at most 9 rows before expansion and sums to Board A's `Wydatki` tile
-- [x] 3.8 No two visible rows share a swatch; the larger of a duplicate pair matches its `/categories` dot
-- [x] 3.9 Expanding `Pozostałe` changes no colour already on screen
-- [x] 3.10 Changing range or toggle collapses `Pozostałe`
-- [x] 3.11 Recurring filter removes those categories and re-bases the percentages
-- [x] 3.12 A range with income but no expenses shows `Brak wydatków w tym zakresie.`
-- [x] 3.13 S-04 regression pass: tiles, A1, A3, re-bucketing, back button and empty state all unchanged
-- [x] 3.14 A 100-character category name does not break the row on a narrow viewport
+- [x] 3.4 Default load is still Przegląd / Ostatnie 30 dni / toggle off — cf194f4
+- [x] 3.5 Switching boards keeps range and toggle, updates the URL, and the back button reverses it — cf194f4
+- [x] 3.6 Reloading `?board=categories&range=ytd&recurring=hidden` restores exactly that view — cf194f4
+- [x] 3.7 Ranking shows at most 9 rows before expansion and sums to Board A's `Wydatki` tile — cf194f4
+- [x] 3.8 No two visible rows share a swatch; the larger of a duplicate pair matches its `/categories` dot — cf194f4
+- [x] 3.9 Expanding `Pozostałe` changes no colour already on screen — cf194f4
+- [x] 3.10 Changing range or toggle collapses `Pozostałe` — cf194f4
+- [x] 3.11 Recurring filter removes those categories and re-bases the percentages — cf194f4
+- [x] 3.12 A range with income but no expenses shows `Brak wydatków w tym zakresie.` — cf194f4
+- [x] 3.13 S-04 regression pass: tiles, A1, A3, re-bucketing, back button and empty state all unchanged — cf194f4
+- [x] 3.14 A 100-character category name does not break the row on a narrow viewport — cf194f4
 
 ### Phase 4: Donut (B1)
 
 #### Automated
 
-- [ ] 4.1 `npm run lint` passes
-- [ ] 4.2 `npx astro check` reports 0 errors
-- [ ] 4.3 `npm run build` passes
+- [x] 4.1 `npm run lint` passes
+- [x] 4.2 `npx astro check` reports 0 errors
+- [x] 4.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 4.4 At most 9 arcs; centre total matches the ranking sum and Board A's tile
-- [ ] 4.5 Arc order and colours match the ranking exactly
-- [ ] 4.6 Tooltip shows the Polish name, a `zł` amount and the correct swatch
-- [ ] 4.7 Expanding `Pozostałe` splits the grey arc in place; collapsing restores it
-- [ ] 4.8 A single-category range renders a full ring with a legible centre total
-- [ ] 4.9 Recurring filter removes arcs and re-proportions the rest
-- [ ] 4.10 Legible on a narrow viewport with no centre-label overlap
-- [ ] 4.11 Keyboard focus reaches the chart; no `jsx-a11y` violation in lint
+- [x] 4.4 At most 9 arcs; centre total matches the ranking sum and Board A's tile
+- [x] 4.5 Arc order and colours match the ranking exactly
+- [x] 4.6 Tooltip shows the Polish name, a `zł` amount and the correct swatch
+- [x] 4.7 Expanding `Pozostałe` splits the grey arc in place; collapsing restores it
+- [x] 4.8 A single-category range renders a full ring with a legible centre total
+- [x] 4.9 Recurring filter removes arcs and re-proportions the rest
+- [x] 4.10 Legible on a narrow viewport with no centre-label overlap
+- [x] 4.11 Keyboard focus reaches the chart; no `jsx-a11y` violation in lint
 
 ### Phase 5: Kategorie w czasie (B3)
 

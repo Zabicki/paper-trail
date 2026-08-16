@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toLocalDateString } from "@/components/entries/date-utils";
+import CategoryDonut from "./CategoryDonut";
 import CategoryRanking from "./CategoryRanking";
 import { resolveDistribution } from "./distribution";
 import { bucketFor, resolveRange, type RangePreset } from "./range";
@@ -46,6 +47,10 @@ function CategoriesBody({ summary, loadError, expanded, onToggleExpanded }: Cate
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Neither chart fetches and neither carries its own loading or error
+          state — the four branches above already cover every case they could
+          be in, exactly as OverviewBody covers Board A's two. */}
+      <CategoryDonut distribution={distribution} expanded={expanded} />
       <CategoryRanking distribution={distribution} expanded={expanded} onToggleExpanded={onToggleExpanded} />
     </div>
   );
