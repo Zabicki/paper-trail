@@ -1,7 +1,9 @@
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard", "/categories"];
+// Prefix-matched. Covers pages only — API routes self-guard with their own
+// getUser() check, so /api/entries/summary is deliberately absent here.
+const PROTECTED_ROUTES = ["/dashboard", "/categories", "/reports"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createClient(context.request.headers, context.cookies);

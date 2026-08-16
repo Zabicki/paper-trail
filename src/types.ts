@@ -42,3 +42,41 @@ export interface Entry {
   category: Pick<Category, "id" | "name" | "color">;
   createdAt: string;
 }
+
+// --- Aggregates (S-04) ---
+//
+// A family deliberately separate from Entry: chart endpoints return sums, not
+// entries, and the two shapes have no reason to converge. In particular
+// Entry.category stays a three-field Pick and is NOT widened with isRecurring
+// just because the recurring filter needs it — that filter is applied in SQL
+// by public.entries_summary, never client-side against entry rows.
+
+// Not a user control. It is derived from the range length (see
+// src/components/reports/range.ts), which keeps FR-013 to a single preset
+// picker rather than two stacked dimensions.
+export type SummaryBucket = "day" | "week" | "month";
+
+export interface SummaryPoint {
+  bucketStart: string;
+  expense: number;
+  income: number;
+}
+
+export interface RangeSummary {
+  from: string;
+  to: string;
+  // Only buckets that actually have entries. Zero-filling gaps is the
+  // caller's job, because only the caller knows whether an absent bucket
+  // should read as a genuine zero or be omitted entirely.
+  points: SummaryPoint[];
+  // Summed in Postgres via `grouping sets`, not re-added from `points`.
+  totals: { expense: number; income: number };
+}
+
+export interface EntriesSummary {
+  bucket: SummaryBucket;
+  current: RangeSummary;
+  // The immediately preceding equal-length range, for the KPI tiles' deltas
+  // and the cumulative chart's comparison line.
+  previous: RangeSummary;
+}

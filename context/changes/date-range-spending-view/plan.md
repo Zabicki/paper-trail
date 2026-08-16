@@ -565,31 +565,31 @@ Rollback is `drop function public.entries_summary(date, date, text, boolean)` in
 
 #### Automated
 
-- [x] 1.1 `npx supabase db reset` applies all seven migrations cleanly
-- [x] 1.2 `npx supabase test db` passes with `Files=3` and the raised plan counts
-- [x] 1.3 `npm run lint` passes
+- [x] 1.1 `npx supabase db reset` applies all seven migrations cleanly — 97b9b7b
+- [x] 1.2 `npx supabase test db` passes with `Files=3` and the raised plan counts — 97b9b7b
+- [x] 1.3 `npm run lint` passes — 97b9b7b
 
 #### Manual
 
-- [x] 1.4 Superuser call in Studio returns rows across all users, confirming RLS (not the function body) is what isolates
-- [x] 1.5 The same call through PostgREST while signed in returns only that user's sums
+- [x] 1.4 Superuser call in Studio returns rows across all users, confirming RLS (not the function body) is what isolates — 97b9b7b
+- [x] 1.5 The same call through PostgREST while signed in returns only that user's sums — 97b9b7b
 
 ### Phase 2: Service, DTOs and the summary endpoint
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` passes
-- [ ] 2.2 `npx astro check` reports 0 errors
-- [ ] 2.3 `npm run build` passes
+- [x] 2.1 `npm run lint` passes
+- [x] 2.2 `npx astro check` reports 0 errors
+- [x] 2.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 2.4 Endpoint returns `current` and `previous` with the correct preceding equal-length range
-- [ ] 2.5 `recurring=hidden` lowers expense totals only
-- [ ] 2.6 Signed-out request returns 401
-- [ ] 2.7 `from` later than `to` returns 400 with a Polish message
-- [ ] 2.8 `bucket=day` over five years returns 400, not a truncated result
-- [ ] 2.9 Second seed user sees different totals for the same range
+- [x] 2.4 Endpoint returns `current` and `previous` with the correct preceding equal-length range
+- [x] 2.5 `recurring=hidden` lowers expense totals only
+- [x] 2.6 Signed-out request returns 401
+- [x] 2.7 `from` later than `to` returns 400 with a Polish message
+- [x] 2.8 `bucket=day` over five years returns 400, not a truncated result
+- [x] 2.9 Second seed user sees different totals for the same range
 
 ### Phase 3: Presentation foundations
 
