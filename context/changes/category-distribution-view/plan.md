@@ -532,16 +532,16 @@ Rollback is `drop function public.entries_category_summary(date, date, text, boo
 
 #### Automated
 
-- [ ] 1.1 `npx supabase db reset` applies all ten migrations cleanly
-- [ ] 1.2 `npx supabase test db` passes with `Files=4` and the raised plan counts
-- [ ] 1.3 `npm run lint` passes
+- [x] 1.1 `npx supabase db reset` applies all ten migrations cleanly
+- [x] 1.2 `npx supabase test db` passes with `Files=4` and the raised plan counts
+- [x] 1.3 `npm run lint` passes
 
 #### Manual
 
-- [ ] 1.4 Superuser call in Studio returns rows across all users, confirming RLS is what isolates
-- [ ] 1.5 The same call through PostgREST while signed in returns only that user's categories
-- [ ] 1.6 `explain analyze` shows the existing index serving the scan; plan recorded in the commit message
-- [ ] 1.7 Demo account shows ~30 categories with visible colour duplicates
+- [x] 1.4 Superuser call in Studio returns rows across all users, confirming RLS is what isolates
+- [x] 1.5 The same call through PostgREST while signed in returns only that user's categories
+- [x] 1.6 `explain analyze` shows the existing index serving the scan; plan recorded in the commit message
+- [x] 1.7 Demo account shows ~30 categories with visible colour duplicates
 
 ### Phase 2: Service, DTOs and the category-summary endpoint
 
