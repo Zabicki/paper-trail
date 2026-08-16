@@ -503,43 +503,43 @@ The Gemini free tier is **contractually unavailable**: the Gemini API Additional
 
 #### Automated
 
-- [x] 2.1 `npx astro sync` regenerates types without error
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Build passes: `npm run build`
-- [x] 2.4 With secrets unset, `POST /api/receipts/parse` returns `503`
-- [x] 2.5 A >10 MB file returns `413`
-- [x] 2.6 `curl -F image=@receipt.jpg` returns `200` and a well-formed `ParsedReceipt`
-- [x] 2.7 Unauthenticated `curl` returns `401`
+- [x] 2.1 `npx astro sync` regenerates types without error — 3966d6c
+- [x] 2.2 Linting passes: `npm run lint` — 3966d6c
+- [x] 2.3 Build passes: `npm run build` — 3966d6c
+- [x] 2.4 With secrets unset, `POST /api/receipts/parse` returns `503` — 3966d6c
+- [x] 2.5 A >10 MB file returns `413` — 3966d6c
+- [x] 2.6 `curl -F image=@receipt.jpg` returns `200` and a well-formed `ParsedReceipt` — 3966d6c
+- [x] 2.7 Unauthenticated `curl` returns `401` — 3966d6c
 
 #### Manual
 
-- [x] 2.8 Red config banner appears when either secret is missing, disappears once both are set
-- [x] 2.9 AI Gateway dashboard shows the request with **no request or response body logged**
-- [x] 2.10 A real paragon returns plausible items; `RABAT`/`OPUST` lines are not products
-- [x] 2.11 A non-receipt photo returns an empty item list rather than invented items
-- [x] 2.12 Wall-clock latency of a real parse noted
+- [x] 2.8 Red config banner appears when either secret is missing, disappears once both are set — 3966d6c
+- [x] 2.9 AI Gateway dashboard shows the request with **no request or response body logged** — 3966d6c
+- [x] 2.10 A real paragon returns plausible items; `RABAT`/`OPUST` lines are not products — 3966d6c
+- [x] 2.11 A non-receipt photo returns an empty item list rather than invented items — 3966d6c
+- [x] 2.12 Wall-clock latency of a real parse noted — 3966d6c
 
 ### Phase 3: Dashboard capture and review UI
 
 #### Automated
 
-- [ ] 3.1 Linting passes: `npm run lint`
-- [ ] 3.2 Build passes: `npm run build`
+- [x] 3.1 Linting passes: `npm run lint`
+- [x] 3.2 Build passes: `npm run build`
 
 #### Manual
 
-- [ ] 3.3 Photographing a real paragon produces a review panel within the timeout, with continuous progress
-- [ ] 3.4 Editing an amount recomputes the delta live; editing a category updates that row only
-- [ ] 3.5 Confirm writes every item to the selected day; list and calendar update without reload
-- [ ] 3.6 Reload shows entries persisted with descriptions
-- [ ] 3.7 Confirm is hard-blocked while any item lacks a category
-- [ ] 3.8 Confirm is soft-blocked on a non-zero delta until acknowledged
-- [ ] 3.9 Total-only button saves exactly one entry at the printed total
-- [ ] 3.10 Changing the calendar day mid-review retargets the confirm correctly
-- [ ] 3.11 Cancelling mid-parse returns to idle silently, with no timeout message
-- [ ] 3.12 Network failure mid-parse shows a network error; the manual form still works
-- [ ] 3.13 A faded or crumpled receipt tried and its behaviour noted
-- [ ] 3.14 With secrets unset, the Paragon section explains unavailability rather than throwing
+- [x] 3.3 Photographing a real paragon produces a review panel within the timeout, with continuous progress
+- [x] 3.4 Editing an amount recomputes the delta live; editing a category updates that row only
+- [x] 3.5 Confirm writes every item to the selected day; list and calendar update without reload
+- [x] 3.6 Reload shows entries persisted with descriptions
+- [x] 3.7 Confirm is hard-blocked while any item lacks a category
+- [x] 3.8 Confirm is soft-blocked on a non-zero delta until acknowledged
+- [x] 3.9 Total-only button saves exactly one entry at the printed total
+- [x] 3.10 Changing the calendar day mid-review retargets the confirm correctly
+- [x] 3.11 Cancelling mid-parse returns to idle silently, with no timeout message
+- [x] 3.12 Network failure mid-parse shows a network error; the manual form still works
+- [x] 3.13 A faded or crumpled receipt tried and its behaviour noted
+- [x] 3.14 With secrets unset, the Paragon section explains unavailability rather than throwing
 
 ### Phase 4: Live accuracy assessment
 

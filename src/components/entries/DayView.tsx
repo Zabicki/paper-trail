@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import MonthCalendar from "./MonthCalendar";
 import EntryForm from "./EntryForm";
 import DayEntriesList from "./DayEntriesList";
+import ReceiptCapture from "@/components/receipts/ReceiptCapture";
 import { monthOf, toLocalDateString } from "./date-utils";
 import type { Category, Entry, EntryType } from "@/types";
 
@@ -122,6 +123,25 @@ export default function DayView() {
     setCalendarRefreshKey((key) => key + 1);
   }
 
+  // handleSaved's shape for N rows. The date comparison and the dedupe are the
+  // same guards for the same reasons; what differs is that the calendar key is
+  // bumped exactly once rather than per entry, because a 30-item receipt would
+  // otherwise refetch the month 30 times.
+  function handleBatchSaved(saved: Entry[]) {
+    const forSelectedDay = saved.filter((entry) => entry.occurredOn === selectedDateRef.current);
+    if (forSelectedDay.length > 0) {
+      setEntries((prev) => {
+        if (prev === null) {
+          return prev;
+        }
+        const known = new Set(prev.map((existing) => existing.id));
+        const additions = forSelectedDay.filter((entry) => !known.has(entry.id));
+        return additions.length > 0 ? [...prev, ...additions] : prev;
+      });
+    }
+    setCalendarRefreshKey((key) => key + 1);
+  }
+
   function handleUpdated(entry: Entry) {
     if (entry.occurredOn === selectedDateRef.current) {
       // Upsert: an edit that only changed the amount replaces the row in
@@ -178,6 +198,22 @@ export default function DayView() {
           />
         )}
       </div>
+
+      {expenseCategories !== null && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Paragon</h2>
+          {/* Deliberately NOT keyed on selectedDate, unlike DayEntriesList
+              below: remounting would throw away a parse the user has already
+              waited multiple seconds for. Moving the calendar mid-review is a
+              supported action — occurredOn is a live prop and the confirm
+              reads it at click time. */}
+          <ReceiptCapture
+            expenseCategories={expenseCategories}
+            occurredOn={selectedDate}
+            onBatchSaved={handleBatchSaved}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Wpisy tego dnia</h2>
