@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toLocalDateString } from "@/components/entries/date-utils";
 import CategoryDonut from "./CategoryDonut";
 import CategoryRanking from "./CategoryRanking";
+import CategoryTrendChart from "./CategoryTrendChart";
 import { resolveDistribution } from "./distribution";
 import { bucketFor, resolveRange, type RangePreset } from "./range";
 import type { CategorySummary } from "@/types";
@@ -52,6 +53,16 @@ function CategoriesBody({ summary, loadError, expanded, onToggleExpanded }: Cate
           be in, exactly as OverviewBody covers Board A's two. */}
       <CategoryDonut distribution={distribution} expanded={expanded} />
       <CategoryRanking distribution={distribution} expanded={expanded} onToggleExpanded={onToggleExpanded} />
+      {/* No `expanded` — B3 stays on the collapsed set by design; see the note
+          in CategoryTrendChart. The range is rebuilt from the summary because
+          zero-filling needs the full bucket sequence, not just the buckets
+          that came back. */}
+      <CategoryTrendChart
+        distribution={distribution}
+        points={summary.points}
+        range={{ from: summary.from, to: summary.to }}
+        bucket={summary.bucket}
+      />
     </div>
   );
 }

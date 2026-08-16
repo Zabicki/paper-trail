@@ -586,37 +586,37 @@ Rollback is `drop function public.entries_category_summary(date, date, text, boo
 
 #### Automated
 
-- [x] 4.1 `npm run lint` passes
-- [x] 4.2 `npx astro check` reports 0 errors
-- [x] 4.3 `npm run build` passes
+- [x] 4.1 `npm run lint` passes — 115e58f
+- [x] 4.2 `npx astro check` reports 0 errors — 115e58f
+- [x] 4.3 `npm run build` passes — 115e58f
 
 #### Manual
 
-- [x] 4.4 At most 9 arcs; centre total matches the ranking sum and Board A's tile
-- [x] 4.5 Arc order and colours match the ranking exactly
-- [x] 4.6 Tooltip shows the Polish name, a `zł` amount and the correct swatch
-- [x] 4.7 Expanding `Pozostałe` splits the grey arc in place; collapsing restores it
-- [x] 4.8 A single-category range renders a full ring with a legible centre total
-- [x] 4.9 Recurring filter removes arcs and re-proportions the rest
-- [x] 4.10 Legible on a narrow viewport with no centre-label overlap
-- [x] 4.11 Keyboard focus reaches the chart; no `jsx-a11y` violation in lint
+- [x] 4.4 At most 9 arcs; centre total matches the ranking sum and Board A's tile — 115e58f
+- [x] 4.5 Arc order and colours match the ranking exactly — 115e58f
+- [x] 4.6 Tooltip shows the Polish name, a `zł` amount and the correct swatch — 115e58f
+- [x] 4.7 Expanding `Pozostałe` splits the grey arc in place; collapsing restores it — 115e58f
+- [x] 4.8 A single-category range renders a full ring with a legible centre total — 115e58f
+- [x] 4.9 Recurring filter removes arcs and re-proportions the rest — 115e58f
+- [x] 4.10 Legible on a narrow viewport with no centre-label overlap — 115e58f
+- [x] 4.11 Keyboard focus reaches the chart; no `jsx-a11y` violation in lint — 115e58f
 
 ### Phase 5: Kategorie w czasie (B3)
 
 #### Automated
 
-- [ ] 5.1 `npm run lint` passes
-- [ ] 5.2 `npx astro check` reports 0 errors
-- [ ] 5.3 `npm run build` passes with the reports island in its own chunk
+- [x] 5.1 `npm run lint` passes
+- [x] 5.2 `npx astro check` reports 0 errors
+- [x] 5.3 `npm run build` passes with the reports island in its own chunk
 
 #### Manual
 
-- [ ] 5.4 Bucketing shifts day → week → month across presets with no extra control
-- [ ] 5.5 Weeks start on Monday, matching Board A and the dashboard calendar
-- [ ] 5.6 Stack heights equal each bucket's expense total and sum to the donut centre
-- [ ] 5.7 Segment colours match the donut and ranking, and are stable across bars
-- [ ] 5.8 Expanding `Pozostałe` deliberately leaves this chart on the collapsed set
-- [ ] 5.9 Recurring filter removes those segments and the monthly step disappears
-- [ ] 5.10 An empty bucket renders as a gap, not a missing bar position
-- [ ] 5.11 Legible on a narrow viewport at both 7-day and full-year ranges
-- [ ] 5.12 Two seed users see charts derived only from their own categories
+- [x] 5.4 Bucketing shifts day → week → month across presets with no extra control
+- [x] 5.5 Weeks start on Monday, matching Board A and the dashboard calendar
+- [x] 5.6 Stack heights equal each bucket's expense total and sum to the donut centre
+- [x] 5.7 Segment colours match the donut and ranking, and are stable across bars
+- [x] 5.8 Expanding `Pozostałe` deliberately leaves this chart on the collapsed set
+- [x] 5.9 Recurring filter removes those segments and the monthly step disappears
+- [x] 5.10 An empty bucket renders as a gap, not a missing bar position
+- [x] 5.11 Legible on a narrow viewport at both 7-day and full-year ranges
+- [x] 5.12 Two seed users see charts derived only from their own categories
