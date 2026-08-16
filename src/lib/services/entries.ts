@@ -4,20 +4,53 @@ import type { Category, CategoryColor, CategoryKind, Entry, EntryType } from "@/
 
 type SupabaseClient = NonNullable<ReturnType<typeof createClient>>;
 
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// Mirrors the `char_length(description) <= 200` check added by
+// 20260816140000_add_entry_description.sql. Both bounds exist on purpose: the
+// database's is the hallucination backstop, this one is what turns an
+// over-long value into a 400 instead of a 500.
+const DESCRIPTION_MAX = 200;
+
 export const createEntrySchema = z.object({
   amount: z.number().positive().max(999999.99),
   categoryId: z.number().int().positive(),
-  occurredOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  occurredOn: z.string().regex(DATE_PATTERN),
   type: z.enum(["expense", "income"]).default("expense"),
+  description: z.string().trim().min(1).max(DESCRIPTION_MAX).nullish(),
 });
 
 // An entry's type is fixed at creation: changing it would also have to change
 // the category (kinds must match), which is a different entry, not an edit.
 // Delete and re-add instead. Everything else about an entry is correctable.
-export const updateEntrySchema = createEntrySchema.omit({ type: true });
+//
+// description is omitted for a different reason: it records where the entry
+// came from, not what it is. Editing an amount or a category must leave it
+// alone. Omitting it here rather than ignoring it in updateEntry is what stops
+// PATCH silently accepting a field nothing ever writes.
+export const updateEntrySchema = createEntrySchema.omit({ type: true, description: true });
+
+// One shared occurredOn for the whole receipt, and no `type` parameter at all:
+// receipt items are always expenses (see the plan's "No income receipts").
+// The 100-item cap matches the service-layer cap in the receipts parser — a
+// paragon longer than that is a garbled parse, not a big shop.
+export const createEntriesBatchSchema = z.object({
+  occurredOn: z.string().regex(DATE_PATTERN),
+  items: z
+    .array(
+      z.object({
+        amount: z.number().positive().max(999999.99),
+        categoryId: z.number().int().positive(),
+        description: z.string().trim().min(1).max(DESCRIPTION_MAX).nullish(),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
 
 export type CreateEntryInput = z.infer<typeof createEntrySchema>;
 export type UpdateEntryInput = z.infer<typeof updateEntrySchema>;
+export type CreateEntriesBatchInput = z.infer<typeof createEntriesBatchSchema>;
 
 export class CategoryNotFoundError extends Error {
   constructor() {
@@ -52,10 +85,11 @@ interface EntryRow {
   occurred_on: string;
   type: "expense" | "income";
   created_at: string;
+  description: string | null;
   category: { id: number; name: string; color: CategoryColor };
 }
 
-const SELECT_COLUMNS = "id, amount, occurred_on, type, created_at, category:categories(id, name, color)";
+const SELECT_COLUMNS = "id, amount, occurred_on, type, created_at, description, category:categories(id, name, color)";
 
 function toDto(row: EntryRow): Entry {
   return {
@@ -65,6 +99,7 @@ function toDto(row: EntryRow): Entry {
     type: row.type,
     category: row.category,
     createdAt: row.created_at,
+    description: row.description,
   };
 }
 
@@ -127,6 +162,7 @@ export async function createEntry(supabase: SupabaseClient, input: CreateEntryIn
       category_id: input.categoryId,
       occurred_on: input.occurredOn,
       type: input.type,
+      description: input.description ?? null,
     })
     .select(SELECT_COLUMNS)
     .single();
@@ -135,6 +171,75 @@ export async function createEntry(supabase: SupabaseClient, input: CreateEntryIn
     throw error;
   }
   return toDto(data as unknown as EntryRow);
+}
+
+// The receipt-confirm write path. Two round trips regardless of item count,
+// which is the whole point: a loop over createEntry would cost 2N of them and
+// would not be atomic — a failure halfway through would leave a half-filed
+// receipt with no way to tell which lines landed.
+//
+// It re-implements the two app-layer-only invariants that assertCategoryUsable
+// guards on the single-entry path (see the comment at that function). Neither
+// is provable by pgTAP — it drives raw SQL and cannot reach TypeScript — so
+// both are named in the plan's Testing Strategy as permanently manual-only:
+//
+//   1. Ownership. The FK on entries.category_id checks row existence only;
+//      Postgres FK constraints are not subject to RLS on the referenced table.
+//      The select below IS RLS-scoped, so it is what actually stops a receipt
+//      attaching to another user's category.
+//   2. type ↔ kind. Nothing in the schema ties the columns together. Every row
+//      written here is an expense, so every category must be kind 'expense'.
+//
+// Plus a third, specific to this path: soft-deleted categories are EXCLUDED.
+// assertCategoryUsable deliberately admits them when correcting an entry
+// already filed under one, but a receipt confirm creates new entries — filing
+// a fresh purchase into a category the user has deleted would resurrect it in
+// every report with no way to have chosen it.
+//
+// Any future change here must re-verify all three by hand.
+export async function createEntriesBatch(supabase: SupabaseClient, input: CreateEntriesBatchInput): Promise<Entry[]> {
+  const requestedIds = [...new Set(input.items.map((item) => item.categoryId))];
+
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, kind")
+    .in("id", requestedIds)
+    .is("deleted_at", null);
+
+  if (error) {
+    throw error;
+  }
+
+  const usable = data as { id: number; kind: CategoryKind }[];
+  // Fewer rows back than ids asked for means at least one id is absent,
+  // soft-deleted, or someone else's — indistinguishable on purpose, exactly as
+  // assertCategoryUsable's single 404 is.
+  if (usable.length < requestedIds.length) {
+    throw new CategoryNotFoundError();
+  }
+  if (usable.some((category) => category.kind !== "expense")) {
+    throw new CategoryKindMismatchError();
+  }
+
+  // One statement, therefore one transaction: either every line of the receipt
+  // lands or none does. No .single() — the whole point is N rows.
+  const { data: inserted, error: insertError } = await supabase
+    .from("entries")
+    .insert(
+      input.items.map((item) => ({
+        amount: item.amount,
+        category_id: item.categoryId,
+        occurred_on: input.occurredOn,
+        type: "expense",
+        description: item.description ?? null,
+      })),
+    )
+    .select(SELECT_COLUMNS);
+
+  if (insertError) {
+    throw insertError;
+  }
+  return (inserted as unknown as EntryRow[]).map(toDto);
 }
 
 export async function updateEntry(supabase: SupabaseClient, id: number, input: UpdateEntryInput): Promise<Entry> {

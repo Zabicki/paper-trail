@@ -35,7 +35,7 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | done |
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | done |
 | S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | planning |
-| S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | planning |
+| S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | in-progress |
 
 ## Streams
 
@@ -156,7 +156,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which provider carries out the classification, and does its accuracy clear the Secondary success bar (a majority of line items correctly categorised without correction)? Owner: user. **Block: yes.**
   - What is the parsing timeout, and what is the receipt-image retention window? Owner: user. **Block: yes** for the timeout; the retention half may dissolve entirely — see OQ-3.
 - **Risk:** This is the product differentiator and the slice most likely to consume the schedule, which is why it is `blocked` rather than optimistically sequenced. `infrastructure.md`'s pre-mortem predicts exactly how it goes wrong: reaching for the Node recipe (`sharp` to downscale, a storage bucket, a signed upload, a retention job), none of which runs on workerd. The Cloudflare Images binding is already provisioned for this purpose. Note also that FR-011 has a *floor*: below the Secondary bar, auto-assignment is slower than typing, so the feature is failing rather than merely imperfect — worth a spike against real receipts before committing the slice.
-- **Status:** planning
+- **Status:** in-progress
 
 ## Backlog Handoff
 

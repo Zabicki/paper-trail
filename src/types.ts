@@ -41,6 +41,11 @@ export interface Entry {
   type: EntryType;
   category: Pick<Category, "id" | "name" | "color">;
   createdAt: string;
+  // The receipt line-item name this entry came from (S-06), or null for
+  // anything typed into the manual form. Required rather than optional: the
+  // column always exists, it is the *value* that may be absent — and an
+  // optional field would let a caller forget it and read as "no receipt".
+  description: string | null;
 }
 
 // --- Aggregates (S-04) ---

@@ -1,7 +1,7 @@
 ---
 change_id: receipt-parsing
 title: AI receipt parsing — pick an LLM provider, model, and setup path
-status: planned
+status: implementing
 created: 2026-08-16
 updated: 2026-08-16
 archived_at: null

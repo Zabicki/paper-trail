@@ -485,19 +485,19 @@ The Gemini free tier is **contractually unavailable**: the Gemini API Additional
 
 #### Automated
 
-- [ ] 1.1 `npx supabase db reset` applies all migrations cleanly
-- [ ] 1.2 pgTAP suite passes: `npx supabase test db`
-- [ ] 1.3 Linting passes: `npm run lint`
-- [ ] 1.4 Build passes: `npm run build`
-- [ ] 1.5 `curl -X POST /api/receipts/entries` with 3 valid expense items returns `201` and 3 entries with descriptions
-- [ ] 1.6 `curl` with another user's `categoryId` returns `404` and inserts nothing
-- [ ] 1.7 `curl` with an income `categoryId` returns `400` and inserts nothing
-- [ ] 1.8 `curl` with `items: []` returns `400`
+- [x] 1.1 `npx supabase db reset` applies all migrations cleanly
+- [x] 1.2 pgTAP suite passes: `npx supabase test db`
+- [x] 1.3 Linting passes: `npm run lint`
+- [x] 1.4 Build passes: `npm run build`
+- [x] 1.5 `curl -X POST /api/receipts/entries` with 3 valid expense items returns `201` and 3 entries with descriptions
+- [x] 1.6 `curl` with another user's `categoryId` returns `404` and inserts nothing
+- [x] 1.7 `curl` with an income `categoryId` returns `400` and inserts nothing
+- [x] 1.8 `curl` with `items: []` returns `400`
 
 #### Manual
 
-- [ ] 1.9 `/dashboard` still renders; existing entries display unchanged
-- [ ] 1.10 Editing an existing entry still works and does not clear its description
+- [x] 1.9 `/dashboard` still renders; existing entries display unchanged
+- [x] 1.10 Editing an existing entry still works and does not clear its description
 
 ### Phase 2: Provider integration and the parse endpoint
 
