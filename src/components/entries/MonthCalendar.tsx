@@ -42,7 +42,7 @@ export default function MonthCalendar({
         if (!response.ok) {
           throw new Error("Nie udało się wczytać kalendarza.");
         }
-        const body = (await response.json()) as { dates: string[] };
+        const body = await response.json<{ dates: string[] }>();
         if (!cancelled.current) {
           setMissingDates(new Set(body.dates));
         }

@@ -39,6 +39,15 @@ export default defineConfig({
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
       SUPABASE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // Cloudflare AI Gateway credentials for receipt parsing (S-06). Optional
+      // for the same reason the Supabase pair is: the app must still boot and
+      // build without them — /api/receipts/parse answers 503 and the red config
+      // banner explains why, rather than the build failing. Note CF_ACCOUNT_ID
+      // is NOT the CLOUDFLARE_ACCOUNT_ID GitHub repo variable: that one is
+      // build-time only and unreadable from inside the Worker.
+      // Run `npx astro sync` after touching this block.
+      CF_AI_TOKEN: envField.string({ context: "server", access: "secret", optional: true }),
+      CF_ACCOUNT_ID: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
 });

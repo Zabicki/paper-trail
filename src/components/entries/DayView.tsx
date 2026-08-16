@@ -46,8 +46,8 @@ export default function DayView() {
         if (!expenseResponse.ok || !incomeResponse.ok) {
           throw new Error("Nie udało się wczytać kategorii.");
         }
-        const expense = (await expenseResponse.json()) as Category[];
-        const income = (await incomeResponse.json()) as Category[];
+        const expense = await expenseResponse.json<Category[]>();
+        const income = await incomeResponse.json<Category[]>();
         if (!cancelled.current) {
           setExpenseCategories(expense);
           setIncomeCategories(income);
@@ -75,7 +75,7 @@ export default function DayView() {
         if (!response.ok) {
           throw new Error("Nie udało się wczytać wpisów dnia.");
         }
-        const data = (await response.json()) as Entry[];
+        const data = await response.json<Entry[]>();
         if (!cancelled.current) {
           setEntries(data);
         }

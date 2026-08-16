@@ -5,7 +5,7 @@ export interface ApiErrorBody {
 
 export async function parseErrorBody(response: Response): Promise<ApiErrorBody> {
   try {
-    return (await response.json()) as ApiErrorBody;
+    return await response.json<ApiErrorBody>();
   } catch {
     return { error: "Coś poszło nie tak. Spróbuj ponownie." };
   }

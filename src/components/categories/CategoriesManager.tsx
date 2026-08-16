@@ -147,7 +147,7 @@ export default function CategoriesManager() {
           const body = await parseErrorBody(response);
           throw new Error(body.error);
         }
-        const data = (await response.json()) as Category[];
+        const data = await response.json<Category[]>();
         if (!cancelled.current) {
           setCategories(data);
         }
@@ -177,7 +177,7 @@ export default function CategoriesManager() {
         setAddError(await parseErrorBody(response));
         return;
       }
-      const created = (await response.json()) as Category;
+      const created = await response.json<Category>();
       setCategories((prev) => sortByName([...(prev ?? []), created]));
       setAddForm(EMPTY_FORM);
     } catch {
@@ -222,7 +222,7 @@ export default function CategoriesManager() {
         setEditError(await parseErrorBody(response));
         return;
       }
-      const updated = (await response.json()) as Category;
+      const updated = await response.json<Category>();
       setCategories((prev) => (prev ? sortByName(prev.map((c) => (c.id === id ? updated : c))) : prev));
       setEditingId(null);
     } catch {

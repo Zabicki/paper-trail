@@ -131,7 +131,7 @@ export default function ReportsView() {
         if (!response.ok) {
           throw new Error("Nie udało się wczytać podsumowania.");
         }
-        const data = (await response.json()) as EntriesSummary;
+        const data = await response.json<EntriesSummary>();
         if (!cancelled.current) {
           setSummary(data);
         }

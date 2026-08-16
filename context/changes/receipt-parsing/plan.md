@@ -485,39 +485,39 @@ The Gemini free tier is **contractually unavailable**: the Gemini API Additional
 
 #### Automated
 
-- [x] 1.1 `npx supabase db reset` applies all migrations cleanly
-- [x] 1.2 pgTAP suite passes: `npx supabase test db`
-- [x] 1.3 Linting passes: `npm run lint`
-- [x] 1.4 Build passes: `npm run build`
-- [x] 1.5 `curl -X POST /api/receipts/entries` with 3 valid expense items returns `201` and 3 entries with descriptions
-- [x] 1.6 `curl` with another user's `categoryId` returns `404` and inserts nothing
-- [x] 1.7 `curl` with an income `categoryId` returns `400` and inserts nothing
-- [x] 1.8 `curl` with `items: []` returns `400`
+- [x] 1.1 `npx supabase db reset` applies all migrations cleanly — 0412e51
+- [x] 1.2 pgTAP suite passes: `npx supabase test db` — 0412e51
+- [x] 1.3 Linting passes: `npm run lint` — 0412e51
+- [x] 1.4 Build passes: `npm run build` — 0412e51
+- [x] 1.5 `curl -X POST /api/receipts/entries` with 3 valid expense items returns `201` and 3 entries with descriptions — 0412e51
+- [x] 1.6 `curl` with another user's `categoryId` returns `404` and inserts nothing — 0412e51
+- [x] 1.7 `curl` with an income `categoryId` returns `400` and inserts nothing — 0412e51
+- [x] 1.8 `curl` with `items: []` returns `400` — 0412e51
 
 #### Manual
 
-- [x] 1.9 `/dashboard` still renders; existing entries display unchanged
-- [x] 1.10 Editing an existing entry still works and does not clear its description
+- [x] 1.9 `/dashboard` still renders; existing entries display unchanged — 0412e51
+- [x] 1.10 Editing an existing entry still works and does not clear its description — 0412e51
 
 ### Phase 2: Provider integration and the parse endpoint
 
 #### Automated
 
-- [ ] 2.1 `npx astro sync` regenerates types without error
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Build passes: `npm run build`
-- [ ] 2.4 With secrets unset, `POST /api/receipts/parse` returns `503`
-- [ ] 2.5 A >10 MB file returns `413`
-- [ ] 2.6 `curl -F image=@receipt.jpg` returns `200` and a well-formed `ParsedReceipt`
-- [ ] 2.7 Unauthenticated `curl` returns `401`
+- [x] 2.1 `npx astro sync` regenerates types without error
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Build passes: `npm run build`
+- [x] 2.4 With secrets unset, `POST /api/receipts/parse` returns `503`
+- [x] 2.5 A >10 MB file returns `413`
+- [x] 2.6 `curl -F image=@receipt.jpg` returns `200` and a well-formed `ParsedReceipt`
+- [x] 2.7 Unauthenticated `curl` returns `401`
 
 #### Manual
 
-- [ ] 2.8 Red config banner appears when either secret is missing, disappears once both are set
-- [ ] 2.9 AI Gateway dashboard shows the request with **no request or response body logged**
-- [ ] 2.10 A real paragon returns plausible items; `RABAT`/`OPUST` lines are not products
-- [ ] 2.11 A non-receipt photo returns an empty item list rather than invented items
-- [ ] 2.12 Wall-clock latency of a real parse noted
+- [x] 2.8 Red config banner appears when either secret is missing, disappears once both are set
+- [x] 2.9 AI Gateway dashboard shows the request with **no request or response body logged**
+- [x] 2.10 A real paragon returns plausible items; `RABAT`/`OPUST` lines are not products
+- [x] 2.11 A non-receipt photo returns an empty item list rather than invented items
+- [x] 2.12 Wall-clock latency of a real parse noted
 
 ### Phase 3: Dashboard capture and review UI
 

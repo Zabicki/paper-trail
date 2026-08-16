@@ -27,6 +27,15 @@
       },
     ],
   },
+  // Receipt downscaling (S-06). The adapter injects this binding at build time
+  // because imageService defaults to "cloudflare-binding" (see astro.config.mjs),
+  // but `wrangler types` only sees what is declared here — without it env.IMAGES
+  // is a type error even though it works at runtime. The adapter's customizer
+  // skips its own injection when the key is already present, so this is
+  // idempotent rather than a duplicate.
+  "images": {
+    "binding": "IMAGES",
+  },
   "assets": {
     "binding": "ASSETS",
     // Must be ./dist/client, NOT ./dist. The Astro adapter writes its own

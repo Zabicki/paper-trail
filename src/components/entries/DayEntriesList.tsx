@@ -83,7 +83,7 @@ export default function DayEntriesList({
         setEditError(await parseErrorBody(response));
         return;
       }
-      const updated = (await response.json()) as Entry;
+      const updated = await response.json<Entry>();
       // The parent decides what happens to the row — if the date changed, the
       // entry now belongs to a different day's list entirely.
       onUpdated(updated);
