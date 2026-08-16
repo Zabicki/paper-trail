@@ -610,39 +610,39 @@ Rollback is `drop function public.entries_summary(date, date, text, boolean)` in
 
 #### Automated
 
-- [x] 4.1 `npm run lint` passes
-- [x] 4.2 `npx astro check` reports 0 errors
-- [x] 4.3 `npm run build` passes
+- [x] 4.1 `npm run lint` passes — f38ac4c
+- [x] 4.2 `npx astro check` reports 0 errors — f38ac4c
+- [x] 4.3 `npm run build` passes — f38ac4c
 
 #### Manual
 
-- [x] 4.4 Signed out, `/reports` redirects to `/auth/signin`
-- [x] 4.5 Default view is "Ostatnie 30 dni" with the toggle off
-- [x] 4.6 Preset change updates URL, tiles and history; back button reverses it
-- [x] 4.7 Reloading `?range=ytd&recurring=hidden` restores exactly that view
-- [x] 4.8 Toggle lowers Wydatki only
-- [x] 4.9 Bilans is visually distinct from the two gross tiles
-- [x] 4.10 Empty range shows `Brak wpisów w tym zakresie.` with the control bar usable
-- [x] 4.11 Empty previous period renders `—` for deltas
-- [x] 4.12 Toggle stays visible while scrolling
-- [x] 4.13 Preset chips remain 44px-tappable on a narrow viewport
+- [x] 4.4 Signed out, `/reports` redirects to `/auth/signin` — f38ac4c
+- [x] 4.5 Default view is "Ostatnie 30 dni" with the toggle off — f38ac4c
+- [x] 4.6 Preset change updates URL, tiles and history; back button reverses it — f38ac4c
+- [x] 4.7 Reloading `?range=ytd&recurring=hidden` restores exactly that view — f38ac4c
+- [x] 4.8 Toggle lowers Wydatki only — f38ac4c
+- [x] 4.9 Bilans is visually distinct from the two gross tiles — f38ac4c
+- [x] 4.10 Empty range shows `Brak wpisów w tym zakresie.` with the control bar usable — f38ac4c
+- [x] 4.11 Empty previous period renders `—` for deltas — f38ac4c
+- [x] 4.12 Toggle stays visible while scrolling — f38ac4c
+- [x] 4.13 Preset chips remain 44px-tappable on a narrow viewport — f38ac4c
 
 ### Phase 5: Charts A1 and A3
 
 #### Automated
 
-- [ ] 5.1 `npm run lint` passes
-- [ ] 5.2 `npx astro check` reports 0 errors
-- [ ] 5.3 `npm run build` passes with a separate reports island chunk
+- [x] 5.1 `npm run lint` passes
+- [x] 5.2 `npx astro check` reports 0 errors
+- [x] 5.3 `npm run build` passes with a separate reports island chunk
 
 #### Manual
 
-- [ ] 5.4 Bucketing shifts day → week → month across presets with no extra control
-- [ ] 5.5 Weeks start on Monday, matching the dashboard calendar
-- [ ] 5.6 Tooltips show Polish series names and `zł` values; axis ticks do not overlap
-- [ ] 5.7 The recurring toggle visibly changes both charts, not only the tiles
-- [ ] 5.8 A3's previous-period line reads as subordinate
-- [ ] 5.9 A range predating the account shows only the current line
-- [ ] 5.10 Keyboard arrow keys move between data points; no `jsx-a11y` violation in lint
-- [ ] 5.11 Charts render legibly on a narrow viewport at both 7-day and full-year ranges
-- [ ] 5.12 Two seed users see charts derived only from their own entries
+- [x] 5.4 Bucketing shifts day → week → month across presets with no extra control
+- [x] 5.5 Weeks start on Monday, matching the dashboard calendar
+- [x] 5.6 Tooltips show Polish series names and `zł` values; axis ticks do not overlap
+- [x] 5.7 The recurring toggle visibly changes both charts, not only the tiles
+- [x] 5.8 A3's previous-period line reads as subordinate
+- [x] 5.9 A range predating the account shows only the current line
+- [x] 5.10 Keyboard arrow keys move between data points; no `jsx-a11y` violation in lint
+- [x] 5.11 Charts render legibly on a narrow viewport at both 7-day and full-year ranges
+- [x] 5.12 Two seed users see charts derived only from their own entries

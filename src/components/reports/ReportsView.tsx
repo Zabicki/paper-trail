@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import { toLocalDateString } from "@/components/entries/date-utils";
+import CumulativeChart from "./CumulativeChart";
 import KpiTiles from "./KpiTiles";
 import RangePicker from "./RangePicker";
 import RecurringToggle from "./RecurringToggle";
-import { bucketFor, DEFAULT_RANGE_PRESET, isRangePreset, resolveRange, type RangePreset } from "./range";
-import type { EntriesSummary } from "@/types";
+import TrendChart from "./TrendChart";
+import {
+  bucketFor,
+  DEFAULT_RANGE_PRESET,
+  enumerateBuckets,
+  isRangePreset,
+  resolveRange,
+  type RangePreset,
+} from "./range";
+import type { EntriesSummary, RangeSummary, SummaryBucket, SummaryPoint } from "@/types";
 
 interface ViewState {
   preset: RangePreset;
@@ -39,6 +48,18 @@ interface ReportsBodyProps {
   loadError: string | null;
 }
 
+// The aggregate returns only buckets that actually have entries, so a bar chart
+// fed straight from its rows would close every gap — putting Tuesday's bar
+// where Wednesday belongs and asserting a continuity the data doesn't have.
+// Filling against the full bucket sequence makes an empty day render as the
+// zero it is.
+function zeroFilledPoints(range: RangeSummary, bucket: SummaryBucket): SummaryPoint[] {
+  const byBucket = new Map(range.points.map((point) => [point.bucketStart, point]));
+  return enumerateBuckets(range, bucket).map(
+    (bucketStart) => byBucket.get(bucketStart) ?? { bucketStart, expense: 0, income: 0 },
+  );
+}
+
 // The strict three-branch early return the codebase uses (error → loading →
 // empty → content), per DayEntriesList. It is a child rather than inline
 // branching so the control bar above it stays mounted in every branch: a
@@ -58,7 +79,16 @@ function ReportsBody({ summary, loadError }: ReportsBodyProps) {
     return <p className="text-muted-foreground text-sm">Brak wpisów w tym zakresie.</p>;
   }
 
-  return <KpiTiles summary={summary} />;
+  // Both charts read the summary already in hand — neither fetches, and neither
+  // carries its own loading or error state, because the three branches above
+  // already cover every case they could be in.
+  return (
+    <div className="flex flex-col gap-8">
+      <KpiTiles summary={summary} />
+      <TrendChart points={zeroFilledPoints(summary.current, summary.bucket)} bucket={summary.bucket} />
+      <CumulativeChart summary={summary} />
+    </div>
+  );
 }
 
 export default function ReportsView() {

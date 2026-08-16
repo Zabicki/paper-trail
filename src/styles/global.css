@@ -108,6 +108,24 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Chart series colours, named by purpose so no chart file has to refer to
+     --chart-N by index. They alias the existing theme tokens rather than
+     introducing new literals, which is what keeps dark mode free: .dark
+     redefines --chart-1/--chart-2 and these follow.
+
+     --color-income lands on --chart-2, the emerald that already means "income"
+     in DayEntriesList's amounts, so the colour carries the same meaning on
+     both pages. These are *series* colours; CATEGORY_COLORS stays reserved for
+     per-category fills in S-05.
+
+     Note for chart authors: shadcn's ChartStyle writes a scoped --color-<key>
+     for every ChartConfig entry that declares a `color`. A config keyed
+     `expense` with `color: "var(--color-expense)"` would therefore define the
+     variable in terms of itself. Give those entries a `label` only and read
+     the token straight off fill/stroke. */
+  --color-expense: var(--chart-1);
+  --color-income: var(--chart-2);
 }
 
 @utility bg-cosmic {
