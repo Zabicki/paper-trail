@@ -605,18 +605,18 @@ Rollback is `drop function public.entries_category_summary(date, date, text, boo
 
 #### Automated
 
-- [x] 5.1 `npm run lint` passes
-- [x] 5.2 `npx astro check` reports 0 errors
-- [x] 5.3 `npm run build` passes with the reports island in its own chunk
+- [x] 5.1 `npm run lint` passes — 7d1c6ee
+- [x] 5.2 `npx astro check` reports 0 errors — 7d1c6ee
+- [x] 5.3 `npm run build` passes with the reports island in its own chunk — 7d1c6ee
 
 #### Manual
 
-- [x] 5.4 Bucketing shifts day → week → month across presets with no extra control
-- [x] 5.5 Weeks start on Monday, matching Board A and the dashboard calendar
-- [x] 5.6 Stack heights equal each bucket's expense total and sum to the donut centre
-- [x] 5.7 Segment colours match the donut and ranking, and are stable across bars
-- [x] 5.8 Expanding `Pozostałe` deliberately leaves this chart on the collapsed set
-- [x] 5.9 Recurring filter removes those segments and the monthly step disappears
-- [x] 5.10 An empty bucket renders as a gap, not a missing bar position
-- [x] 5.11 Legible on a narrow viewport at both 7-day and full-year ranges
-- [x] 5.12 Two seed users see charts derived only from their own categories
+- [x] 5.4 Bucketing shifts day → week → month across presets with no extra control — 7d1c6ee
+- [x] 5.5 Weeks start on Monday, matching Board A and the dashboard calendar — 7d1c6ee
+- [x] 5.6 Stack heights equal each bucket's expense total and sum to the donut centre — 7d1c6ee
+- [x] 5.7 Segment colours match the donut and ranking, and are stable across bars — 7d1c6ee
+- [x] 5.8 Expanding `Pozostałe` deliberately leaves this chart on the collapsed set — 7d1c6ee
+- [x] 5.9 Recurring filter removes those segments and the monthly step disappears — 7d1c6ee
+- [x] 5.10 An empty bucket renders as a gap, not a missing bar position — 7d1c6ee
+- [x] 5.11 Legible on a narrow viewport at both 7-day and full-year ranges — 7d1c6ee
+- [x] 5.12 Two seed users see charts derived only from their own categories — 7d1c6ee

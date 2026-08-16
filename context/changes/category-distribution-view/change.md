@@ -1,7 +1,7 @@
 ---
 change_id: category-distribution-view
 title: Category distribution view, informed by the per-category chart findings
-status: implementing
+status: implemented
 created: 2026-08-16
 updated: 2026-08-16
 archived_at: null
