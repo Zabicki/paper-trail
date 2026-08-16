@@ -595,37 +595,37 @@ Rollback is `drop function public.entries_summary(date, date, text, boolean)` in
 
 #### Automated
 
-- [x] 3.1 `npm run lint` passes with the generated `chart.tsx` in the tree
-- [x] 3.2 `npx astro check` reports 0 errors
-- [x] 3.3 `npm run build` passes
-- [x] 3.4 `package.json` records `recharts` at an exact version with no caret
+- [x] 3.1 `npm run lint` passes with the generated `chart.tsx` in the tree — 302bb07
+- [x] 3.2 `npx astro check` reports 0 errors — 302bb07
+- [x] 3.3 `npm run build` passes — 302bb07
+- [x] 3.4 `package.json` records `recharts` at an exact version with no caret — 302bb07
 
 #### Manual
 
-- [x] 3.5 `/dashboard` renders `12,50 zł` and the ≤4-interaction / ≤10-second entry path is unaffected
-- [x] 3.6 All four shipped pages read correctly with the dark token set active
-- [x] 3.7 Recurring badge, category colour dots and emerald income amounts still read correctly
+- [x] 3.5 `/dashboard` renders `12,50 zł` and the ≤4-interaction / ≤10-second entry path is unaffected — 302bb07
+- [x] 3.6 All four shipped pages read correctly with the dark token set active — 302bb07
+- [x] 3.7 Recurring badge, category colour dots and emerald income amounts still read correctly — 302bb07
 
 ### Phase 4: `/reports` page — controls and KPI tiles
 
 #### Automated
 
-- [ ] 4.1 `npm run lint` passes
-- [ ] 4.2 `npx astro check` reports 0 errors
-- [ ] 4.3 `npm run build` passes
+- [x] 4.1 `npm run lint` passes
+- [x] 4.2 `npx astro check` reports 0 errors
+- [x] 4.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 4.4 Signed out, `/reports` redirects to `/auth/signin`
-- [ ] 4.5 Default view is "Ostatnie 30 dni" with the toggle off
-- [ ] 4.6 Preset change updates URL, tiles and history; back button reverses it
-- [ ] 4.7 Reloading `?range=ytd&recurring=hidden` restores exactly that view
-- [ ] 4.8 Toggle lowers Wydatki only
-- [ ] 4.9 Bilans is visually distinct from the two gross tiles
-- [ ] 4.10 Empty range shows `Brak wpisów w tym zakresie.` with the control bar usable
-- [ ] 4.11 Empty previous period renders `—` for deltas
-- [ ] 4.12 Toggle stays visible while scrolling
-- [ ] 4.13 Preset chips remain 44px-tappable on a narrow viewport
+- [x] 4.4 Signed out, `/reports` redirects to `/auth/signin`
+- [x] 4.5 Default view is "Ostatnie 30 dni" with the toggle off
+- [x] 4.6 Preset change updates URL, tiles and history; back button reverses it
+- [x] 4.7 Reloading `?range=ytd&recurring=hidden` restores exactly that view
+- [x] 4.8 Toggle lowers Wydatki only
+- [x] 4.9 Bilans is visually distinct from the two gross tiles
+- [x] 4.10 Empty range shows `Brak wpisów w tym zakresie.` with the control bar usable
+- [x] 4.11 Empty previous period renders `—` for deltas
+- [x] 4.12 Toggle stays visible while scrolling
+- [x] 4.13 Preset chips remain 44px-tappable on a narrow viewport
 
 ### Phase 5: Charts A1 and A3
 

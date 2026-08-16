@@ -1,0 +1,23 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Topbar from "@/components/Topbar.astro";
+import ReportsView from "@/components/reports/ReportsView";
+
+// max-w-4xl rather than the max-w-2xl the entry pages use: the charts this page
+// grows in Phase 5 need the horizontal room, and the KPI row already reads
+// better as three columns than two.
+---
+
+<Layout title="Raporty">
+  <div class="bg-cosmic min-h-screen p-4">
+    <div class="mx-auto max-w-4xl">
+      <Topbar />
+      <div class="rounded-2xl border border-white/10 bg-white/10 p-6 text-white backdrop-blur-xl">
+        <h1 class="mb-4 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-2xl font-bold text-transparent">
+          Raporty
+        </h1>
+        <ReportsView client:load />
+      </div>
+    </div>
+  </div>
+</Layout>
