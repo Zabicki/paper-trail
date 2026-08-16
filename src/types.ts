@@ -80,3 +80,43 @@ export interface EntriesSummary {
   // and the cumulative chart's comparison line.
   previous: RangeSummary;
 }
+
+// --- Category aggregates (S-05) ---
+//
+// A second aggregate family alongside the S-04 group, for the same reason it
+// is separate from Entry: these are sums keyed by category, not entries. The
+// board is expense-only — public.entries_category_summary hardcodes
+// `type = 'expense'` — so nothing here carries an expense/income dimension.
+
+export interface CategoryTotal {
+  categoryId: number;
+  name: string;
+  color: CategoryColor;
+  total: number;
+}
+
+export interface CategoryBucketPoint {
+  bucketStart: string;
+  // Keyed by STRINGIFIED categoryId, not by number, because a Recharts
+  // `dataKey` is a string and the stacked chart reads these points directly as
+  // its chart data. A number-keyed record would force a per-render remap of
+  // every point. This is the only reason for the string keys.
+  totals: Record<string, number>;
+}
+
+export interface CategorySummary {
+  bucket: SummaryBucket;
+  from: string;
+  to: string;
+  // Range grand totals per category, sorted descending. This order is what
+  // the client's top-N selection and colour assignment both walk, so it is
+  // tie-broken by name to stay stable across identical loads.
+  categories: CategoryTotal[];
+  // Only buckets that actually have expenses. Zero-filling gaps is the
+  // caller's job, matching RangeSummary.points.
+  points: CategoryBucketPoint[];
+  // From the `()` grouping-set row — an exact Postgres numeric, never a
+  // JavaScript sum of `categories[].total`. Every percentage on the board
+  // divides by this.
+  total: number;
+}

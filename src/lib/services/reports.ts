@@ -1,7 +1,17 @@
 import { z } from "zod";
 import type { PostgrestError } from "@supabase/supabase-js";
 import type { createClient } from "@/lib/supabase";
-import type { EntriesSummary, RangeSummary, SummaryBucket, SummaryPoint } from "@/types";
+import { DEFAULT_CATEGORY_COLOR } from "@/types";
+import type {
+  CategoryBucketPoint,
+  CategoryColor,
+  CategorySummary,
+  CategoryTotal,
+  EntriesSummary,
+  RangeSummary,
+  SummaryBucket,
+  SummaryPoint,
+} from "@/types";
 
 type SupabaseClient = NonNullable<ReturnType<typeof createClient>>;
 
@@ -203,4 +213,103 @@ export async function getEntriesSummary(supabase: SupabaseClient, input: Summary
     current: toRangeSummary(current, currentResult.data ?? []),
     previous: toRangeSummary(previous, previousResult.data ?? []),
   };
+}
+
+// --- Category summary (S-05) ---
+//
+// Deliberately in this module rather than a category-reports.ts of its own, so
+// MAX_BUCKETS, RangeTooLargeError, bucketCountUpperBound and the date helpers
+// stay single-copy. They already exist in a second copy in
+// src/components/reports/range.ts (see the note above); a third would be the
+// point at which they stop agreeing.
+
+// Same boundary-assertion pattern as SummaryRow. `category_color` is typed as
+// CategoryColor rather than string because the categories table's CHECK
+// constraint restricts the column to the CATEGORY_COLORS palette — the same
+// assumption EntryRow makes in entries.ts:55.
+interface CategorySummaryRow {
+  bucket_start: string | null;
+  category_id: number | null;
+  category_name: string | null;
+  category_color: CategoryColor | null;
+  total: number | string;
+}
+
+interface CategorySummaryResponse {
+  data: CategorySummaryRow[] | null;
+  error: PostgrestError | null;
+}
+
+function toCategorySummary(range: DateRange, bucket: SummaryBucket, rows: CategorySummaryRow[]): CategorySummary {
+  const categories: CategoryTotal[] = [];
+  const byBucket = new Map<string, CategoryBucketPoint>();
+  let total = 0;
+
+  for (const row of rows) {
+    const amount = Number(row.total);
+
+    // The three grouping sets are told apart by which key columns are null.
+    // Both null is the `()` row: the range grand total.
+    if (row.bucket_start === null && row.category_id === null) {
+      total = amount;
+      continue;
+    }
+
+    // Defensive: category_id is non-null on both remaining sets, but the
+    // narrowing is what lets the two branches below index by it.
+    if (row.category_id === null) {
+      continue;
+    }
+
+    if (row.bucket_start === null) {
+      categories.push({
+        categoryId: row.category_id,
+        name: row.category_name ?? "",
+        color: row.category_color ?? DEFAULT_CATEGORY_COLOR,
+        total: amount,
+      });
+      continue;
+    }
+
+    let point = byBucket.get(row.bucket_start);
+    if (!point) {
+      point = { bucketStart: row.bucket_start, totals: {} };
+      byBucket.set(row.bucket_start, point);
+    }
+    point.totals[row.category_id.toString()] = amount;
+  }
+
+  // The function returns no ORDER BY. Sorting descending by total is what the
+  // client's top-N and colour rules walk; the localeCompare tie-break makes
+  // that order — and therefore every colour assignment — stable across two
+  // identical loads, which is the difference between a steady board and one
+  // that reshuffles its palette on refresh.
+  categories.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
+  const points = [...byBucket.values()].sort((a, b) => a.bucketStart.localeCompare(b.bucketStart));
+
+  return { bucket, from: range.from, to: range.to, categories, points, total };
+}
+
+export async function getCategorySummary(supabase: SupabaseClient, input: SummaryQueryInput): Promise<CategorySummary> {
+  const range: DateRange = { from: input.from, to: input.to };
+
+  if (bucketCountUpperBound(range, input.bucket) > MAX_BUCKETS) {
+    throw new RangeTooLargeError();
+  }
+
+  // One call, not two: there is no previous-period comparison on this board
+  // (B4 is out of scope), so nothing here needs previousRange.
+  const result = (await supabase.rpc("entries_category_summary", {
+    p_from: range.from,
+    p_to: range.to,
+    p_bucket: input.bucket,
+    p_exclude_recurring: input.recurring === "hidden",
+  })) as CategorySummaryResponse;
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  return toCategorySummary(range, input.bucket, result.data ?? []);
 }

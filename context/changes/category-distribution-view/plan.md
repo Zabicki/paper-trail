@@ -532,33 +532,33 @@ Rollback is `drop function public.entries_category_summary(date, date, text, boo
 
 #### Automated
 
-- [x] 1.1 `npx supabase db reset` applies all ten migrations cleanly
-- [x] 1.2 `npx supabase test db` passes with `Files=4` and the raised plan counts
-- [x] 1.3 `npm run lint` passes
+- [x] 1.1 `npx supabase db reset` applies all ten migrations cleanly — 4537d4b
+- [x] 1.2 `npx supabase test db` passes with `Files=4` and the raised plan counts — 4537d4b
+- [x] 1.3 `npm run lint` passes — 4537d4b
 
 #### Manual
 
-- [x] 1.4 Superuser call in Studio returns rows across all users, confirming RLS is what isolates
-- [x] 1.5 The same call through PostgREST while signed in returns only that user's categories
-- [x] 1.6 `explain analyze` shows the existing index serving the scan; plan recorded in the commit message
-- [x] 1.7 Demo account shows ~30 categories with visible colour duplicates
+- [x] 1.4 Superuser call in Studio returns rows across all users, confirming RLS is what isolates — 4537d4b
+- [x] 1.5 The same call through PostgREST while signed in returns only that user's categories — 4537d4b
+- [x] 1.6 `explain analyze` shows the existing index serving the scan; plan recorded in the commit message — 4537d4b
+- [x] 1.7 Demo account shows ~30 categories with visible colour duplicates — 4537d4b
 
 ### Phase 2: Service, DTOs and the category-summary endpoint
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` passes
-- [ ] 2.2 `npx astro check` reports 0 errors
-- [ ] 2.3 `npm run build` passes
+- [x] 2.1 `npm run lint` passes
+- [x] 2.2 `npx astro check` reports 0 errors
+- [x] 2.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 2.4 Endpoint returns `categories`, `points` and a `total` equal to their sum
-- [ ] 2.5 That `total` matches Board A's `Wydatki` tile for the same range and toggle
-- [ ] 2.6 `recurring=hidden` removes recurring categories and lowers `total`
-- [ ] 2.7 Entries under a soft-deleted category still appear with name and colour
-- [ ] 2.8 401 signed out; 400 on `from > to`; 400 on an over-large bucket count
-- [ ] 2.9 Seed user B sees entirely different categories
+- [x] 2.4 Endpoint returns `categories`, `points` and a `total` equal to their sum
+- [x] 2.5 That `total` matches Board A's `Wydatki` tile for the same range and toggle
+- [x] 2.6 `recurring=hidden` removes recurring categories and lowers `total`
+- [x] 2.7 Entries under a soft-deleted category still appear with name and colour
+- [x] 2.8 401 signed out; 400 on `from > to`; 400 on an over-large bucket count
+- [x] 2.9 Seed user B sees entirely different categories
 
 ### Phase 3: Board switcher, distribution model and ranking (B2)
 
