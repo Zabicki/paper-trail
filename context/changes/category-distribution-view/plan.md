@@ -547,40 +547,40 @@ Rollback is `drop function public.entries_category_summary(date, date, text, boo
 
 #### Automated
 
-- [x] 2.1 `npm run lint` passes
-- [x] 2.2 `npx astro check` reports 0 errors
-- [x] 2.3 `npm run build` passes
+- [x] 2.1 `npm run lint` passes — 336a4ea
+- [x] 2.2 `npx astro check` reports 0 errors — 336a4ea
+- [x] 2.3 `npm run build` passes — 336a4ea
 
 #### Manual
 
-- [x] 2.4 Endpoint returns `categories`, `points` and a `total` equal to their sum
-- [x] 2.5 That `total` matches Board A's `Wydatki` tile for the same range and toggle
-- [x] 2.6 `recurring=hidden` removes recurring categories and lowers `total`
-- [x] 2.7 Entries under a soft-deleted category still appear with name and colour
-- [x] 2.8 401 signed out; 400 on `from > to`; 400 on an over-large bucket count
-- [x] 2.9 Seed user B sees entirely different categories
+- [x] 2.4 Endpoint returns `categories`, `points` and a `total` equal to their sum — 336a4ea
+- [x] 2.5 That `total` matches Board A's `Wydatki` tile for the same range and toggle — 336a4ea
+- [x] 2.6 `recurring=hidden` removes recurring categories and lowers `total` — 336a4ea
+- [x] 2.7 Entries under a soft-deleted category still appear with name and colour — 336a4ea
+- [x] 2.8 401 signed out; 400 on `from > to`; 400 on an over-large bucket count — 336a4ea
+- [x] 2.9 Seed user B sees entirely different categories — 336a4ea
 
 ### Phase 3: Board switcher, distribution model and ranking (B2)
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes
-- [ ] 3.2 `npx astro check` reports 0 errors
-- [ ] 3.3 `npm run build` passes
+- [x] 3.1 `npm run lint` passes
+- [x] 3.2 `npx astro check` reports 0 errors
+- [x] 3.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 3.4 Default load is still Przegląd / Ostatnie 30 dni / toggle off
-- [ ] 3.5 Switching boards keeps range and toggle, updates the URL, and the back button reverses it
-- [ ] 3.6 Reloading `?board=categories&range=ytd&recurring=hidden` restores exactly that view
-- [ ] 3.7 Ranking shows at most 9 rows before expansion and sums to Board A's `Wydatki` tile
-- [ ] 3.8 No two visible rows share a swatch; the larger of a duplicate pair matches its `/categories` dot
-- [ ] 3.9 Expanding `Pozostałe` changes no colour already on screen
-- [ ] 3.10 Changing range or toggle collapses `Pozostałe`
-- [ ] 3.11 Recurring filter removes those categories and re-bases the percentages
-- [ ] 3.12 A range with income but no expenses shows `Brak wydatków w tym zakresie.`
-- [ ] 3.13 S-04 regression pass: tiles, A1, A3, re-bucketing, back button and empty state all unchanged
-- [ ] 3.14 A 100-character category name does not break the row on a narrow viewport
+- [x] 3.4 Default load is still Przegląd / Ostatnie 30 dni / toggle off
+- [x] 3.5 Switching boards keeps range and toggle, updates the URL, and the back button reverses it
+- [x] 3.6 Reloading `?board=categories&range=ytd&recurring=hidden` restores exactly that view
+- [x] 3.7 Ranking shows at most 9 rows before expansion and sums to Board A's `Wydatki` tile
+- [x] 3.8 No two visible rows share a swatch; the larger of a duplicate pair matches its `/categories` dot
+- [x] 3.9 Expanding `Pozostałe` changes no colour already on screen
+- [x] 3.10 Changing range or toggle collapses `Pozostałe`
+- [x] 3.11 Recurring filter removes those categories and re-bases the percentages
+- [x] 3.12 A range with income but no expenses shows `Brak wydatków w tym zakresie.`
+- [x] 3.13 S-04 regression pass: tiles, A1, A3, re-bucketing, back button and empty state all unchanged
+- [x] 3.14 A 100-character category name does not break the row on a narrow viewport
 
 ### Phase 4: Donut (B1)
 

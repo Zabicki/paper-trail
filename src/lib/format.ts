@@ -22,12 +22,31 @@ const percentDeltaFormatter = new Intl.NumberFormat("pl-PL", {
   maximumFractionDigits: 1,
 });
 
+// Distinct from percentDeltaFormatter: a share is never signed, so the
+// "exceptZero" plus sign that reads as "up" on a delta would be meaningless
+// noise here.
+const shareFormatter = new Intl.NumberFormat("pl-PL", {
+  style: "percent",
+  maximumFractionDigits: 1,
+});
+
 export function formatCurrency(amount: number): string {
   return currencyFormatter.format(amount);
 }
 
 export function formatCurrencyCompact(amount: number): string {
   return compactFormatter.format(amount);
+}
+
+/**
+ * A category's share of a range total, as a percentage.
+ *
+ * One decimal place rather than none: Board B deliberately renders a long tail
+ * of sub-1% categories, and rounding those to a flat "0%" would make the
+ * smallest rows indistinguishable from empty ones.
+ */
+export function formatShare(share: number): string {
+  return shareFormatter.format(share);
 }
 
 /**
