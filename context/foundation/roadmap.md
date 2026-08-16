@@ -3,7 +3,7 @@ project: PaperTrail
 version: 1
 status: draft
 created: 2026-08-15
-updated: 2026-08-15
+updated: 2026-08-16
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -33,7 +33,7 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | S-01  | `custom-categories`           | define, rename and delete own categories, and flag one as a recurring cost   | F-01          | FR-004, FR-005              | done |
 | S-02  | `daily-expense-entry`         | log an expense against today in ≤4 interactions; back-date as a first-class path | F-01, S-01 | US-01, FR-006, FR-007       | done |
 | S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | done |
-| S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | proposed |
+| S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | in-progress |
 | S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | proposed |
 | S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | blocked |
 
@@ -128,7 +128,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Does the recurring-cost filter default to on or off? PRD raised "should exclusion be the default view rather than a toggle" against FR-015 and let the FR stand as a toggle without setting the default. Owner: user. Block: no.
 - **Risk:** Carries the FR-015 filter mechanism because it is the first view that can exercise it; S-05 then reuses it rather than reimplementing. Sequenced after entry for an unavoidable reason the PRD names in its own non-goals: v1 starts empty, so quick-select ranges "have little to range over in the first weeks." This slice will look thin in testing regardless of how well it is built — that is a data problem, not a quality signal, and it is the strongest argument for revisiting OQ-3 below.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-05: Category distribution view
 

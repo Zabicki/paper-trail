@@ -200,15 +200,28 @@ select throws_ok(
 );
 
 -- === Back to the superuser session role: confirm user A's rows survived ===
+-- Scoped to the seed users for the reason categories_rls_test.sql:128-134
+-- spells out: these see EVERY row in the table, RLS included, so left
+-- unqualified they also count whatever manual dev testing left behind on the
+-- same date. That is not hypothetical — S-04's local demo dataset put entries
+-- on 2026-08-10 and turned both of these red, one of them with a bare
+-- "more than one row returned by a subquery" error rather than a test
+-- failure. A suite that goes red for environmental reasons trains you to
+-- ignore red, and this is the only automated proof of the isolation
+-- guarantee.
 reset role;
 
 select is(
-  (select count(*) from public.entries where occurred_on = '2026-08-10')::int, 1,
+  (select count(*) from public.entries
+     where occurred_on = '2026-08-10'
+       and user_id = '11111111-1111-1111-1111-111111111111')::int, 1,
   'user A''s original row still exists, untouched by user B''s update/delete attempts'
 );
 
 select is(
-  (select amount from public.entries where occurred_on = '2026-08-10')::numeric,
+  (select amount from public.entries
+     where occurred_on = '2026-08-10'
+       and user_id = '11111111-1111-1111-1111-111111111111')::numeric,
   12.50::numeric,
   'user A''s row still carries its original amount — user B''s UPDATE changed nothing'
 );
