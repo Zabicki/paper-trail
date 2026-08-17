@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -241,27 +242,32 @@ export default function DayEntriesList({
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
+                    size="icon-touch"
                     // The edit state is shared across rows, so opening a
                     // second one mid-save would land the first row's error
                     // (or its dismissal) on the wrong form.
                     disabled={saving}
+                    aria-label="Edytuj"
                     onClick={() => {
                       startEdit(entry);
                     }}
                   >
-                    Edytuj
+                    <Pencil />
                   </Button>
                   <Button
                     type="button"
                     variant="destructive"
-                    size="sm"
+                    size="icon-touch"
                     onClick={() => {
                       void handleDelete(entry.id);
                     }}
                     disabled={deletingId === entry.id}
+                    aria-label="Usuń"
+                    // With no label left to swap to "Usuwanie…", the spinner is
+                    // the only in-flight signal a slow delete has.
+                    aria-busy={deletingId === entry.id}
                   >
-                    {deletingId === entry.id ? "Usuwanie…" : "Usuń"}
+                    {deletingId === entry.id ? <Loader2 className="animate-spin" /> : <Trash2 />}
                   </Button>
                 </div>
               </div>

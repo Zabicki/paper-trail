@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -239,14 +240,15 @@ export default function ReceiptReview({
                   </button>
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
+                    variant="destructive"
+                    size="icon-touch"
                     disabled={submitting}
+                    aria-label="Usuń pozycję"
                     onClick={() => {
                       removeRow(row.key);
                     }}
                   >
-                    Usuń
+                    <Trash2 />
                   </Button>
                 </div>
 

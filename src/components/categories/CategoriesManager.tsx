@@ -1,4 +1,5 @@
 import { useEffect, useState, type SubmitEvent } from "react";
+import { Loader2, Pencil, Repeat, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -414,34 +415,43 @@ export default function CategoriesManager({ onCreated, onChanged }: CategoriesMa
                           className="size-4 shrink-0 rounded-full"
                           style={{ backgroundColor: category.color }}
                         />
-                        <span className="font-medium">{category.name}</span>
-                        {category.isRecurring && (
-                          <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs">
-                            cykliczny
-                          </span>
-                        )}
+                        {/* The glyph is decorative, so without a label the row
+                            would announce nothing about being a large recurring
+                            cost — same composition as CategoryPicker's chips. */}
+                        <span
+                          className="font-medium"
+                          aria-label={category.isRecurring ? `${category.name}, duży koszt cykliczny` : undefined}
+                        >
+                          {category.name}
+                        </span>
+                        {category.isRecurring && <Repeat className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="icon-touch"
+                          aria-label="Edytuj"
                           onClick={() => {
                             startEdit(category);
                           }}
                         >
-                          Edytuj
+                          <Pencil />
                         </Button>
                         <Button
                           type="button"
                           variant="destructive"
-                          size="sm"
+                          size="icon-touch"
                           onClick={() => {
                             void handleDelete(category.id);
                           }}
                           disabled={deletingId === category.id}
+                          aria-label="Usuń"
+                          // With no label left to swap to "Usuwanie…", the
+                          // spinner is the only in-flight signal.
+                          aria-busy={deletingId === category.id}
                         >
-                          {deletingId === category.id ? "Usuwanie…" : "Usuń"}
+                          {deletingId === category.id ? <Loader2 className="animate-spin" /> : <Trash2 />}
                         </Button>
                       </div>
                     </div>
