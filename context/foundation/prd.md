@@ -1,6 +1,6 @@
 ---
 project: "PaperTrail"
-version: 1
+version: 2
 status: draft
 created: 2026-08-14
 context_type: greenfield
@@ -88,6 +88,8 @@ Each FR carries a `> Socrates:` record from the shaping challenge round, where e
   > Socrates: Challenged on blank-slate onboarding, renames rewriting chart history, and foreclosing cross-user insight. No counter-argument accepted — stands as written; user-defined categories are one of the three product insights.
 - FR-005: User can flag a category as a large recurring cost. Priority: must-have
   > Socrates: Challenged on forcing artificial category splits, conflating "large" with "recurring", and flag changes retroactively rewriting history. No counter-argument accepted — stands as written; per-category is the simplest mechanism and keeps entry fast.
+- FR-018: User can assign an icon to a category. Priority: nice-to-have
+  > Provenance: added post-MVP (2026-08-17) after using the shipped app. Supersedes the per-category color as the visual marker — a color swatch identifies a category only after the user memorises the mapping, while an icon is self-describing at a glance.
 
 ### Daily entry
 - FR-006: User can manually log an expense with amount, category, and date. Priority: must-have
@@ -98,6 +100,8 @@ Each FR carries a `> Socrates:` record from the shaping challenge round, where e
   > Socrates: Challenged on income having a different rhythm with no bearing on the daily-friction thesis, and on mixing signs through every aggregation. No counter-argument accepted — stands as written.
 - FR-009: User can review, edit, and delete logged entries. Priority: must-have
   > Socrates: Challenged on irreversible deletion destroying the audit trail, edits silently rewriting past charts, and both paths threatening the durability guardrail. No counter-argument accepted — stands as written; uncorrectable errors would rebuild the distrust that killed the sheet.
+- FR-017: User can attach a short free-text description to an entry. Priority: nice-to-have
+  > Provenance: added post-MVP (2026-08-17) after using the shipped app. FR-006 names amount, category and date only; the `entries.description` column shipped with S-06 for receipt line-item names and is not yet reachable from manual entry or any list view.
 
 ### Receipt parsing
 - FR-010: User can upload a receipt image for parsing. Priority: must-have

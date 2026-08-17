@@ -3,8 +3,8 @@ project: PaperTrail
 version: 1
 status: draft
 created: 2026-08-15
-updated: 2026-08-16
-prd_version: 1
+updated: 2026-08-17
+prd_version: 2
 main_goal: speed
 top_blocker: decisions
 ---
@@ -36,6 +36,10 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | done |
 | S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | done |
 | S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | in-progress |
+| S-07  | `dashboard-category-management` | manage categories from the dashboard itself, and read the day view without clutter or misalignment | S-01, S-02, S-03 | FR-004, FR-005, FR-007, FR-009 | ready |
+| S-08  | `reports-axis-and-all-time-range` | read every chart's Y-axis labels, and see "Cały okres" start at their first entry | S-04, S-05 | FR-013, FR-014 | ready |
+| S-09  | `category-icons`              | recognise a category by an icon they chose, everywhere it appears            | S-05, S-07    | FR-004, FR-014, FR-018        | proposed |
+| S-10  | `entry-descriptions-and-receipt-grouping` | say what an entry was, and get one entry per category from a receipt | S-03, S-06 | FR-006, FR-009, FR-012, FR-017 | proposed |
 
 ## Streams
 
@@ -46,6 +50,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | A      | Ledger core         | `F-01` → `S-01` → `S-02` → `S-03`      | The must-have spine under `main_goal: speed`; contains the north star at `S-02`.          |
 | B      | Insight             | `S-04` → `S-05`                        | Joins Stream A at `S-02`; needs real entries to range over, so it trails the ledger.      |
 | C      | Receipt intelligence | `S-06`                                 | Joins Stream A at `S-02`. Blocked on OQ-2/OQ-3 below — the product differentiator, gated. |
+| D      | Daily-use polish    | `S-07` → `S-09` → `S-10` · `S-08` parallel | Post-MVP pass over shipped surfaces, driven by real use rather than by the PRD. Joins Stream A at `S-03`, Stream B at `S-05`, Stream C at `S-06`. |
 
 ## Baseline
 
@@ -158,6 +163,62 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** This is the product differentiator and the slice most likely to consume the schedule, which is why it is `blocked` rather than optimistically sequenced. `infrastructure.md`'s pre-mortem predicts exactly how it goes wrong: reaching for the Node recipe (`sharp` to downscale, a storage bucket, a signed upload, a retention job), none of which runs on workerd. The Cloudflare Images binding is already provisioned for this purpose. Note also that FR-011 has a *floor*: below the Secondary bar, auto-assignment is slower than typing, so the feature is failing rather than merely imperfect — worth a spike against real receipts before committing the slice.
 - **Status:** in-progress
 
+### S-07: Dashboard as the single capture surface
+
+- **Outcome:** User can create, rename, delete and flag their categories from the dashboard itself — without a separate tab — sees at a glance which are recurring, and reads the day's entries without duplicated sign-out controls or a calendar whose numbers drift off their weekday headers.
+- **Change ID:** `dashboard-category-management`
+- **PRD refs:** FR-004, FR-005, FR-007, FR-009
+- **Prerequisites:** S-01, S-02, S-03
+- **Parallel with:** S-08, S-10
+- **Blockers:** —
+- **Unknowns:**
+  - Which five categories are "the first five" before `Pokaż więcej`? The picker's list is already recency-ordered by `listCategoriesForEntryForm`; confirm recency is the intended cut rather than alphabetical. Owner: user. Block: no.
+  - The overlay needs a modal primitive and none is installed — hand-roll on the already-present `radix-ui`, or generate shadcn's `dialog`. Owner: implementation. Block: no.
+- **Risk:** The widest of the four post-MVP slices, but every item is confined to the dashboard shell and none touches the schema. The one real regression: retiring `/categories` also retires the only surface that can create an *income* category, since the dashboard's picker is scoped to the current entry type — the overlay must carry the kind selector or income categories become uncreatable. The ≤4-interaction NFR that governed S-02 is the acceptance constraint on the collapsed list: `Pokaż więcej` must not add a tap to the common path.
+- **Status:** ready
+
+### S-08: Reports readability fixes
+
+- **Outcome:** User can read every chart's Y-axis labels without the leading digit clipped, and "Cały okres" plots from their first recorded entry instead of two decades of empty months.
+- **Change ID:** `reports-axis-and-all-time-range`
+- **PRD refs:** FR-013, FR-014
+- **Prerequisites:** S-04, S-05
+- **Parallel with:** S-07, S-09, S-10
+- **Blockers:** —
+- **Unknowns:**
+  - What should "Cały okres" resolve to for a user with no entries at all? The existing precedent is the account-creation floor already used for missing-day clamping. Owner: user. Block: no.
+- **Risk:** Two fixes of very different size behind one outcome. The axis half is a width allowance on three charts; the all-time half needs a first-entry lookup that exists nowhere in the codebase today. Note that the twenty-year floor was itself a workaround for the bucket-count guard — a real first-entry date removes the condition that guard was tripping on, so the two halves are the same defect seen from opposite ends.
+- **Status:** ready
+
+### S-09: Category icons replace colors
+
+- **Outcome:** User can assign an icon to each of their categories and recognise categories by that icon everywhere one appears — entry picker, day list, category manager and the reports charts — instead of maintaining a color per category.
+- **Change ID:** `category-icons`
+- **PRD refs:** FR-004, FR-014, FR-018
+- **Prerequisites:** S-05, S-07
+  - Depends on S-07 rather than running beside it because the category editor that gains the icon picker is the one S-07 moves into the dashboard overlay; the alternative is building the picker twice.
+- **Parallel with:** S-08, S-10
+- **Blockers:** —
+- **Unknowns:**
+  - A curated icon set, or search across the full icon catalogue? Shipping the whole set into a client island is a bundle-size decision, not only a UX one. Owner: user. Block: no.
+  - Does the per-category color get retired outright, or kept as the chart series color? Owner: user. Block: no — but see Risk for the ordering constraint either answer inherits.
+- **Risk:** The narrowest concept with the widest reach — a category marker renders at five call sites plus the chart legends, and the distribution module keys its shade de-duplication off the stored color, so charts need their own color derivation once the user stops choosing one. The deployment trap is ordering: CI applies migrations before the Worker deploys, so dropping the color column (or the category-summary function's color return) must trail the code change by one deploy, or the running Worker queries a column that no longer exists.
+- **Status:** proposed
+
+### S-10: Entries say what they were
+
+- **Outcome:** User can describe an entry in their own words when logging it manually or correcting a receipt, sees those descriptions in "Wpisy tego dnia" — truncated past three items and expandable — and gets one entry per category from a receipt, dated from the receipt itself and correctable when the model misreads it.
+- **Change ID:** `entry-descriptions-and-receipt-grouping`
+- **PRD refs:** FR-006, FR-009, FR-012, FR-017
+- **Prerequisites:** S-03, S-06
+- **Parallel with:** S-08, S-09
+- **Blockers:** —
+- **Unknowns:**
+  - Once a receipt collapses to one entry per category, does the existing "save as a single entry at the printed total" shortcut still earn its place? Owner: user. Block: no.
+  - How is a grouped description composed and truncated — plain comma-joined item names, or names with amounts? Owner: user. Block: no.
+- **Risk:** No migration needed: the entry description column shipped with S-06, deliberately written but never shown, so this slice is largely the display-and-edit half that was scoped out then — though the update schema omits the field on purpose and has to be opened up for post-save correction. The behavioural change is grouping: a receipt stops producing one entry per printed line and starts producing one per category, which silently redefines what S-06's accuracy log is measuring. Its pre-grouping numbers stop being comparable unless the change is recorded there.
+- **Status:** proposed
+
 ## Backlog Handoff
 
 Tracked as GitHub issues in [`Zabicki/paper-trail`](https://github.com/Zabicki/paper-trail/issues), all on the `MVP v1` milestone. The roadmap stays the source of truth for scope; the issues are the execution surface. `gh issue list --label status:ready` answers "what can I pick up now".
@@ -171,6 +232,10 @@ Tracked as GitHub issues in [`Zabicki/paper-trail`](https://github.com/Zabicki/p
 | S-04       | `date-range-spending-view`    | Quick-select date-range spending view with recurring filter  | [#5](https://github.com/Zabicki/paper-trail/issues/5)  | no                    | Needs S-01, S-02                                |
 | S-05       | `category-distribution-view`  | Category distribution view, readable at any category count   | [#6](https://github.com/Zabicki/paper-trail/issues/6)  | no                    | Needs S-04                                      |
 | S-06       | `receipt-parsing`             | Receipt upload, parsing and review into own categories       | [#7](https://github.com/Zabicki/paper-trail/issues/7)  | no                    | Blocked on OQ-2 and OQ-3                        |
+| S-07       | `dashboard-category-management` | Manage categories from the dashboard; day-view fixes       | —            | yes                   | Run `/10x-plan dashboard-category-management`   |
+| S-08       | `reports-axis-and-all-time-range` | Fix clipped Y-axis labels and the all-time range         | —            | yes                   | Independent of S-07                             |
+| S-09       | `category-icons`              | Category icons replace per-category colors                   | —            | no                    | Needs S-07                                      |
+| S-10       | `entry-descriptions-and-receipt-grouping` | Entry descriptions; receipt date and per-category grouping | — | no              | Needs S-06 to land                              |
 
 ## Open Roadmap Questions
 
