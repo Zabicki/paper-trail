@@ -1,7 +1,7 @@
 ---
 change_id: dashboard-category-management
 title: Dashboard as the single capture surface — category management + day-view fixes
-status: new
+status: implementing
 created: 2026-08-17
 updated: 2026-08-17
 archived_at: null
@@ -29,6 +29,12 @@ Seeded from `context/foundation/roadmap.md` → **S-07: Dashboard as the single 
 - Every item is confined to the dashboard shell; **nothing touches the schema.**
 - **The one real regression to guard:** retiring `/categories` also retires the only surface that can create an *income* category, since the dashboard's picker is scoped to the current entry type. The overlay must carry the kind selector, or income categories become uncreatable.
 - The ≤4-interaction NFR that governed S-02 is the acceptance constraint on the collapsed list: `Pokaż więcej` must not add a tap to the common path.
+
+### Implementation adaptations
+
+- **Phase 1 widened to translate the whole auth screen set.** Criterion 1.3 (`grep -rn "Sign out\|Sign in\|Sign up\|Not signed in" src/` returns nothing) was written assuming `Topbar.astro` was the only source of those strings; it was not. `src/pages/auth/{signin,signup,confirm-email}.astro`, `SignInForm.tsx`, `SignUpForm.tsx` and `PasswordToggle.tsx` were still the starter's English scaffold — and beyond those four words: headings, `Password` / `Confirm password` labels, placeholders, validation messages, pending text and aria-labels. Rather than narrow the criterion to Topbar, the user chose to translate all of it, so Phase 1 covers more than change #2's four-string contract. The `Supabase is not configured` string in `src/pages/api/auth/{signin,signup}.ts` went with it, matching `config-status.ts`'s existing wording.
+- **Still English by necessity:** Supabase's own `error.message` (e.g. `Invalid login credentials`) passes through to `?error=` untranslated. Mapping those to Polish would need an error-code table and is out of this slice's scope.
+- The `Dashboard` Topbar link label stays English, as the plan specifies.
 
 ### Backlog
 

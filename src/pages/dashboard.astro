@@ -2,24 +2,12 @@
 import Layout from "@/layouts/Layout.astro";
 import Topbar from "@/components/Topbar.astro";
 import DayView from "@/components/entries/DayView";
-
-const { user } = Astro.locals;
 ---
 
 <Layout title="Dashboard">
   <div class="bg-cosmic min-h-screen p-4">
     <div class="mx-auto max-w-2xl">
       <Topbar />
-      <div class="mb-4 flex items-center justify-between text-sm text-white/80">
-        <span>
-          Zalogowano jako <span class="font-semibold text-white">{user?.email}</span>
-        </span>
-        <form method="POST" action="/api/auth/signout">
-          <button type="submit" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
-            Wyloguj się
-          </button>
-        </form>
-      </div>
       <div class="rounded-2xl border border-white/10 bg-white/10 p-6 text-white backdrop-blur-xl">
         <DayView client:load />
       </div>

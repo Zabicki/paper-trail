@@ -102,7 +102,7 @@ export default function MonthCalendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 place-items-center gap-1">
         {Array.from({ length: leadingBlanks }, (_, index) => (
           <span key={`blank-${index}`} aria-hidden="true" />
         ))}
@@ -122,7 +122,7 @@ export default function MonthCalendar({
                 onSelectDate(date);
               }}
               className={cn(
-                "flex size-11 items-center justify-center rounded-full text-sm transition-colors",
+                "flex size-11 max-w-full items-center justify-center rounded-full text-sm transition-colors",
                 isSelected ? "bg-primary text-primary-foreground" : "hover:bg-accent",
                 !isSelected && isMissing && "text-destructive ring-destructive/60 ring-1",
                 !isSelected && isToday && "font-semibold",
