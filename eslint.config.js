@@ -74,8 +74,16 @@ const astroConfig = tseslint.config({
   },
 });
 
+// includeIgnoreFile reads the ROOT .gitignore only, and supabase/.temp is
+// ignored by the nested supabase/.gitignore instead. `supabase start` writes a
+// TypeScript edge-runtime shim in there that is outside tsconfig's project, so
+// projectService fails it with a parsing error — turning `npm run lint` red for
+// anyone who has the local stack running. Not our code; not lintable.
+const generatedIgnores = { ignores: ["supabase/.temp/**"] };
+
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  generatedIgnores,
   baseConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],

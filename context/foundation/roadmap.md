@@ -34,7 +34,7 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | S-02  | `daily-expense-entry`         | log an expense against today in ≤4 interactions; back-date as a first-class path | F-01, S-01 | US-01, FR-006, FR-007       | done |
 | S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | done |
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | done |
-| S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | planning |
+| S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | done |
 | S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | in-progress |
 
 ## Streams
@@ -141,7 +141,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - What is the readability strategy at high category counts — grouping a long tail, capping slices, switching chart form? PRD amended FR-014 with a readability criterion and explicitly left the method "to downstream design." Owner: user/design. Block: no. **Resolved during planning 2026-08-16**: top 8 or above 2% of total (whichever gives fewer slices), tail collapsed into an expandable `Pozostałe (n)`, with an always-visible ranking list as the form that degrades gracefully to any count. See `context/changes/category-distribution-view/plan-brief.md`.
 - **Risk:** Depends on S-04 rather than running parallel to it, because it reuses that slice's recurring-cost filter and range selection. The named risk is the one the PRD already surfaced: freely-defined categories produce a long tail of small slices that becomes noise exactly when there is finally enough data to care, so the readability criterion is an acceptance condition, not a refinement.
-- **Status:** planning
+- **Status:** done
 
 ### S-06: Receipt parsing
 

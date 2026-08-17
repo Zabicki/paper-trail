@@ -532,91 +532,91 @@ Rollback is `drop function public.entries_category_summary(date, date, text, boo
 
 #### Automated
 
-- [ ] 1.1 `npx supabase db reset` applies all ten migrations cleanly
-- [ ] 1.2 `npx supabase test db` passes with `Files=4` and the raised plan counts
-- [ ] 1.3 `npm run lint` passes
+- [x] 1.1 `npx supabase db reset` applies all ten migrations cleanly — 4537d4b
+- [x] 1.2 `npx supabase test db` passes with `Files=4` and the raised plan counts — 4537d4b
+- [x] 1.3 `npm run lint` passes — 4537d4b
 
 #### Manual
 
-- [ ] 1.4 Superuser call in Studio returns rows across all users, confirming RLS is what isolates
-- [ ] 1.5 The same call through PostgREST while signed in returns only that user's categories
-- [ ] 1.6 `explain analyze` shows the existing index serving the scan; plan recorded in the commit message
-- [ ] 1.7 Demo account shows ~30 categories with visible colour duplicates
+- [x] 1.4 Superuser call in Studio returns rows across all users, confirming RLS is what isolates — 4537d4b
+- [x] 1.5 The same call through PostgREST while signed in returns only that user's categories — 4537d4b
+- [x] 1.6 `explain analyze` shows the existing index serving the scan; plan recorded in the commit message — 4537d4b
+- [x] 1.7 Demo account shows ~30 categories with visible colour duplicates — 4537d4b
 
 ### Phase 2: Service, DTOs and the category-summary endpoint
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` passes
-- [ ] 2.2 `npx astro check` reports 0 errors
-- [ ] 2.3 `npm run build` passes
+- [x] 2.1 `npm run lint` passes — 336a4ea
+- [x] 2.2 `npx astro check` reports 0 errors — 336a4ea
+- [x] 2.3 `npm run build` passes — 336a4ea
 
 #### Manual
 
-- [ ] 2.4 Endpoint returns `categories`, `points` and a `total` equal to their sum
-- [ ] 2.5 That `total` matches Board A's `Wydatki` tile for the same range and toggle
-- [ ] 2.6 `recurring=hidden` removes recurring categories and lowers `total`
-- [ ] 2.7 Entries under a soft-deleted category still appear with name and colour
-- [ ] 2.8 401 signed out; 400 on `from > to`; 400 on an over-large bucket count
-- [ ] 2.9 Seed user B sees entirely different categories
+- [x] 2.4 Endpoint returns `categories`, `points` and a `total` equal to their sum — 336a4ea
+- [x] 2.5 That `total` matches Board A's `Wydatki` tile for the same range and toggle — 336a4ea
+- [x] 2.6 `recurring=hidden` removes recurring categories and lowers `total` — 336a4ea
+- [x] 2.7 Entries under a soft-deleted category still appear with name and colour — 336a4ea
+- [x] 2.8 401 signed out; 400 on `from > to`; 400 on an over-large bucket count — 336a4ea
+- [x] 2.9 Seed user B sees entirely different categories — 336a4ea
 
 ### Phase 3: Board switcher, distribution model and ranking (B2)
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes
-- [ ] 3.2 `npx astro check` reports 0 errors
-- [ ] 3.3 `npm run build` passes
+- [x] 3.1 `npm run lint` passes — cf194f4
+- [x] 3.2 `npx astro check` reports 0 errors — cf194f4
+- [x] 3.3 `npm run build` passes — cf194f4
 
 #### Manual
 
-- [ ] 3.4 Default load is still Przegląd / Ostatnie 30 dni / toggle off
-- [ ] 3.5 Switching boards keeps range and toggle, updates the URL, and the back button reverses it
-- [ ] 3.6 Reloading `?board=categories&range=ytd&recurring=hidden` restores exactly that view
-- [ ] 3.7 Ranking shows at most 9 rows before expansion and sums to Board A's `Wydatki` tile
-- [ ] 3.8 No two visible rows share a swatch; the larger of a duplicate pair matches its `/categories` dot
-- [ ] 3.9 Expanding `Pozostałe` changes no colour already on screen
-- [ ] 3.10 Changing range or toggle collapses `Pozostałe`
-- [ ] 3.11 Recurring filter removes those categories and re-bases the percentages
-- [ ] 3.12 A range with income but no expenses shows `Brak wydatków w tym zakresie.`
-- [ ] 3.13 S-04 regression pass: tiles, A1, A3, re-bucketing, back button and empty state all unchanged
-- [ ] 3.14 A 100-character category name does not break the row on a narrow viewport
+- [x] 3.4 Default load is still Przegląd / Ostatnie 30 dni / toggle off — cf194f4
+- [x] 3.5 Switching boards keeps range and toggle, updates the URL, and the back button reverses it — cf194f4
+- [x] 3.6 Reloading `?board=categories&range=ytd&recurring=hidden` restores exactly that view — cf194f4
+- [x] 3.7 Ranking shows at most 9 rows before expansion and sums to Board A's `Wydatki` tile — cf194f4
+- [x] 3.8 No two visible rows share a swatch; the larger of a duplicate pair matches its `/categories` dot — cf194f4
+- [x] 3.9 Expanding `Pozostałe` changes no colour already on screen — cf194f4
+- [x] 3.10 Changing range or toggle collapses `Pozostałe` — cf194f4
+- [x] 3.11 Recurring filter removes those categories and re-bases the percentages — cf194f4
+- [x] 3.12 A range with income but no expenses shows `Brak wydatków w tym zakresie.` — cf194f4
+- [x] 3.13 S-04 regression pass: tiles, A1, A3, re-bucketing, back button and empty state all unchanged — cf194f4
+- [x] 3.14 A 100-character category name does not break the row on a narrow viewport — cf194f4
 
 ### Phase 4: Donut (B1)
 
 #### Automated
 
-- [ ] 4.1 `npm run lint` passes
-- [ ] 4.2 `npx astro check` reports 0 errors
-- [ ] 4.3 `npm run build` passes
+- [x] 4.1 `npm run lint` passes — 115e58f
+- [x] 4.2 `npx astro check` reports 0 errors — 115e58f
+- [x] 4.3 `npm run build` passes — 115e58f
 
 #### Manual
 
-- [ ] 4.4 At most 9 arcs; centre total matches the ranking sum and Board A's tile
-- [ ] 4.5 Arc order and colours match the ranking exactly
-- [ ] 4.6 Tooltip shows the Polish name, a `zł` amount and the correct swatch
-- [ ] 4.7 Expanding `Pozostałe` splits the grey arc in place; collapsing restores it
-- [ ] 4.8 A single-category range renders a full ring with a legible centre total
-- [ ] 4.9 Recurring filter removes arcs and re-proportions the rest
-- [ ] 4.10 Legible on a narrow viewport with no centre-label overlap
-- [ ] 4.11 Keyboard focus reaches the chart; no `jsx-a11y` violation in lint
+- [x] 4.4 At most 9 arcs; centre total matches the ranking sum and Board A's tile — 115e58f
+- [x] 4.5 Arc order and colours match the ranking exactly — 115e58f
+- [x] 4.6 Tooltip shows the Polish name, a `zł` amount and the correct swatch — 115e58f
+- [x] 4.7 Expanding `Pozostałe` splits the grey arc in place; collapsing restores it — 115e58f
+- [x] 4.8 A single-category range renders a full ring with a legible centre total — 115e58f
+- [x] 4.9 Recurring filter removes arcs and re-proportions the rest — 115e58f
+- [x] 4.10 Legible on a narrow viewport with no centre-label overlap — 115e58f
+- [x] 4.11 Keyboard focus reaches the chart; no `jsx-a11y` violation in lint — 115e58f
 
 ### Phase 5: Kategorie w czasie (B3)
 
 #### Automated
 
-- [ ] 5.1 `npm run lint` passes
-- [ ] 5.2 `npx astro check` reports 0 errors
-- [ ] 5.3 `npm run build` passes with the reports island in its own chunk
+- [x] 5.1 `npm run lint` passes — 7d1c6ee
+- [x] 5.2 `npx astro check` reports 0 errors — 7d1c6ee
+- [x] 5.3 `npm run build` passes with the reports island in its own chunk — 7d1c6ee
 
 #### Manual
 
-- [ ] 5.4 Bucketing shifts day → week → month across presets with no extra control
-- [ ] 5.5 Weeks start on Monday, matching Board A and the dashboard calendar
-- [ ] 5.6 Stack heights equal each bucket's expense total and sum to the donut centre
-- [ ] 5.7 Segment colours match the donut and ranking, and are stable across bars
-- [ ] 5.8 Expanding `Pozostałe` deliberately leaves this chart on the collapsed set
-- [ ] 5.9 Recurring filter removes those segments and the monthly step disappears
-- [ ] 5.10 An empty bucket renders as a gap, not a missing bar position
-- [ ] 5.11 Legible on a narrow viewport at both 7-day and full-year ranges
-- [ ] 5.12 Two seed users see charts derived only from their own categories
+- [x] 5.4 Bucketing shifts day → week → month across presets with no extra control — 7d1c6ee
+- [x] 5.5 Weeks start on Monday, matching Board A and the dashboard calendar — 7d1c6ee
+- [x] 5.6 Stack heights equal each bucket's expense total and sum to the donut centre — 7d1c6ee
+- [x] 5.7 Segment colours match the donut and ranking, and are stable across bars — 7d1c6ee
+- [x] 5.8 Expanding `Pozostałe` deliberately leaves this chart on the collapsed set — 7d1c6ee
+- [x] 5.9 Recurring filter removes those segments and the monthly step disappears — 7d1c6ee
+- [x] 5.10 An empty bucket renders as a gap, not a missing bar position — 7d1c6ee
+- [x] 5.11 Legible on a narrow viewport at both 7-day and full-year ranges — 7d1c6ee
+- [x] 5.12 Two seed users see charts derived only from their own categories — 7d1c6ee
