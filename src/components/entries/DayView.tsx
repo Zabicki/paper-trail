@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import MonthCalendar from "./MonthCalendar";
 import EntryForm from "./EntryForm";
 import DayEntriesList from "./DayEntriesList";
+import ReceiptCapture from "@/components/receipts/ReceiptCapture";
 import { monthOf, toLocalDateString } from "./date-utils";
 import type { Category, Entry, EntryType } from "@/types";
 
@@ -46,8 +47,8 @@ export default function DayView() {
         if (!expenseResponse.ok || !incomeResponse.ok) {
           throw new Error("Nie udało się wczytać kategorii.");
         }
-        const expense = (await expenseResponse.json()) as Category[];
-        const income = (await incomeResponse.json()) as Category[];
+        const expense = await expenseResponse.json<Category[]>();
+        const income = await incomeResponse.json<Category[]>();
         if (!cancelled.current) {
           setExpenseCategories(expense);
           setIncomeCategories(income);
@@ -75,7 +76,7 @@ export default function DayView() {
         if (!response.ok) {
           throw new Error("Nie udało się wczytać wpisów dnia.");
         }
-        const data = (await response.json()) as Entry[];
+        const data = await response.json<Entry[]>();
         if (!cancelled.current) {
           setEntries(data);
         }
@@ -117,6 +118,25 @@ export default function DayView() {
         // an intervening GET may already have returned this row. Appending it
         // again duplicates the React key and double-counts the day's total.
         return prev.some((existing) => existing.id === entry.id) ? prev : [...prev, entry];
+      });
+    }
+    setCalendarRefreshKey((key) => key + 1);
+  }
+
+  // handleSaved's shape for N rows. The date comparison and the dedupe are the
+  // same guards for the same reasons; what differs is that the calendar key is
+  // bumped exactly once rather than per entry, because a 30-item receipt would
+  // otherwise refetch the month 30 times.
+  function handleBatchSaved(saved: Entry[]) {
+    const forSelectedDay = saved.filter((entry) => entry.occurredOn === selectedDateRef.current);
+    if (forSelectedDay.length > 0) {
+      setEntries((prev) => {
+        if (prev === null) {
+          return prev;
+        }
+        const known = new Set(prev.map((existing) => existing.id));
+        const additions = forSelectedDay.filter((entry) => !known.has(entry.id));
+        return additions.length > 0 ? [...prev, ...additions] : prev;
       });
     }
     setCalendarRefreshKey((key) => key + 1);
@@ -178,6 +198,22 @@ export default function DayView() {
           />
         )}
       </div>
+
+      {expenseCategories !== null && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-lg font-semibold">Paragon</h2>
+          {/* Deliberately NOT keyed on selectedDate, unlike DayEntriesList
+              below: remounting would throw away a parse the user has already
+              waited multiple seconds for. Moving the calendar mid-review is a
+              supported action — occurredOn is a live prop and the confirm
+              reads it at click time. */}
+          <ReceiptCapture
+            expenseCategories={expenseCategories}
+            occurredOn={selectedDate}
+            onBatchSaved={handleBatchSaved}
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Wpisy tego dnia</h2>

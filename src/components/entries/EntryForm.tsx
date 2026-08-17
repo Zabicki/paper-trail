@@ -122,7 +122,7 @@ export default function EntryForm({
         setError(await parseErrorBody(response));
         return;
       }
-      const entry = (await response.json()) as Entry;
+      const entry = await response.json<Entry>();
       onSaved(entry);
       setAmountText("");
       setCategoryId(null);

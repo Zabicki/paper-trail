@@ -41,6 +41,11 @@ export interface Entry {
   type: EntryType;
   category: Pick<Category, "id" | "name" | "color">;
   createdAt: string;
+  // The receipt line-item name this entry came from (S-06), or null for
+  // anything typed into the manual form. Required rather than optional: the
+  // column always exists, it is the *value* that may be absent — and an
+  // optional field would let a caller forget it and read as "no receipt".
+  description: string | null;
 }
 
 // --- Aggregates (S-04) ---
@@ -79,4 +84,36 @@ export interface EntriesSummary {
   // The immediately preceding equal-length range, for the KPI tiles' deltas
   // and the cumulative chart's comparison line.
   previous: RangeSummary;
+}
+
+// --- Parsed receipts (S-06) ---
+//
+// The wire shape of POST /api/receipts/parse, shared by the route and the
+// review island. Deliberately NOT an Entry: nothing here is persisted, and the
+// differences are the whole point — an amount may still be wrong, a categoryId
+// may be absent, and a name is a read-only aid rather than a stored field until
+// the user confirms. Everything in here is a model's guess pending correction.
+
+export interface ParsedReceiptItem {
+  name: string;
+  amount: number;
+  // Null when the model picked a category that is not the user's, or picked
+  // none. An unassigned item is a correction task for the user, never a reason
+  // to drop a real purchase — entries.category_id is NOT NULL, so the review
+  // panel hard-blocks confirm until every row has one.
+  categoryId: number | null;
+}
+
+export interface ParsedReceipt {
+  // The date printed on the paragon, YYYY-MM-DD, or null if unreadable. Only
+  // ever a hint: the entries are filed to the day selected in the calendar.
+  receiptDate: string | null;
+  // The printed SUMA PLN. The sum check compares this against the items and is
+  // computed client-side, because it must recompute as the user edits amounts.
+  total: number | null;
+  items: ParsedReceiptItem[];
+  // How many lines the deterministic post-processing removed (non-positive or
+  // non-finite amounts — typically RABAT/OPUST rows the model emitted as
+  // products anyway). Surfaced so removed lines are visible, not mysterious.
+  droppedItems: number;
 }
