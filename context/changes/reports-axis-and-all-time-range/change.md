@@ -1,7 +1,7 @@
 ---
 change_id: reports-axis-and-all-time-range
 title: Reports readability — unclipped Y-axis labels and a real "Cały okres" range
-status: implementing
+status: implemented
 created: 2026-08-17
 updated: 2026-08-17
 archived_at: null

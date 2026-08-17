@@ -219,18 +219,18 @@ None. No schema change, no new index, no RPC change — so the CI ordering trap 
 
 #### Automated
 
-- [x] 1.1 `npx astro sync` completes without error
-- [x] 1.2 `npm run lint` passes
-- [x] 1.3 `npm run build` succeeds
-- [x] 1.4 `grep -rn "width={44}\|ALL_TIME_YEARS_BACK" src/` returns nothing
+- [x] 1.1 `npx astro sync` completes without error — cc6eb46
+- [x] 1.2 `npm run lint` passes — cc6eb46
+- [x] 1.3 `npm run build` succeeds — cc6eb46
+- [x] 1.4 `grep -rn "width={44}\|ALL_TIME_YEARS_BACK" src/` returns nothing — cc6eb46
 
 #### Manual
 
-- [x] 1.5 Y-axis ticks fully visible on all three charts above 1000 zł, desktop and mobile
-- [x] 1.6 Small-magnitude ranges leave no oversized gutter and the plot area does not jump between switches
-- [x] 1.7 `Cały okres` on Board A starts at the first recorded entry, caption agrees, no empty leading buckets
-- [x] 1.8 `Cały okres` on Board B shows the same start date as Board A
-- [x] 1.9 Sub-30-day history renders day buckets on `Cały okres`
-- [x] 1.10 Recurring-filter toggle does not move the `Cały okres` X-axis start
-- [x] 1.11 Zero-entry account shows creation date plus empty-state copy, no error
-- [x] 1.12 All six other presets resolve exactly as before
+- [x] 1.5 Y-axis ticks fully visible on all three charts above 1000 zł, desktop and mobile — cc6eb46
+- [x] 1.6 Small-magnitude ranges leave no oversized gutter and the plot area does not jump between switches — cc6eb46
+- [x] 1.7 `Cały okres` on Board A starts at the first recorded entry, caption agrees, no empty leading buckets — cc6eb46
+- [x] 1.8 `Cały okres` on Board B shows the same start date as Board A — cc6eb46
+- [x] 1.9 Sub-30-day history renders day buckets on `Cały okres` — cc6eb46
+- [x] 1.10 Recurring-filter toggle does not move the `Cały okres` X-axis start — cc6eb46
+- [x] 1.11 Zero-entry account shows creation date plus empty-state copy, no error — cc6eb46
+- [x] 1.12 All six other presets resolve exactly as before — cc6eb46
