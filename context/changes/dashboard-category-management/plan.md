@@ -377,48 +377,48 @@ One deployment note that does apply: `/categories` disappearing is a URL contrac
 
 #### Automated
 
-- [x] 2.1 Types and lint pass: `npx astro sync && npm run lint`
-- [x] 2.2 Build passes: `npm run build`
-- [x] 2.3 `src/pages/categories.astro` no longer exists
-- [x] 2.4 No stale `/categories` references outside the middleware redirect
-- [x] 2.5 No new Radix dependency; `dialog.tsx` imports the unified `radix-ui` package
+- [x] 2.1 Types and lint pass: `npx astro sync && npm run lint` — fa9275e
+- [x] 2.2 Build passes: `npm run build` — fa9275e
+- [x] 2.3 `src/pages/categories.astro` no longer exists — fa9275e
+- [x] 2.4 No stale `/categories` references outside the middleware redirect — fa9275e
+- [x] 2.5 No new Radix dependency; `dialog.tsx` imports the unified `radix-ui` package — fa9275e
 
 #### Manual
 
-- [x] 2.6 Dialog opens from the trigger; Escape and backdrop close it; focus is trapped and returns to the trigger
-- [x] 2.7 Tab order reaches name, kind, colours, recurring checkbox and submit
-- [x] 2.8 Creating an expense category closes the dialog with it selected; the entry saves
-- [x] 2.9 An income category can be created from the dialog, lands in the income section, and never appears among expense chips
-- [x] 2.10 Creating an income category while on Wydatek leaves the expense selection untouched
-- [x] 2.11 Rename updates the chip and the day-list name with no loading flash
-- [x] 2.12 Recolour updates the chip dot and the day-list dot
-- [x] 2.13 Duplicate name (case-insensitive) shows the inline error under the name field
-- [x] 2.14 Kind is static text on edit, with the Polish hint
-- [x] 2.15 Soft-delete re-verification: removed from picker and manager, name reusable, existing entry still listed and still editable (amount-only correction saves)
-- [x] 2.16 Deleting the selected category clears the form's selection
-- [x] 2.17 Zero-category empty state opens the dialog, for both Wydatek and Przychód
-- [x] 2.18 `/categories` redirects to `/dashboard`; signed out it chains to `/auth/signin`
-- [x] 2.19 Topbar no longer offers `Kategorie`; `Dashboard` and `Raporty` work
-- [x] 2.20 Receipt capture works with a category created mid-session
-- [x] 2.21 Dialog usable at 375px: content scrolls internally, page behind does not
+- [x] 2.6 Dialog opens from the trigger; Escape and backdrop close it; focus is trapped and returns to the trigger — fa9275e
+- [x] 2.7 Tab order reaches name, kind, colours, recurring checkbox and submit — fa9275e
+- [x] 2.8 Creating an expense category closes the dialog with it selected; the entry saves — fa9275e
+- [x] 2.9 An income category can be created from the dialog, lands in the income section, and never appears among expense chips — fa9275e
+- [x] 2.10 Creating an income category while on Wydatek leaves the expense selection untouched — fa9275e
+- [x] 2.11 Rename updates the chip and the day-list name with no loading flash — fa9275e
+- [x] 2.12 Recolour updates the chip dot and the day-list dot — fa9275e
+- [x] 2.13 Duplicate name (case-insensitive) shows the inline error under the name field — fa9275e
+- [x] 2.14 Kind is static text on edit, with the Polish hint — fa9275e
+- [x] 2.15 Soft-delete re-verification: removed from picker and manager, name reusable, existing entry still listed and still editable (amount-only correction saves) — fa9275e
+- [x] 2.16 Deleting the selected category clears the form's selection — fa9275e
+- [x] 2.17 Zero-category empty state opens the dialog, for both Wydatek and Przychód — fa9275e
+- [x] 2.18 `/categories` redirects to `/dashboard`; signed out it chains to `/auth/signin` — fa9275e
+- [x] 2.19 Topbar no longer offers `Kategorie`; `Dashboard` and `Raporty` work — fa9275e
+- [x] 2.20 Receipt capture works with a category created mid-session — fa9275e
+- [x] 2.21 Dialog usable at 375px: content scrolls internally, page behind does not — fa9275e
 
 ### Phase 3: Collapsed picker and the recurring marker
 
 #### Automated
 
-- [ ] 3.1 Types and lint pass: `npx astro sync && npm run lint`
-- [ ] 3.2 Build passes: `npm run build`
-- [ ] 3.3 `DayEntriesList.tsx` and `ReceiptReview.tsx` are untouched
+- [x] 3.1 Types and lint pass: `npx astro sync && npm run lint`
+- [x] 3.2 Build passes: `npm run build`
+- [x] 3.3 `DayEntriesList.tsx` and `ReceiptReview.tsx` are untouched
 
 #### Manual
 
-- [ ] 3.4 Budget re-count: routine expense still 3 interactions, ≤10s
-- [ ] 3.5 With ≤5 categories no toggle renders
-- [ ] 3.6 `Pokaż więcej (n)` expands in place without moving or recolouring visible chips; `Pokaż mniej` collapses
-- [ ] 3.7 The filter searches hidden categories and hides the toggle; clearing restores the collapsed state
-- [ ] 3.8 A chip selected from the tail stays visible after collapsing
-- [ ] 3.9 A dialog-created category is selected and visible immediately
-- [ ] 3.10 Switching Wydatek ↔ Przychód resets the picker to collapsed
-- [ ] 3.11 Recurring marker visible in the picker and announced by a screen reader
-- [ ] 3.12 Day-list edit row and receipt review still render a flat picker
-- [ ] 3.13 Chips remain 44px-comfortable at 375px
+- [x] 3.4 Budget re-count: routine expense still 3 interactions, ≤10s
+- [x] 3.5 With ≤5 categories no toggle renders
+- [x] 3.6 `Pokaż więcej (n)` expands in place without moving or recolouring visible chips; `Pokaż mniej` collapses
+- [x] 3.7 The filter searches hidden categories and hides the toggle; clearing restores the collapsed state
+- [x] 3.8 A chip selected from the tail stays visible after collapsing
+- [x] 3.9 A dialog-created category is selected and visible immediately
+- [x] 3.10 Switching Wydatek ↔ Przychód resets the picker to collapsed
+- [x] 3.11 Recurring marker visible in the picker and announced by a screen reader
+- [x] 3.12 Day-list edit row and receipt review still render a flat picker
+- [x] 3.13 Chips remain 44px-comfortable at 375px

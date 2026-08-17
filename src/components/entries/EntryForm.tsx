@@ -236,12 +236,18 @@ export default function EntryForm({
                   Zarządzaj
                 </Button>
               </div>
+              {/* key={type} remounts the picker so its expansion state follows
+                  the Wydatek/Przychód toggle, the way the shipped collapse on
+                  the reports board follows its range toggle. Keeping that state
+                  inside the picker is what makes a remount the whole reset. */}
               <CategoryPicker
+                key={type}
                 categories={categories}
                 value={selectedCategoryId}
                 onChange={setCategoryId}
                 filterText={filterText}
                 onFilterTextChange={setFilterText}
+                collapsible
               />
               {error?.field === "categoryId" && <p className="text-destructive text-sm">{error.error}</p>}
             </div>
