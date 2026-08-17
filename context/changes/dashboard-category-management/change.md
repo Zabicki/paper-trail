@@ -1,7 +1,7 @@
 ---
 change_id: dashboard-category-management
 title: Dashboard as the single capture surface — category management + day-view fixes
-status: implementing
+status: implemented
 created: 2026-08-17
 updated: 2026-08-17
 archived_at: null

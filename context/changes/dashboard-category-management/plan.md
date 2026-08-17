@@ -406,19 +406,19 @@ One deployment note that does apply: `/categories` disappearing is a URL contrac
 
 #### Automated
 
-- [x] 3.1 Types and lint pass: `npx astro sync && npm run lint`
-- [x] 3.2 Build passes: `npm run build`
-- [x] 3.3 `DayEntriesList.tsx` and `ReceiptReview.tsx` are untouched
+- [x] 3.1 Types and lint pass: `npx astro sync && npm run lint` — f8eef01
+- [x] 3.2 Build passes: `npm run build` — f8eef01
+- [x] 3.3 `DayEntriesList.tsx` and `ReceiptReview.tsx` are untouched — f8eef01
 
 #### Manual
 
-- [x] 3.4 Budget re-count: routine expense still 3 interactions, ≤10s
-- [x] 3.5 With ≤5 categories no toggle renders
-- [x] 3.6 `Pokaż więcej (n)` expands in place without moving or recolouring visible chips; `Pokaż mniej` collapses
-- [x] 3.7 The filter searches hidden categories and hides the toggle; clearing restores the collapsed state
-- [x] 3.8 A chip selected from the tail stays visible after collapsing
-- [x] 3.9 A dialog-created category is selected and visible immediately
-- [x] 3.10 Switching Wydatek ↔ Przychód resets the picker to collapsed
-- [x] 3.11 Recurring marker visible in the picker and announced by a screen reader
-- [x] 3.12 Day-list edit row and receipt review still render a flat picker
-- [x] 3.13 Chips remain 44px-comfortable at 375px
+- [x] 3.4 Budget re-count: routine expense still 3 interactions, ≤10s — f8eef01
+- [x] 3.5 With ≤5 categories no toggle renders — f8eef01
+- [x] 3.6 `Pokaż więcej (n)` expands in place without moving or recolouring visible chips; `Pokaż mniej` collapses — f8eef01
+- [x] 3.7 The filter searches hidden categories and hides the toggle; clearing restores the collapsed state — f8eef01
+- [x] 3.8 A chip selected from the tail stays visible after collapsing — f8eef01
+- [x] 3.9 A dialog-created category is selected and visible immediately — f8eef01
+- [x] 3.10 Switching Wydatek ↔ Przychód resets the picker to collapsed — f8eef01
+- [x] 3.11 Recurring marker visible in the picker and announced by a screen reader — f8eef01
+- [x] 3.12 Day-list edit row and receipt review still render a flat picker — f8eef01
+- [x] 3.13 Chips remain 44px-comfortable at 375px — f8eef01
