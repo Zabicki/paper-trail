@@ -4,7 +4,7 @@ import CategoryDonut from "./CategoryDonut";
 import CategoryRanking from "./CategoryRanking";
 import CategoryTrendChart from "./CategoryTrendChart";
 import { resolveDistribution } from "./distribution";
-import { bucketFor, resolveRange, type RangePreset } from "./range";
+import { bucketFor, resolveRange, type DateRange, type RangePreset } from "./range";
 import type { CategorySummary } from "@/types";
 
 // Board B — Kategorie. The mirror of OverviewBoard: its own fetch, its own four
@@ -14,6 +14,8 @@ import type { CategorySummary } from "@/types";
 interface CategoriesBoardProps {
   preset: RangePreset;
   recurringHidden: boolean;
+  // Mirrors OverviewBoard — see the comment on its own prop.
+  onRangeResolved: (range: DateRange) => void;
 }
 
 interface CategoriesBodyProps {
@@ -67,7 +69,7 @@ function CategoriesBody({ summary, loadError, expanded, onToggleExpanded }: Cate
   );
 }
 
-export default function CategoriesBoard({ preset, recurringHidden }: CategoriesBoardProps) {
+export default function CategoriesBoard({ preset, recurringHidden, onRangeResolved }: CategoriesBoardProps) {
   const [summary, setSummary] = useState<CategorySummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -86,6 +88,10 @@ export default function CategoriesBoard({ preset, recurringHidden }: CategoriesB
       // "Today" is a browser-local date here for the same reason it is on Board
       // A — Workers run UTC (src/components/entries/date-utils.ts).
       const range = resolveRange(preset, toLocalDateString(new Date()));
+      // Published before the await for the same reason as Board A: the caption
+      // must show the range this request was built from, not one re-derived
+      // from a separate "today".
+      onRangeResolved(range);
       const params = new URLSearchParams({
         from: range.from,
         to: range.to,
@@ -112,7 +118,7 @@ export default function CategoriesBoard({ preset, recurringHidden }: CategoriesB
     return () => {
       cancelled.current = true;
     };
-  }, [preset, recurringHidden]);
+  }, [preset, recurringHidden, onRangeResolved]);
 
   return (
     <CategoriesBody

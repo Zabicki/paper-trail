@@ -5,7 +5,7 @@ import CategoriesBoard from "./CategoriesBoard";
 import OverviewBoard from "./OverviewBoard";
 import RangePicker from "./RangePicker";
 import RecurringToggle from "./RecurringToggle";
-import { DEFAULT_RANGE_PRESET, isRangePreset, resolveRange, type RangePreset } from "./range";
+import { DEFAULT_RANGE_PRESET, isRangePreset, resolveRange, type DateRange, type RangePreset } from "./range";
 
 // A state-and-controls shell, not a data component. Each board owns its own
 // fetch (OverviewBoard, CategoriesBoard); what lives here is the view state,
@@ -51,11 +51,20 @@ function initialViewState(): ViewState {
 
 export default function ReportsView() {
   const [view, setView] = useState<ViewState>(initialViewState);
-  // Captured once rather than read during render: resolveRange needs a "today"
-  // and the boards derive theirs inside their fetch effects, but the caption
-  // below is rendered — and calling new Date() in a render body is exactly the
-  // impurity react-compiler exists to catch.
-  const [today] = useState(() => toLocalDateString(new Date()));
+
+  // The caption's range is REPORTED BY the active board, not derived here. A
+  // mount-time `today` cannot be the caption's source: the boards resolve a
+  // fresh "today" inside their fetch effects, so a tab left open across midnight
+  // would label one range while the money below it came from another — on a page
+  // whose whole job is attributing amounts to a date range. Before the split
+  // this was impossible by construction, because the caption was the server's
+  // echo of exactly what had been fetched.
+  //
+  // The mount-time value seeds the FIRST PAINT only, so the caption still
+  // renders during the initial load (an improvement over waiting for the
+  // summary, which is worth keeping). Every board fetch overwrites it with the
+  // range that fetch actually used, which is what closes the divergence.
+  const [range, setRange] = useState<DateRange>(() => resolveRange(view.preset, toLocalDateString(new Date())));
 
   // The other direction of the URL sync: pushState below writes history
   // entries, this reads them back when the user walks the back button.
@@ -80,13 +89,6 @@ export default function ReportsView() {
     // — is a step the back button should undo.
     window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
   }
-
-  // Both boards resolve the same range from the same preset, so the caption can
-  // be derived here instead of being lifted out of whichever board happens to
-  // have loaded. It now shows during loading too, where previously it waited
-  // for the summary — the dates are identical either way, the endpoint just
-  // echoes back what it was given.
-  const range = resolveRange(view.preset, today);
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,9 +121,9 @@ export default function ReportsView() {
       </p>
 
       {view.board === "categories" ? (
-        <CategoriesBoard preset={view.preset} recurringHidden={view.recurringHidden} />
+        <CategoriesBoard preset={view.preset} recurringHidden={view.recurringHidden} onRangeResolved={setRange} />
       ) : (
-        <OverviewBoard preset={view.preset} recurringHidden={view.recurringHidden} />
+        <OverviewBoard preset={view.preset} recurringHidden={view.recurringHidden} onRangeResolved={setRange} />
       )}
     </div>
   );

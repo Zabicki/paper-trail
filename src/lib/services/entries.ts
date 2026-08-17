@@ -36,6 +36,11 @@ export const updateEntrySchema = createEntrySchema.omit({ type: true, descriptio
 // paragon longer than that is a garbled parse, not a big shop.
 export const createEntriesBatchSchema = z.object({
   occurredOn: z.string().regex(DATE_PATTERN),
+  // The idempotency key, minted once per parsed receipt by the client and
+  // resent unchanged on every retry of the same confirm. REQUIRED, not
+  // optional: an optional key degrades silently to the non-idempotent behaviour
+  // this exists to remove, and there is exactly one caller.
+  batchId: z.uuid(),
   items: z
     .array(
       z.object({
@@ -197,6 +202,19 @@ export async function createEntry(supabase: SupabaseClient, input: CreateEntryIn
 // every report with no way to have chosen it.
 //
 // Any future change here must re-verify all three by hand.
+//
+// IDEMPOTENCY (review finding F4). The insert is keyed on
+// (user_id, batch_id, batch_seq) — see 20260817190000_add_entry_batch_key.sql —
+// and resolves duplicates by ignoring them, so replaying the same confirm writes
+// nothing the second time. That is still ONE statement and therefore still one
+// transaction, which is what keeps the all-or-nothing property above intact.
+//
+// The catch is the return value: `RETURNING` yields only rows the statement
+// actually inserted, so a fully-conflicting replay would hand back an empty
+// array and the UI would report "saved 0 entries" for a receipt that is sitting
+// in the database. Hence the re-select below — a retry returns the same Entry[]
+// the first call did, which is also what lets DayView's id-keyed dedupe
+// recognise the rows as already present.
 export async function createEntriesBatch(supabase: SupabaseClient, input: CreateEntriesBatchInput): Promise<Entry[]> {
   const requestedIds = [...new Set(input.items.map((item) => item.categoryId))];
 
@@ -223,23 +241,56 @@ export async function createEntriesBatch(supabase: SupabaseClient, input: Create
 
   // One statement, therefore one transaction: either every line of the receipt
   // lands or none does. No .single() — the whole point is N rows.
+  //
+  // upsert + ignoreDuplicates rather than insert, because supabase-js exposes
+  // `on conflict do nothing` only through that pair. All items still share an
+  // identical key shape, which is what keeps PostgREST emitting one multi-row
+  // INSERT rather than N statements.
   const { data: inserted, error: insertError } = await supabase
     .from("entries")
-    .insert(
-      input.items.map((item) => ({
+    .upsert(
+      input.items.map((item, index) => ({
         amount: item.amount,
         category_id: item.categoryId,
         occurred_on: input.occurredOn,
         type: "expense",
         description: item.description ?? null,
+        batch_id: input.batchId,
+        // Position in the confirmed list, assigned here and never accepted from
+        // the client: it exists to make line k of a batch identifiable, and a
+        // client-supplied value could collide two lines into one.
+        batch_seq: index,
       })),
+      { onConflict: "user_id,batch_id,batch_seq", ignoreDuplicates: true },
     )
     .select(SELECT_COLUMNS);
 
   if (insertError) {
     throw insertError;
   }
-  return (inserted as unknown as EntryRow[]).map(toDto);
+
+  const insertedRows = inserted as unknown as EntryRow[];
+  if (insertedRows.length === input.items.length) {
+    return insertedRows.map(toDto);
+  }
+
+  // A replay. Return what is stored under this batch rather than the partial
+  // RETURNING set, so the response is the same on the second call as on the
+  // first. RLS scopes the read, and the batch id is only ever this user's
+  // because it is half of a user_id-scoped unique key.
+  //
+  // Ordered by batch_seq so the response keeps the order the user confirmed in,
+  // matching the first call's RETURNING order.
+  const { data: existing, error: selectError } = await supabase
+    .from("entries")
+    .select(SELECT_COLUMNS)
+    .eq("batch_id", input.batchId)
+    .order("batch_seq", { ascending: true });
+
+  if (selectError) {
+    throw selectError;
+  }
+  return (existing as unknown as EntryRow[]).map(toDto);
 }
 
 export async function updateEntry(supabase: SupabaseClient, id: number, input: UpdateEntryInput): Promise<Entry> {

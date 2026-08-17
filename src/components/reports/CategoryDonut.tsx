@@ -41,7 +41,7 @@ interface DonutDatum {
 // The donut follows the `Pozostałe` expansion state so it and the ranking
 // always show the same set — unlike B3, which deliberately stays collapsed.
 function donutData(distribution: Distribution, expanded: boolean): DonutDatum[] {
-  const { visible, collapsed, total } = distribution;
+  const { visible, collapsed, collapsedTotal, total } = distribution;
 
   const slices = (expanded ? [...visible, ...collapsed] : visible).map((slice) => ({
     key: String(slice.categoryId),
@@ -55,7 +55,6 @@ function donutData(distribution: Distribution, expanded: boolean): DonutDatum[] 
     return slices;
   }
 
-  const collapsedTotal = collapsed.reduce((sum, slice) => sum + slice.total, 0);
   return [
     ...slices,
     {

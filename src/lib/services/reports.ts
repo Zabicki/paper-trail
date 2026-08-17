@@ -28,11 +28,20 @@ export const summaryQuerySchema = z.object({
 
 export type SummaryQueryInput = z.infer<typeof summaryQuerySchema>;
 
-// PostgREST caps a response at max_rows = 1000 and TRUNCATES rather than
-// erroring, so a hand-crafted bucket=day over a decade would silently return a
-// partial aggregate that still looks like a valid answer. 400 buckets is
-// ~802 rows including the grand totals, comfortably clear of the cap while
-// far beyond any range the preset picker can produce.
+// PostgREST caps a response at max_rows = 1000 (supabase/config.toml) and
+// TRUNCATES rather than erroring, so a hand-crafted bucket=day over a decade
+// would silently return a partial aggregate that still looks like a valid
+// answer.
+//
+// ⚠ MAX_BUCKETS bounds BUCKETS, not ROWS, and the two callers have very
+// different row widths. entries_summary returns 2 rows per bucket, so 400
+// buckets is ~802 rows — comfortably clear of the cap while far beyond any
+// range the preset picker can produce. entries_category_summary returns one row
+// per non-empty (bucket × category) cell, a width the user's category count
+// sets and nothing here can see, so for that caller this guard alone does NOT
+// keep the response under the cap. getCategorySummary therefore carries a
+// second, exact truncation check.
+const POSTGREST_MAX_ROWS = 1000;
 const MAX_BUCKETS = 400;
 
 export class RangeTooLargeError extends Error {
@@ -309,6 +318,16 @@ export async function getCategorySummary(supabase: SupabaseClient, input: Summar
 
   if (result.error) {
     throw result.error;
+  }
+
+  // Exact truncation detection, because MAX_BUCKETS cannot bound this
+  // response's width (see its comment). PostgREST truncates silently, and
+  // grouping-set row order is unspecified — so the row dropped may well be the
+  // `()` grand total, which would leave `total` at 0 and make every consumer
+  // render 0% beside a real złoty amount. Raising the same error as the range
+  // guard means the route's existing 400 mapping already covers it.
+  if ((result.data?.length ?? 0) >= POSTGREST_MAX_ROWS) {
+    throw new RangeTooLargeError();
   }
 
   return toCategorySummary(range, input.bucket, result.data ?? []);

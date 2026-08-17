@@ -47,14 +47,17 @@ export interface NormalisedImage {
 export async function normaliseReceiptImage(file: File): Promise<NormalisedImage> {
   const bytes = new Uint8Array(await file.arrayBuffer());
 
-  // .info() consumes the stream it is given, so each binding call gets its own
-  // stream built from the bytes we already hold.
-  const streamOf = () => new Blob([bytes]).stream();
-
+  // .info() and .input() each consume the stream they are given, so every
+  // binding call needs its own. Streamed straight off the File rather than from
+  // `new Blob([bytes])`: a Blob is re-readable, so file.stream() is safe to call
+  // more than once, and it avoids a second full-size copy of the upload living
+  // in the isolate alongside `bytes` (which the passthrough and fallback returns
+  // below still need). At the 10 MB limit that copy is not free — see the
+  // Content-Length gate in src/pages/api/receipts/parse.ts.
   let format: string;
   let width: number;
   try {
-    const info = await env.IMAGES.info(streamOf());
+    const info = await env.IMAGES.info(file.stream());
     // An SVG comes back without dimensions. Nothing photographs a receipt as
     // SVG, so treat it as "needs normalising" rather than special-casing it.
     if (!("width" in info)) {
@@ -75,7 +78,7 @@ export async function normaliseReceiptImage(file: File): Promise<NormalisedImage
   }
 
   try {
-    const output = await env.IMAGES.input(streamOf())
+    const output = await env.IMAGES.input(file.stream())
       .transform({ width: TARGET_WIDTH, fit: "scale-down" })
       .output({ format: FALLBACK_CONTENT_TYPE, quality: 80 });
 

@@ -1,6 +1,10 @@
 import { Buffer } from "node:buffer";
 import { z } from "zod";
 import { CF_AI_TOKEN, CF_ACCOUNT_ID } from "astro:env/server";
+// Shared with the client's sum check rather than copied. The two used to be
+// byte-identical local functions; see the header of src/lib/money.ts for why
+// that mattered here specifically.
+import { roundToCents } from "@/lib/money";
 import type { Category, ParsedReceipt, ParsedReceiptItem } from "@/types";
 
 // A product decision, not a platform limit: there is no wall-clock cap on a
@@ -128,10 +132,6 @@ const RESPONSE_FORMAT = {
     },
   },
 } as const;
-
-function roundToCents(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 /**
  * Everything a model must not be trusted to do itself. Four independent

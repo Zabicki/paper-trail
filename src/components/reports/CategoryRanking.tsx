@@ -62,9 +62,8 @@ function RankingRow({ name, fill, total, share, maxShare, leading, indented = fa
 }
 
 export default function CategoryRanking({ distribution, expanded, onToggleExpanded }: CategoryRankingProps) {
-  const { visible, collapsed, total } = distribution;
+  const { visible, collapsed, collapsedTotal, total } = distribution;
 
-  const collapsedTotal = collapsed.reduce((sum, slice) => sum + slice.total, 0);
   const collapsedShare = total > 0 ? collapsedTotal / total : 0;
   // Number.EPSILON keeps the divisor non-zero when every share is zero, and
   // covers the spread of an empty `visible` — Math.max() over nothing is

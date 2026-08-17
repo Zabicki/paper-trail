@@ -4,15 +4,12 @@
 // S-04's duplicated date arithmetic (review finding F4) directly *caused* a
 // numeric bug: two copies of the same maths drifted apart. This module is
 // small enough that inlining it would look harmless, which is the trap.
-
-/**
- * Cents-precision rounding. Every figure the sum check compares goes through
- * this first, so binary-float noise (0.1 + 0.2) never renders as a mismatch
- * the user has no way to act on.
- */
-export function roundToCents(value: number): number {
-  return Math.round(value * 100) / 100;
-}
+//
+// roundToCents used to live here too, and was byte-identical to a copy in
+// src/lib/services/receipts.ts — the same trap one level up, caught by this
+// change's own review as F10. It now lives in src/lib/money.ts, which both sides
+// import.
+import { roundToCents } from "@/lib/money";
 
 /**
  * What the reviewed line items add up to.

@@ -122,9 +122,30 @@ cross join lateral (
     ('Naprawy',       days.n % 43 = 25, round((70 + (days.n * 17) % 110 + ((days.n * 13) % 100) / 100.0)::numeric, 2)),
     ('Poczta',        days.n % 39 = 19, round((10 + (days.n * 13) % 20  + ((days.n * 41) % 100) / 100.0)::numeric, 2))
 ) as spec(category_name, applies, amount)
+-- The join key must be the key the unique index and the `on conflict` clause
+-- above already use: categories_user_id_name_lower_idx
+-- (20260815145611_add_category_fields.sql) is a PARTIAL unique index on
+-- lower(name) WHERE deleted_at IS NULL. Two consequences, both silent:
+--
+--   * Without `deleted_at is null`, a soft-deleted row and a live row can share
+--     a name — the insert above succeeds because the deleted row sits outside
+--     the index predicate — and this join would then match BOTH, inserting two
+--     entries per applicable day. entries_category_summary deliberately has no
+--     deleted_at filter, so both would be counted: the category's total doubles
+--     and half of it is filed under a category invisible on /categories. The
+--     `not exists` guard cannot catch it, being keyed on category_id, which
+--     differs between the two rows.
+--   * Matching exact `name` against a lower(name) uniqueness rule means a demo
+--     category already named e.g. `kawa` makes the insert a no-op AND leaves
+--     this join finding nothing — silently omitting a category from the very
+--     distribution this migration exists to pin down.
+--
+-- The demo account is a live shared login and this migration reaches hosted
+-- through CI's `supabase db push`, so both paths are reachable in production.
 join public.categories cat
   on cat.user_id = '33333333-3333-3333-3333-333333333333'
- and cat.name = spec.category_name
+ and lower(cat.name) = lower(spec.category_name)
+ and cat.deleted_at is null
 where spec.applies
   and not exists (
     select 1 from public.entries e

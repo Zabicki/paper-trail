@@ -30,6 +30,16 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
   const [parsed, setParsed] = useState<ParsedReceipt | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState<number | null>(null);
+  // The idempotency key for the confirm POST (review finding F4). Minted once
+  // per successful parse and held across retries, which is precisely what makes
+  // a retry safe: without it, a POST that commits server-side but loses its
+  // response leaves the user reading "Spróbuj ponownie" over a button that
+  // writes the whole receipt a second time.
+  //
+  // Per PARSE, not per confirm attempt — re-minting it on each attempt would
+  // give every retry a fresh key and reopen the hole. It is cleared by toIdle()
+  // alongside `parsed`, so the next receipt gets its own.
+  const [batchId, setBatchId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -71,6 +81,7 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
     setProgress("");
     setParsed(null);
     setImageUrl(null);
+    setBatchId(null);
   }
 
   async function handleFile(picked: File) {
@@ -121,6 +132,9 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
       const receipt = await response.json<ParsedReceipt>();
       if (isCancelled()) return;
       setParsed(receipt);
+      // Minted here, with the parse it belongs to, so every confirm attempt for
+      // this receipt carries the same key.
+      setBatchId(crypto.randomUUID());
       setStatus("review");
       setProgress("");
     } catch (caught) {
@@ -151,6 +165,15 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
   }
 
   async function handleConfirm(items: ConfirmItem[]) {
+    // Unreachable in practice — the review panel only renders once a parse has
+    // succeeded, which is where batchId is set — but sending the confirm without
+    // a key would silently produce a non-idempotent write, so it fails loudly
+    // instead. Thrown, not rendered, for the reason given at the bottom of this
+    // function: the panel owns the button and the message.
+    if (batchId === null) {
+      throw new Error("Coś poszło nie tak. Spróbuj ponownie.");
+    }
+
     setStatus("confirming");
     setError(null);
 
@@ -164,7 +187,10 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
         // the user can move the calendar mid-review and the entries belong to
         // whichever day it points at now. The response is then reconciled
         // against selectedDateRef by the parent, which is the S-02 F1 guard.
-        body: JSON.stringify({ occurredOn, items }),
+        //
+        // `batchId` is the opposite: fixed at parse time and deliberately NOT
+        // re-read per attempt, so a retry is recognised as the same write.
+        body: JSON.stringify({ occurredOn, batchId, items }),
       });
       if (response.ok) {
         entries = await response.json<Entry[]>();

@@ -3,7 +3,7 @@ import { toLocalDateString } from "@/components/entries/date-utils";
 import CumulativeChart from "./CumulativeChart";
 import KpiTiles from "./KpiTiles";
 import TrendChart from "./TrendChart";
-import { bucketFor, enumerateBuckets, resolveRange, type RangePreset } from "./range";
+import { bucketFor, enumerateBuckets, resolveRange, type DateRange, type RangePreset } from "./range";
 import type { EntriesSummary, RangeSummary, SummaryBucket, SummaryPoint } from "@/types";
 
 // Board A, lifted out of ReportsView unchanged when S-05 added a second board.
@@ -14,6 +14,10 @@ import type { EntriesSummary, RangeSummary, SummaryBucket, SummaryPoint } from "
 interface OverviewBoardProps {
   preset: RangePreset;
   recurringHidden: boolean;
+  // Reported back so ReportsView's caption shows the range this board actually
+  // fetched, rather than one re-derived from a separate "today". See the comment
+  // on ReportsView's `range` state.
+  onRangeResolved: (range: DateRange) => void;
 }
 
 // The aggregate returns only buckets that actually have entries, so a bar chart
@@ -64,7 +68,7 @@ function OverviewBody({ summary, loadError }: OverviewBodyProps) {
   );
 }
 
-export default function OverviewBoard({ preset, recurringHidden }: OverviewBoardProps) {
+export default function OverviewBoard({ preset, recurringHidden, onRangeResolved }: OverviewBoardProps) {
   const [summary, setSummary] = useState<EntriesSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -79,6 +83,10 @@ export default function OverviewBoard({ preset, recurringHidden }: OverviewBoard
       // logging at 23:30 CEST would get yesterday out of a server-derived
       // "today". The endpoint validates concrete dates, never derives them.
       const range = resolveRange(preset, toLocalDateString(new Date()));
+      // Published before the await, so the caption is correct while this board
+      // is still loading — and published from the same `range` the request below
+      // is built from, which is what makes the label and the money agree.
+      onRangeResolved(range);
       const params = new URLSearchParams({
         from: range.from,
         to: range.to,
@@ -105,7 +113,7 @@ export default function OverviewBoard({ preset, recurringHidden }: OverviewBoard
     return () => {
       cancelled.current = true;
     };
-  }, [preset, recurringHidden]);
+  }, [preset, recurringHidden, onRangeResolved]);
 
   return <OverviewBody summary={summary} loadError={loadError} />;
 }

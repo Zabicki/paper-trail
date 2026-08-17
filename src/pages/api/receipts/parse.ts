@@ -10,6 +10,13 @@ import { parseReceipt } from "@/lib/services/receipts";
 // wire, encoded once, immediately before the provider call.
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
+// The pre-buffer gate's threshold, deliberately ABOVE MAX_IMAGE_BYTES. It is
+// compared against Content-Length, which covers the whole multipart envelope
+// (boundaries plus part headers) and not just the image part — so gating it on
+// MAX_IMAGE_BYTES exactly would reject an image that is legitimately at the
+// limit. 64 KB is far more envelope than a single-part form can produce.
+const MAX_MULTIPART_BYTES = MAX_IMAGE_BYTES + 64 * 1024;
+
 // Self-guards with getUser() below rather than joining PROTECTED_ROUTES — see
 // the convention comment in src/middleware.ts.
 export const POST: APIRoute = async (context) => {
@@ -30,6 +37,24 @@ export const POST: APIRoute = async (context) => {
   // to build the Gateway URL, so either one missing is 503.
   if (!CF_AI_TOKEN || !CF_ACCOUNT_ID) {
     return new Response(JSON.stringify({ error: "Odczyt paragonów nie jest skonfigurowany" }), { status: 503 });
+  }
+
+  // Pre-buffer gate. The image.size check below cannot protect the buffer it
+  // exists to protect: formData() materialises the ENTIRE body first, so
+  // image.size does not exist until those bytes are already in the isolate. A
+  // 90 MB upload would reach the 128 MB isolate ceiling and be killed (error
+  // 1102), answering 500 instead of the actionable 413 below. Cloudflare
+  // enforces the real body length against the declared header, so this is
+  // effective against honest and dishonest clients alike.
+  //
+  // A missing or unparseable header yields Number(null) === 0 / NaN and falls
+  // through by design — image.size stays the authoritative check, and it is
+  // what still catches a chunked request that declares no length.
+  const declaredBytes = Number(context.request.headers.get("content-length"));
+  if (declaredBytes > MAX_MULTIPART_BYTES) {
+    return new Response(JSON.stringify({ error: "Zdjęcie jest za duże (limit 10 MB)", field: "image" }), {
+      status: 413,
+    });
   }
 
   let form: FormData;

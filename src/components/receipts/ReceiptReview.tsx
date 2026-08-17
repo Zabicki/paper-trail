@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "@/components/entries/CategoryPicker";
 import { formatCurrency } from "@/lib/format";
-import { roundToCents, sumItems, totalDelta } from "./receipt-total";
+import { roundToCents } from "@/lib/money";
+import { sumItems, totalDelta } from "./receipt-total";
 import type { Category, ParsedReceipt } from "@/types";
 
 // The wire shape of one confirmed line, matching createEntriesBatchSchema's
