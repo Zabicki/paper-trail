@@ -360,47 +360,47 @@ One deployment note that does apply: `/categories` disappearing is a URL contrac
 
 #### Automated
 
-- [x] 1.1 Types and lint pass: `npx astro sync && npm run lint`
-- [x] 1.2 Build passes: `npm run build`
-- [x] 1.3 No English auth copy remains in `src/`
-- [x] 1.4 Exactly one `api/auth/signout` reference, in `Topbar.astro`
+- [x] 1.1 Types and lint pass: `npx astro sync && npm run lint` — ccb62b5
+- [x] 1.2 Build passes: `npm run build` — ccb62b5
+- [x] 1.3 No English auth copy remains in `src/` — ccb62b5
+- [x] 1.4 Exactly one `api/auth/signout` reference, in `Topbar.astro` — ccb62b5
 
 #### Manual
 
-- [x] 1.5 `/dashboard` shows one sign-out control and the email once; signing out works
-- [x] 1.6 Polish Topbar on `/reports` and on the signed-out `/auth/signin`
-- [x] 1.7 Day numbers centred under their weekday headers on desktop
-- [x] 1.8 No overflow or overlap at 375px and 320px; tap target still comfortable
-- [x] 1.9 Selected / today / missing-day styling and month navigation unchanged
+- [x] 1.5 `/dashboard` shows one sign-out control and the email once; signing out works — ccb62b5
+- [x] 1.6 Polish Topbar on `/reports` and on the signed-out `/auth/signin` — ccb62b5
+- [x] 1.7 Day numbers centred under their weekday headers on desktop — ccb62b5
+- [x] 1.8 No overflow or overlap at 375px and 320px; tap target still comfortable — ccb62b5
+- [x] 1.9 Selected / today / missing-day styling and month navigation unchanged — ccb62b5
 
 ### Phase 2: Category overlay, and retirement of `/categories`
 
 #### Automated
 
-- [ ] 2.1 Types and lint pass: `npx astro sync && npm run lint`
-- [ ] 2.2 Build passes: `npm run build`
-- [ ] 2.3 `src/pages/categories.astro` no longer exists
-- [ ] 2.4 No stale `/categories` references outside the middleware redirect
-- [ ] 2.5 No new Radix dependency; `dialog.tsx` imports the unified `radix-ui` package
+- [x] 2.1 Types and lint pass: `npx astro sync && npm run lint`
+- [x] 2.2 Build passes: `npm run build`
+- [x] 2.3 `src/pages/categories.astro` no longer exists
+- [x] 2.4 No stale `/categories` references outside the middleware redirect
+- [x] 2.5 No new Radix dependency; `dialog.tsx` imports the unified `radix-ui` package
 
 #### Manual
 
-- [ ] 2.6 Dialog opens from the trigger; Escape and backdrop close it; focus is trapped and returns to the trigger
-- [ ] 2.7 Tab order reaches name, kind, colours, recurring checkbox and submit
-- [ ] 2.8 Creating an expense category closes the dialog with it selected; the entry saves
-- [ ] 2.9 An income category can be created from the dialog, lands in the income section, and never appears among expense chips
-- [ ] 2.10 Creating an income category while on Wydatek leaves the expense selection untouched
-- [ ] 2.11 Rename updates the chip and the day-list name with no loading flash
-- [ ] 2.12 Recolour updates the chip dot and the day-list dot
-- [ ] 2.13 Duplicate name (case-insensitive) shows the inline error under the name field
-- [ ] 2.14 Kind is static text on edit, with the Polish hint
-- [ ] 2.15 Soft-delete re-verification: removed from picker and manager, name reusable, existing entry still listed and still editable (amount-only correction saves)
-- [ ] 2.16 Deleting the selected category clears the form's selection
-- [ ] 2.17 Zero-category empty state opens the dialog, for both Wydatek and Przychód
-- [ ] 2.18 `/categories` redirects to `/dashboard`; signed out it chains to `/auth/signin`
-- [ ] 2.19 Topbar no longer offers `Kategorie`; `Dashboard` and `Raporty` work
-- [ ] 2.20 Receipt capture works with a category created mid-session
-- [ ] 2.21 Dialog usable at 375px: content scrolls internally, page behind does not
+- [x] 2.6 Dialog opens from the trigger; Escape and backdrop close it; focus is trapped and returns to the trigger
+- [x] 2.7 Tab order reaches name, kind, colours, recurring checkbox and submit
+- [x] 2.8 Creating an expense category closes the dialog with it selected; the entry saves
+- [x] 2.9 An income category can be created from the dialog, lands in the income section, and never appears among expense chips
+- [x] 2.10 Creating an income category while on Wydatek leaves the expense selection untouched
+- [x] 2.11 Rename updates the chip and the day-list name with no loading flash
+- [x] 2.12 Recolour updates the chip dot and the day-list dot
+- [x] 2.13 Duplicate name (case-insensitive) shows the inline error under the name field
+- [x] 2.14 Kind is static text on edit, with the Polish hint
+- [x] 2.15 Soft-delete re-verification: removed from picker and manager, name reusable, existing entry still listed and still editable (amount-only correction saves)
+- [x] 2.16 Deleting the selected category clears the form's selection
+- [x] 2.17 Zero-category empty state opens the dialog, for both Wydatek and Przychód
+- [x] 2.18 `/categories` redirects to `/dashboard`; signed out it chains to `/auth/signin`
+- [x] 2.19 Topbar no longer offers `Kategorie`; `Dashboard` and `Raporty` work
+- [x] 2.20 Receipt capture works with a category created mid-session
+- [x] 2.21 Dialog usable at 375px: content scrolls internally, page behind does not
 
 ### Phase 3: Collapsed picker and the recurring marker
 

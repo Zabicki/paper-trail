@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
+import CategoryManagerDialog from "@/components/categories/CategoryManagerDialog";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
 import type { Category, Entry, EntryType } from "@/types";
 
@@ -14,6 +15,8 @@ interface EntryFormProps {
   onTypeChange: (type: EntryType) => void;
   occurredOn: string;
   onSaved: (entry: Entry) => void;
+  onCategoryCreated: (category: Category) => void;
+  onCategoriesChanged: () => void;
 }
 
 const CONFIRMATION_DISPLAY_MS = 2500;
@@ -73,6 +76,8 @@ export default function EntryForm({
   onTypeChange,
   occurredOn,
   onSaved,
+  onCategoryCreated,
+  onCategoriesChanged,
 }: EntryFormProps) {
   const [amountText, setAmountText] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -80,6 +85,9 @@ export default function EntryForm({
   const [error, setError] = useState<ApiErrorBody | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // The dialog is owned here, not in DayView, because creating a category has
+  // to write to this component's selection.
+  const [managerOpen, setManagerOpen] = useState(false);
 
   useEffect(() => {
     if (!justSaved) return;
@@ -93,9 +101,15 @@ export default function EntryForm({
 
   const categories = type === "income" ? incomeCategories : expenseCategories;
 
+  // Derived rather than reset in an effect: a category deleted from the manager
+  // dialog vanishes from `categories`, and the form must not be able to submit
+  // an id the picker no longer offers — not even for the one render an effect
+  // would take to clear it.
+  const selectedCategoryId = categoryId !== null && categories.some((c) => c.id === categoryId) ? categoryId : null;
+
   const amountValue = Number(amountText.replace(",", "."));
   const amountValid = amountText.trim().length > 0 && Number.isFinite(amountValue) && amountValue > 0;
-  const canSubmit = amountValid && categoryId !== null && !submitting;
+  const canSubmit = amountValid && selectedCategoryId !== null && !submitting;
 
   // The chip list underneath changes wholesale, so any selection made against
   // the previous one is meaningless.
@@ -104,6 +118,19 @@ export default function EntryForm({
     setCategoryId(null);
     setFilterText("");
     setError(null);
+  }
+
+  // Closes the dialog, because a just-created category is almost always the one
+  // being reached for. Selecting it only makes sense when it can be this
+  // entry's category — a category of the other kind cannot.
+  function handleCategoryCreated(created: Category) {
+    setManagerOpen(false);
+    onCategoryCreated(created);
+    if (created.kind === type) {
+      setCategoryId(created.id);
+      // A stale filter would otherwise hide the chip we just selected.
+      setFilterText("");
+    }
   }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -116,7 +143,7 @@ export default function EntryForm({
       const response = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amountValue, categoryId, occurredOn, type }),
+        body: JSON.stringify({ amount: amountValue, categoryId: selectedCategoryId, occurredOn, type }),
       });
       if (!response.ok) {
         setError(await parseErrorBody(response));
@@ -139,67 +166,104 @@ export default function EntryForm({
   }
 
   return (
-    <form
-      onSubmit={(event) => {
-        void handleSubmit(event);
-      }}
-      className="flex flex-col gap-3"
-    >
-      <TypeToggle value={type} onChange={handleTypeChange} disabled={submitting} />
+    // Fragment root so the dialog is a sibling of the form, not a descendant:
+    // the manager renders its own <form>, and nesting one inside this one would
+    // be invalid HTML if Radix ever stopped portalling to document.body.
+    <>
+      <form
+        onSubmit={(event) => {
+          void handleSubmit(event);
+        }}
+        className="flex flex-col gap-3"
+      >
+        <TypeToggle value={type} onChange={handleTypeChange} disabled={submitting} />
 
-      {categories.length === 0 ? (
-        // Rendered below the toggle, never in place of it — otherwise having
-        // no income categories would trap the user on the income side.
-        <p className="text-sm text-blue-100/80">
-          {type === "income"
-            ? "Nie masz jeszcze żadnej kategorii przychodów. "
-            : "Nie masz jeszcze żadnej kategorii wydatków. "}
-          <a href="/categories" className="text-purple-300 hover:underline">
-            Dodaj kategorię
-          </a>
-          {type === "income" ? ", aby zapisywać przychody." : ", aby zacząć dodawać wydatki."}
-        </p>
-      ) : (
-        <>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="entry-amount">Kwota</Label>
-            {/* h-11 overrides the shared Input's h-9: 44px is the minimum
-                comfortable tap target, and this form is the tap-budgeted one. */}
-            <Input
-              id="entry-amount"
-              inputMode="decimal"
-              value={amountText}
-              onChange={(event) => {
-                setAmountText(event.target.value);
+        {categories.length === 0 ? (
+          // Rendered below the toggle, never in place of it — otherwise having
+          // no income categories would trap the user on the income side.
+          <p className="text-sm text-blue-100/80">
+            {type === "income"
+              ? "Nie masz jeszcze żadnej kategorii przychodów. "
+              : "Nie masz jeszcze żadnej kategorii wydatków. "}
+            {/* type="button": this sits inside the entry form, and a
+                default-type button would submit it. */}
+            <button
+              type="button"
+              className="text-purple-300 hover:underline"
+              onClick={() => {
+                setManagerOpen(true);
               }}
-              placeholder="0.00"
-              aria-invalid={error?.field === "amount"}
-              disabled={submitting}
-              className="h-11 min-h-11"
-            />
-            {error?.field === "amount" && <p className="text-destructive text-sm">{error.error}</p>}
-          </div>
+            >
+              Dodaj kategorię
+            </button>
+            {type === "income" ? ", aby zapisywać przychody." : ", aby zacząć dodawać wydatki."}
+          </p>
+        ) : (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="entry-amount">Kwota</Label>
+              {/* h-11 overrides the shared Input's h-9: 44px is the minimum
+                comfortable tap target, and this form is the tap-budgeted one. */}
+              <Input
+                id="entry-amount"
+                inputMode="decimal"
+                value={amountText}
+                onChange={(event) => {
+                  setAmountText(event.target.value);
+                }}
+                placeholder="0.00"
+                aria-invalid={error?.field === "amount"}
+                disabled={submitting}
+                className="h-11 min-h-11"
+              />
+              {error?.field === "amount" && <p className="text-destructive text-sm">{error.error}</p>}
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Kategoria</span>
-            <CategoryPicker
-              categories={categories}
-              value={categoryId}
-              onChange={setCategoryId}
-              filterText={filterText}
-              onFilterTextChange={setFilterText}
-            />
-            {error?.field === "categoryId" && <p className="text-destructive text-sm">{error.error}</p>}
-          </div>
+            <div className="flex flex-col gap-1.5">
+              {/* The label becomes a row so category management sits where the
+                  need for it arises. size="sm" keeps the row close to the
+                  bare label's height. */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">Kategoria</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setManagerOpen(true);
+                  }}
+                >
+                  Zarządzaj
+                </Button>
+              </div>
+              <CategoryPicker
+                categories={categories}
+                value={selectedCategoryId}
+                onChange={setCategoryId}
+                filterText={filterText}
+                onFilterTextChange={setFilterText}
+              />
+              {error?.field === "categoryId" && <p className="text-destructive text-sm">{error.error}</p>}
+            </div>
 
-          {error && !error.field && <p className="text-destructive text-sm">{error.error}</p>}
-          {justSaved && <p className="text-sm text-emerald-400">Zapisano!</p>}
+            {error && !error.field && <p className="text-destructive text-sm">{error.error}</p>}
+            {justSaved && <p className="text-sm text-emerald-400">Zapisano!</p>}
 
-          <Button type="submit" disabled={!canSubmit} className="min-h-11">
-            {submitting ? "Zapisywanie…" : SUBMIT_LABELS[type]}
-          </Button>
-        </>
-      )}
-    </form>
+            <Button type="submit" disabled={!canSubmit} className="min-h-11">
+              {submitting ? "Zapisywanie…" : SUBMIT_LABELS[type]}
+            </Button>
+          </>
+        )}
+      </form>
+
+      <CategoryManagerDialog
+        open={managerOpen}
+        onOpenChange={setManagerOpen}
+        onCreated={handleCategoryCreated}
+        // Rename, recolour, recurring, delete: refresh the dashboard but leave
+        // the dialog open — the manager's own rhythm is several edits in a row.
+        onChanged={onCategoriesChanged}
+      />
+    </>
   );
 }

@@ -37,7 +37,8 @@ export const POZOSTALE_FILL = "var(--muted-foreground)";
 // repeats one — and two arcs sharing a fill is a misread, not a cosmetic issue.
 // Duplicates are separated by shifting lightness only: hue and saturation are
 // what make a colour recognisable as "the green one", and the shifted shade has
-// to stay readable as a variant of the dot shown on /categories.
+// to stay readable as a variant of the dot shown in the dashboard's category
+// manager.
 // The step the walk PREFERS. It shrinks when a hex has enough categories on it
 // that the full step would not fit — see shiftedFill.
 const LIGHTNESS_STEP = 0.13;
@@ -121,8 +122,8 @@ function hslToHex(hue: number, saturation: number, lightness: number): string {
 
 // `occurrence` is how many earlier categories in the sorted list already used
 // this hex. Zero returns the hex BYTE-IDENTICAL, so the largest category on a
-// colour always matches its dot on /categories exactly — the duplicate is what
-// moves, never the original.
+// colour always matches its dot in the dashboard's category manager exactly —
+// the duplicate is what moves, never the original.
 //
 // `count` is how many categories share this hex in total, and it is why the
 // caller needs a pre-pass. FITTING THE WALK TO THE BAND, RATHER THAN CLAMPING
@@ -144,8 +145,8 @@ function hslToHex(hue: number, saturation: number, lightness: number): string {
 // distinguishable. At six categories on #3b82f6 the steps are ~0.08 of
 // lightness; well beyond that they are visibly close. Separating them further
 // would mean rotating hue, which stops the swatch reading as "a shade of the
-// colour the user picked" — the link manual criterion 3.8 checks against
-// /categories.
+// colour the user picked" — the link manual criterion 3.8 checks against the
+// dashboard's category manager.
 function shiftedFill(hex: string, occurrence: number, count: number): string {
   if (occurrence === 0) {
     return hex;

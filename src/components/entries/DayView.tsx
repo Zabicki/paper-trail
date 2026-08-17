@@ -15,6 +15,10 @@ export default function DayView() {
   const [selectedDate, setSelectedDate] = useState(() => toLocalDateString(new Date()));
   const [visibleMonth, setVisibleMonth] = useState(() => monthOf(selectedDate));
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
+  // Same lever as calendarRefreshKey, for the two surfaces a category mutation
+  // can invalidate: the picker's lists and the day's entries.
+  const [categoriesRefreshKey, setCategoriesRefreshKey] = useState(0);
+  const [entriesRefreshKey, setEntriesRefreshKey] = useState(0);
 
   // Lives here rather than in EntryForm because the heading above the form
   // follows it.
@@ -63,13 +67,22 @@ export default function DayView() {
     return () => {
       cancelled.current = true;
     };
-  }, []);
+  }, [categoriesRefreshKey]);
+
+  // Nulling `entries` is what puts "Wczytywanie wpisów…" on screen. A date
+  // change has to: the rows showing belong to another day. A category-driven
+  // refresh must not: the rows are the same rows, only the category snapshot
+  // embedded in them may have moved, so that refetch has to be invisible.
+  const loadedDateRef = useRef<string | null>(null);
 
   useEffect(() => {
     const cancelled = { current: false };
 
     void (async () => {
-      setEntries(null);
+      if (loadedDateRef.current !== selectedDate) {
+        loadedDateRef.current = selectedDate;
+        setEntries(null);
+      }
       setEntriesError(null);
       try {
         const response = await fetch(`/api/entries?date=${selectedDate}`);
@@ -90,7 +103,7 @@ export default function DayView() {
     return () => {
       cancelled.current = true;
     };
-  }, [selectedDate]);
+  }, [selectedDate, entriesRefreshKey]);
 
   function handleSelectDate(date: string) {
     setSelectedDate(date);
@@ -169,6 +182,29 @@ export default function DayView() {
     setCalendarRefreshKey((key) => key + 1);
   }
 
+  // Refresh, don't patch. Both picker lists come from
+  // listCategoriesForEntryForm, whose ordering (recency head, then alphabetical
+  // tail, kind-scoped) is server logic; reproducing that merge here would fork
+  // it. The day's entries go along because Entry.category is an embedded
+  // snapshot, so a rename or a recolour otherwise leaves stale rows in the list
+  // right below the dialog.
+  function refreshAfterCategoryMutation() {
+    setCategoriesRefreshKey((key) => key + 1);
+    setEntriesRefreshKey((key) => key + 1);
+  }
+
+  function handleCategoryCreated(category: Category) {
+    // The one optimistic patch: a brand-new category has no entries, so recency
+    // puts it in the alphabetical tail — and EntryForm wants to select it now,
+    // before the refetch lands. Appending keeps its chip renderable meanwhile.
+    if (category.kind === "income") {
+      setIncomeCategories((prev) => (prev ? [...prev, category] : prev));
+    } else {
+      setExpenseCategories((prev) => (prev ? [...prev, category] : prev));
+    }
+    refreshAfterCategoryMutation();
+  }
+
   const categoriesLoaded = expenseCategories !== null && incomeCategories !== null;
 
   return (
@@ -195,6 +231,8 @@ export default function DayView() {
             onTypeChange={setEntryType}
             occurredOn={selectedDate}
             onSaved={handleSaved}
+            onCategoryCreated={handleCategoryCreated}
+            onCategoriesChanged={refreshAfterCategoryMutation}
           />
         )}
       </div>

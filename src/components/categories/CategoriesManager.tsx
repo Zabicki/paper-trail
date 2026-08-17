@@ -123,7 +123,15 @@ function ColorSwatchPicker({
   );
 }
 
-export default function CategoriesManager() {
+interface CategoriesManagerProps {
+  // Both optional so the component still renders standalone. They only report
+  // what already happened — nothing about this component's own behaviour
+  // depends on them.
+  onCreated?: (category: Category) => void;
+  onChanged?: () => void;
+}
+
+export default function CategoriesManager({ onCreated, onChanged }: CategoriesManagerProps) {
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -180,6 +188,7 @@ export default function CategoriesManager() {
       const created = await response.json<Category>();
       setCategories((prev) => sortByName([...(prev ?? []), created]));
       setAddForm(EMPTY_FORM);
+      onCreated?.(created);
     } catch {
       setAddError({ error: "Nie udało się połączyć z serwerem. Spróbuj ponownie." });
     } finally {
@@ -225,6 +234,7 @@ export default function CategoriesManager() {
       const updated = await response.json<Category>();
       setCategories((prev) => (prev ? sortByName(prev.map((c) => (c.id === id ? updated : c))) : prev));
       setEditingId(null);
+      onChanged?.();
     } catch {
       setEditError({ error: "Nie udało się połączyć z serwerem. Spróbuj ponownie." });
     } finally {
@@ -247,6 +257,9 @@ export default function CategoriesManager() {
         return;
       }
       setCategories((prev) => (prev ? prev.filter((c) => c.id !== id) : prev));
+      // Fires on the 404 path too: the row is gone either way, so a parent
+      // holding a stale copy of it needs to refresh regardless.
+      onChanged?.();
     } catch {
       window.alert("Nie udało się połączyć z serwerem. Spróbuj ponownie.");
     } finally {
