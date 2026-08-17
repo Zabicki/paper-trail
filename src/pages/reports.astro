@@ -2,10 +2,33 @@
 import Layout from "@/layouts/Layout.astro";
 import Topbar from "@/components/Topbar.astro";
 import ReportsView from "@/components/reports/ReportsView";
+import { createClient } from "@/lib/supabase";
+import { getFirstEntryDate } from "@/lib/services/reports";
 
 // max-w-4xl rather than the max-w-2xl the entry pages use: the charts this page
 // grows in Phase 5 need the horizontal room, and the KPI row already reads
 // better as three columns than two.
+
+// The one value this page reads server-side, and the only page in the repo that
+// reads anything: where "Cały okres" starts. It has to be in hand BEFORE the
+// first aggregate request can be built — the range determines the bucket, which
+// is a request parameter — so fetching it from an island would mean two
+// sequential round trips and a loading state on a preset that has none.
+//
+// Resolved once per render. `Cache-Control: private, no-store` (src/middleware.ts)
+// means any navigation back to /reports re-resolves it; the only value that can
+// go stale mid-session is the zero-entries → first-entry transition.
+const { user } = Astro.locals;
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+
+// Falls back rather than throwing when Supabase is unconfigured (createClient
+// returns null) or the user has no entries yet: the account-creation date, the
+// same floor api/entries/days.ts uses to clamp missing-day marking. The red
+// config banner already tells the user what is wrong — this page must not 500
+// on top of it. Today is the last resort, since Workers run UTC and a date is
+// still better than a crash.
+const accountCreated = user?.created_at.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
+const allTimeStart = (supabase ? await getFirstEntryDate(supabase) : null) ?? accountCreated;
 ---
 
 <Layout title="Raporty">
@@ -16,7 +39,7 @@ import ReportsView from "@/components/reports/ReportsView";
         <h1 class="mb-4 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-2xl font-bold text-transparent">
           Raporty
         </h1>
-        <ReportsView client:load />
+        <ReportsView allTimeStart={allTimeStart} client:load />
       </div>
     </div>
   </div>

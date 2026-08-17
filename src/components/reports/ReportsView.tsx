@@ -49,7 +49,14 @@ function initialViewState(): ViewState {
   return typeof window === "undefined" ? DEFAULT_VIEW_STATE : fromSearch(window.location.search);
 }
 
-export default function ReportsView() {
+interface ReportsViewProps {
+  // Where "Cały okres" starts: the user's first entry, or their account-creation
+  // date when they have none. Resolved on the server (src/pages/reports.astro) so
+  // the preset needs no round trip of its own.
+  allTimeStart: string;
+}
+
+export default function ReportsView({ allTimeStart }: ReportsViewProps) {
   const [view, setView] = useState<ViewState>(initialViewState);
 
   // The caption's range is REPORTED BY the active board, not derived here. A
@@ -64,7 +71,9 @@ export default function ReportsView() {
   // renders during the initial load (an improvement over waiting for the
   // summary, which is worth keeping). Every board fetch overwrites it with the
   // range that fetch actually used, which is what closes the divergence.
-  const [range, setRange] = useState<DateRange>(() => resolveRange(view.preset, toLocalDateString(new Date())));
+  const [range, setRange] = useState<DateRange>(() =>
+    resolveRange(view.preset, toLocalDateString(new Date()), allTimeStart),
+  );
 
   // The other direction of the URL sync: pushState below writes history
   // entries, this reads them back when the user walks the back button.
@@ -121,9 +130,19 @@ export default function ReportsView() {
       </p>
 
       {view.board === "categories" ? (
-        <CategoriesBoard preset={view.preset} recurringHidden={view.recurringHidden} onRangeResolved={setRange} />
+        <CategoriesBoard
+          preset={view.preset}
+          recurringHidden={view.recurringHidden}
+          allTimeStart={allTimeStart}
+          onRangeResolved={setRange}
+        />
       ) : (
-        <OverviewBoard preset={view.preset} recurringHidden={view.recurringHidden} onRangeResolved={setRange} />
+        <OverviewBoard
+          preset={view.preset}
+          recurringHidden={view.recurringHidden}
+          allTimeStart={allTimeStart}
+          onRangeResolved={setRange}
+        />
       )}
     </div>
   );

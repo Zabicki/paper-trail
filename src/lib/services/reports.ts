@@ -224,6 +224,44 @@ export async function getEntriesSummary(supabase: SupabaseClient, input: Summary
   };
 }
 
+/**
+ * The earliest date this user has any entry on, or `null` if they have none.
+ *
+ * This is what "Cały okres" resolves its start to. It lives here rather than in
+ * entries.ts because it is range vocabulary — the same concern as previousRange
+ * and MAX_BUCKETS — not entry CRUD.
+ *
+ * Three deliberate omissions:
+ *
+ *   - No `user_id` filter: RLS supplies the predicate, and
+ *     entries_user_id_occurred_on_idx (user_id, occurred_on) then covers the
+ *     ordered limit-1 read. Don't reach for a security definer function here.
+ *   - No `deleted_at` filter on the joined category. Both summary functions
+ *     deliberately count entries filed under soft-deleted categories (see
+ *     20260816103000_add_entries_summary_function.sql), and a start date that
+ *     disagreed with them would sit AFTER the earliest bar they plot.
+ *   - No recurring-cost filter, so toggling FR-015 never moves the X-axis. The
+ *     visible cost is a few leading zero buckets when the filter is on; the
+ *     alternative re-scales — and can re-bucket — the chart under the user on a
+ *     control that is supposed to change the bars.
+ *
+ * `entries` has no deleted_at of its own: entry deletion is hard (entries.ts's
+ * deleteEntry), so there is nothing to exclude on this side either.
+ */
+export async function getFirstEntryDate(supabase: SupabaseClient): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("entries")
+    .select("occurred_on")
+    .order("occurred_on", { ascending: true })
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+  const rows = data as { occurred_on: string }[];
+  return rows.length > 0 ? rows[0].occurred_on : null;
+}
+
 // --- Category summary (S-05) ---
 //
 // Deliberately in this module rather than a category-reports.ts of its own, so

@@ -136,7 +136,10 @@ export default function CategoryTrendChart({ distribution, points, range, bucket
             minTickGap={16}
             tickFormatter={(value: string) => formatBucketLabel(value, bucket)}
           />
-          <YAxis tickLine={false} axisLine={false} width={44} tickFormatter={formatCurrencyCompact} />
+          {/* width="auto" rather than a number — see the note on TrendChart's
+              axis. Stacked bars total the whole bucket, so these ticks run as
+              high as A1's and clipped the same way. */}
+          <YAxis tickLine={false} axisLine={false} width="auto" tickFormatter={formatCurrencyCompact} />
           <ChartTooltip
             content={
               <ChartTooltipContent

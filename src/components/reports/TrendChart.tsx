@@ -59,7 +59,11 @@ export default function TrendChart({ points, bucket }: TrendChartProps) {
             minTickGap={16}
             tickFormatter={(value: string) => formatBucketLabel(value, bucket)}
           />
-          <YAxis tickLine={false} axisLine={false} width={44} tickFormatter={formatCurrencyCompact} />
+          {/* width="auto" rather than a number: formatCurrencyCompact renders a
+              four-figure bucket as "12,5 tys.", which is wider than any constant
+              that also suits a bare "50". The fixed 44 this replaces clipped the
+              leading digit of every bucket over 1000 zł. */}
+          <YAxis tickLine={false} axisLine={false} width="auto" tickFormatter={formatCurrencyCompact} />
           <ChartTooltip
             content={
               <ChartTooltipContent

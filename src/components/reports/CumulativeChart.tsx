@@ -137,7 +137,10 @@ export default function CumulativeChart({ summary }: CumulativeChartProps) {
             minTickGap={16}
             tickFormatter={(value: string) => formatBucketLabel(value, summary.bucket)}
           />
-          <YAxis tickLine={false} axisLine={false} width={44} tickFormatter={formatCurrencyCompact} />
+          {/* width="auto" rather than a number — see the note on TrendChart's
+              axis. A cumulative total is the widest tick on the page, so this is
+              the chart the fixed 44 clipped first. */}
+          <YAxis tickLine={false} axisLine={false} width="auto" tickFormatter={formatCurrencyCompact} />
           <ChartTooltip
             content={
               <ChartTooltipContent

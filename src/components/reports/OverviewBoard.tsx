@@ -14,6 +14,9 @@ import type { EntriesSummary, RangeSummary, SummaryBucket, SummaryPoint } from "
 interface OverviewBoardProps {
   preset: RangePreset;
   recurringHidden: boolean;
+  // Server-resolved start for "Cały okres" — see ReportsView's own prop. Passed
+  // down rather than fetched here because both boards resolve their own range.
+  allTimeStart: string;
   // Reported back so ReportsView's caption shows the range this board actually
   // fetched, rather than one re-derived from a separate "today". See the comment
   // on ReportsView's `range` state.
@@ -68,7 +71,7 @@ function OverviewBody({ summary, loadError }: OverviewBodyProps) {
   );
 }
 
-export default function OverviewBoard({ preset, recurringHidden, onRangeResolved }: OverviewBoardProps) {
+export default function OverviewBoard({ preset, recurringHidden, allTimeStart, onRangeResolved }: OverviewBoardProps) {
   const [summary, setSummary] = useState<EntriesSummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -82,7 +85,7 @@ export default function OverviewBoard({ preset, recurringHidden, onRangeResolved
       // Resolved here and not on the server: Workers run UTC, and a user
       // logging at 23:30 CEST would get yesterday out of a server-derived
       // "today". The endpoint validates concrete dates, never derives them.
-      const range = resolveRange(preset, toLocalDateString(new Date()));
+      const range = resolveRange(preset, toLocalDateString(new Date()), allTimeStart);
       // Published before the await, so the caption is correct while this board
       // is still loading — and published from the same `range` the request below
       // is built from, which is what makes the label and the money agree.
@@ -113,7 +116,7 @@ export default function OverviewBoard({ preset, recurringHidden, onRangeResolved
     return () => {
       cancelled.current = true;
     };
-  }, [preset, recurringHidden, onRangeResolved]);
+  }, [preset, recurringHidden, allTimeStart, onRangeResolved]);
 
   return <OverviewBody summary={summary} loadError={loadError} />;
 }

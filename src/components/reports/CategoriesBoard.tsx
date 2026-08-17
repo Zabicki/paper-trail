@@ -14,7 +14,8 @@ import type { CategorySummary } from "@/types";
 interface CategoriesBoardProps {
   preset: RangePreset;
   recurringHidden: boolean;
-  // Mirrors OverviewBoard — see the comment on its own prop.
+  // Both mirror OverviewBoard — see the comments on its own props.
+  allTimeStart: string;
   onRangeResolved: (range: DateRange) => void;
 }
 
@@ -69,7 +70,12 @@ function CategoriesBody({ summary, loadError, expanded, onToggleExpanded }: Cate
   );
 }
 
-export default function CategoriesBoard({ preset, recurringHidden, onRangeResolved }: CategoriesBoardProps) {
+export default function CategoriesBoard({
+  preset,
+  recurringHidden,
+  allTimeStart,
+  onRangeResolved,
+}: CategoriesBoardProps) {
   const [summary, setSummary] = useState<CategorySummary | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -87,7 +93,7 @@ export default function CategoriesBoard({ preset, recurringHidden, onRangeResolv
 
       // "Today" is a browser-local date here for the same reason it is on Board
       // A — Workers run UTC (src/components/entries/date-utils.ts).
-      const range = resolveRange(preset, toLocalDateString(new Date()));
+      const range = resolveRange(preset, toLocalDateString(new Date()), allTimeStart);
       // Published before the await for the same reason as Board A: the caption
       // must show the range this request was built from, not one re-derived
       // from a separate "today".
@@ -118,7 +124,7 @@ export default function CategoriesBoard({ preset, recurringHidden, onRangeResolv
     return () => {
       cancelled.current = true;
     };
-  }, [preset, recurringHidden, onRangeResolved]);
+  }, [preset, recurringHidden, allTimeStart, onRangeResolved]);
 
   return (
     <CategoriesBody

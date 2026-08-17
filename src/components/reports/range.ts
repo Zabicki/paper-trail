@@ -52,14 +52,21 @@ export function isRangePreset(value: string | null): value is RangePreset {
   return value !== null && PRESET_VALUES.has(value);
 }
 
-// "Cały okres" still has to resolve to two concrete dates, because that is
-// what the aggregate takes. A literal epoch floor is not usable: the endpoint's
-// bucket guard (src/lib/services/reports.ts) rejects any span implying more
-// than 400 buckets, and 1970 → today is ~680 months, so the preset would
-// answer 400 every time. Twenty years is far beyond anything this app can
-// hold, caps the span at ~252 month buckets, and — being relative — never
-// drifts into the guard as the years pass.
-const ALL_TIME_YEARS_BACK = 20;
+// "Cały okres" starts at the user's first recorded entry — a date the server
+// resolves once per page render and hands down as `allTimeStart` (see
+// getFirstEntryDate in src/lib/services/reports.ts and src/pages/reports.astro).
+// It used to start at a relative twenty-year floor, which plotted ~252 empty
+// month buckets in front of the handful the user actually had.
+//
+// The clamp below is what that floor was really for. The aggregate refuses any
+// span implying more than MAX_BUCKETS = 400 buckets (src/lib/services/reports.ts),
+// and this bound is expressed in months for exactly that reason: 396 + 1 = 397
+// month buckets stays inside the guard, while a year-granular bound would tip
+// over it in December. The entry form's date field carries no min/max and
+// validates on a regex alone, so a mis-typed year like 0202 is storable — one
+// such row would otherwise 400 the whole preset. The guard itself stays as the
+// second line of defence for hand-crafted URLs.
+const ALL_TIME_MAX_MONTHS_BACK = 396;
 
 function pad(value: number): string {
   return value.toString().padStart(2, "0");
@@ -105,7 +112,10 @@ export function inclusiveDayCount({ from, to }: DateRange): number {
   return Math.round((toUtcDate(to).getTime() - toUtcDate(from).getTime()) / 86_400_000) + 1;
 }
 
-export function resolveRange(preset: RangePreset, today: string): DateRange {
+// `allTimeStart` is required rather than defaulted: a default would let a future
+// caller silently reintroduce a hardcoded floor, which is the defect this
+// parameter exists to remove. Every other preset ignores it.
+export function resolveRange(preset: RangePreset, today: string, allTimeStart: string): DateRange {
   switch (preset) {
     case "last-7-days":
       return { from: addDays(today, -6), to: today };
@@ -123,8 +133,12 @@ export function resolveRange(preset: RangePreset, today: string): DateRange {
       return { from: addDays(addMonths(today, -3), 1), to: today };
     case "ytd":
       return { from: `${today.slice(0, 4)}-01-01`, to: today };
-    case "all-time":
-      return { from: `${Number(today.slice(0, 4)) - ALL_TIME_YEARS_BACK}-01-01`, to: today };
+    case "all-time": {
+      // Lexicographic comparison, exact for zero-padded ISO dates — the same
+      // clamp days.ts:55-58 and summary.ts:44 already do.
+      const floor = addMonths(today, -ALL_TIME_MAX_MONTHS_BACK);
+      return { from: allTimeStart > floor ? allTimeStart : floor, to: today };
+    }
   }
 }
 
