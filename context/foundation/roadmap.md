@@ -35,7 +35,7 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | S-03  | `income-and-entry-management` | log an income, and review / edit / delete any logged entry                   | S-02          | FR-008, FR-009              | done |
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | done |
 | S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | done |
-| S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | in-progress |
+| S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | done |
 | S-07  | `dashboard-category-management` | manage categories from the dashboard itself, and read the day view without clutter or misalignment | S-01, S-02, S-03 | FR-004, FR-005, FR-007, FR-009 | ready |
 | S-08  | `reports-axis-and-all-time-range` | read every chart's Y-axis labels, and see "Cały okres" start at their first entry | S-04, S-05 | FR-013, FR-014 | ready |
 | S-09  | `category-icons`              | recognise a category by an icon they chose, everywhere it appears            | S-05, S-07    | FR-004, FR-014, FR-018        | proposed |
@@ -161,7 +161,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which provider carries out the classification, and does its accuracy clear the Secondary success bar (a majority of line items correctly categorised without correction)? Owner: user. **Block: yes.**
   - What is the parsing timeout, and what is the receipt-image retention window? Owner: user. **Block: yes** for the timeout; the retention half may dissolve entirely — see OQ-3.
 - **Risk:** This is the product differentiator and the slice most likely to consume the schedule, which is why it is `blocked` rather than optimistically sequenced. `infrastructure.md`'s pre-mortem predicts exactly how it goes wrong: reaching for the Node recipe (`sharp` to downscale, a storage bucket, a signed upload, a retention job), none of which runs on workerd. The Cloudflare Images binding is already provisioned for this purpose. Note also that FR-011 has a *floor*: below the Secondary bar, auto-assignment is slower than typing, so the feature is failing rather than merely imperfect — worth a spike against real receipts before committing the slice.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-07: Dashboard as the single capture surface
 
@@ -266,3 +266,4 @@ Tracked as GitHub issues in [`Zabicki/paper-trail`](https://github.com/Zabicki/p
 - **S-03: User can log an income, and can review, edit and delete any previously logged entry.** — Archived 2026-08-15 → `context/archive/2026-08-15-income-and-entry-management/`. Lesson: —.
 - **S-04: User can view spending over quick-select date ranges (last week, last month, year-to-date) and can exclude categories flagged as large recurring costs from the view.** — Archived 2026-08-16 → `context/archive/2026-08-16-date-range-spending-view/`. Lesson: —.
 - **S-05: User can see spending distributed across their own categories, and the view stays readable regardless of how many categories they have defined.** — Archived 2026-08-17 → `context/archive/2026-08-16-category-distribution-view/`. Lesson: —.
+- **S-06: User can upload a photographed receipt and review line items pre-assigned to their own categories, correcting any category or amount before anything is persisted.** — Archived 2026-08-17 → `context/archive/2026-08-16-receipt-parsing/`. Phases 1–3 shipped and reviewed; **Phase 4 (live accuracy assessment) archived unmeasured** — `accuracy-log.md` is an empty scaffold, so the Secondary success bar in FR-011 has no recorded answer. Lesson: —.
