@@ -446,43 +446,43 @@ Nothing here changes a query, adds a round trip, or moves a computation across t
 
 #### Automated
 
-- [x] 1.1 `npx astro sync` succeeds
-- [x] 1.2 Type check passes: `npx tsc --noEmit`
-- [x] 1.3 Linting passes: `npm run lint`
-- [x] 1.4 Production build passes: `npm run build`
-- [x] 1.5 `npx supabase test db` passes with `entries_description_test.sql` unchanged
-- [x] 1.6 No migration added: `git status --short supabase/migrations/` is empty
-- [x] 1.7 Reversed rationale rewritten: `grep -n "records where the entry came from" src/lib/services/entries.ts` returns nothing
+- [x] 1.1 `npx astro sync` succeeds — a9926d7
+- [x] 1.2 Type check passes: `npx tsc --noEmit` — a9926d7
+- [x] 1.3 Linting passes: `npm run lint` — a9926d7
+- [x] 1.4 Production build passes: `npm run build` — a9926d7
+- [x] 1.5 `npx supabase test db` passes with `entries_description_test.sql` unchanged — a9926d7
+- [x] 1.6 No migration added: `git status --short supabase/migrations/` is empty — a9926d7
+- [x] 1.7 Reversed rationale rewritten: `grep -n "records where the entry came from" src/lib/services/entries.ts` returns nothing — a9926d7
 
 #### Manual
 
-- [x] 1.8 Expense with a description saves it
-- [x] 1.9 Untouched description field stores `NULL`, not `""`
-- [x] 1.10 Amount-only edit leaves the description intact
-- [x] 1.11 Cleared description stores `NULL`
-- [x] 1.12 Entry under a soft-deleted category still saves
-- [x] 1.13 A 201-character description is a 400, not a 500
-- [x] 1.14 Tap-budget re-count: routine expense still 3 interactions and ≤10s
+- [x] 1.8 Expense with a description saves it — a9926d7
+- [x] 1.9 Untouched description field stores `NULL`, not `""` — a9926d7
+- [x] 1.10 Amount-only edit leaves the description intact — a9926d7
+- [x] 1.11 Cleared description stores `NULL` — a9926d7
+- [x] 1.12 Entry under a soft-deleted category still saves — a9926d7
+- [x] 1.13 A 201-character description is a 400, not a 500 — a9926d7
+- [x] 1.14 Tap-budget re-count: routine expense still 3 interactions and ≤10s — a9926d7
 
 ### Phase 2: Descriptions visible in the day list
 
 #### Automated
 
-- [ ] 2.1 Type check passes: `npx tsc --noEmit`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Production build passes: `npm run build`
-- [ ] 2.4 Separator not duplicated: `grep -rn '" · "' src/ --include=*.tsx` has no hits outside `src/lib/entry-description.ts`
+- [x] 2.1 Type check passes: `npx tsc --noEmit`
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Production build passes: `npm run build`
+- [x] 2.4 Separator not duplicated: `grep -rn '" · "' src/ --include=*.tsx` has no hits outside `src/lib/entry-description.ts`
 
 #### Manual
 
-- [ ] 2.5 One-item description renders with no toggle
-- [ ] 2.6 Five-item description shows three plus `+2`, expands and collapses
-- [ ] 2.7 Expanding one row does not affect another
-- [ ] 2.8 Descriptionless rows keep today's single-line height
-- [ ] 2.9 Day navigation collapses everything
-- [ ] 2.10 Edit-then-cancel on an expanded row leaves it readable
-- [ ] 2.11 A long description does not push the amount or actions off-screen at 360px
-- [ ] 2.12 Day totals unaffected
+- [x] 2.5 One-item description renders with no toggle
+- [x] 2.6 Five-item description shows three plus `+2`, expands and collapses
+- [x] 2.7 Expanding one row does not affect another
+- [x] 2.8 Descriptionless rows keep today's single-line height
+- [x] 2.9 Day navigation collapses everything
+- [x] 2.10 Edit-then-cancel on an expanded row leaves it readable
+- [x] 2.11 A long description does not push the amount or actions off-screen at 360px
+- [x] 2.12 Day totals unaffected
 
 ### Phase 3: The receipt's own date
 

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
 import CategoryIcon from "@/components/categories/CategoryIcon";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
+import { DESCRIPTION_ITEM_SEPARATOR, splitDescriptionItems } from "@/lib/entry-description";
 import { formatCurrency } from "@/lib/format";
 import type { Category, Entry } from "@/types";
 
@@ -40,6 +41,56 @@ function sumOf(entries: Entry[], type: Entry["type"]): number {
   return entries.filter((entry) => entry.type === type).reduce((total, entry) => total + entry.amount, 0);
 }
 
+// Three items before the clamp. A grouped receipt description routinely carries
+// more; a manual one almost never splits at all, which is what keeps this inert
+// for hand-written entries.
+const DESCRIPTION_PREVIEW_ITEMS = 3;
+
+// The second line of a row. Renders nothing at all when the description has no
+// items, so a descriptionless row keeps exactly today's single-line height.
+function EntryDescription({
+  description,
+  expanded,
+  onToggle,
+}: {
+  description: string;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const items = splitDescriptionItems(description);
+  if (items.length === 0) {
+    return null;
+  }
+
+  const hiddenCount = items.length - DESCRIPTION_PREVIEW_ITEMS;
+  const shown = expanded || hiddenCount <= 0 ? items : items.slice(0, DESCRIPTION_PREVIEW_ITEMS);
+
+  return (
+    // break-words rather than a truncate: at 360px a long single-item
+    // description has to wrap inside the left column, not widen it and push the
+    // amount and the two action buttons off-screen.
+    <span className="text-muted-foreground text-xs break-words">
+      {shown.join(DESCRIPTION_ITEM_SEPARATOR)}
+      {/* Mirrors CategoryPicker's collapse rule: rendered only when there is
+          something to hide, and kept rendered while expanded so the row can be
+          collapsed again. Deliberately not a 44px control — it is a third
+          affordance in a row that already has Edytuj and Usuń, and making it
+          their size would compete with them. */}
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-label={expanded ? "Zwiń opis wpisu" : `Pokaż pozostałe pozycje opisu (${String(hiddenCount)})`}
+          className="text-foreground ml-1 underline underline-offset-2"
+        >
+          {expanded ? "Zwiń" : `+${String(hiddenCount)}`}
+        </button>
+      )}
+    </span>
+  );
+}
+
 export default function DayEntriesList({
   entries,
   loadError,
@@ -59,6 +110,21 @@ export default function DayEntriesList({
   const [editError, setEditError] = useState<ApiErrorBody | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  // A set, not a single id like editingId: two rows can be expanded at once
+  // without conflict, because unlike editing there is no shared error state to
+  // land on the wrong row. DayView keys this component on selectedDate, so
+  // navigating days clears it via remount rather than via an effect.
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
+
+  function toggleExpanded(id: number) {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) {
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   function startEdit(entry: Entry) {
     setEditingId(entry.id);
@@ -264,11 +330,25 @@ export default function DayEntriesList({
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <CategoryIcon name={entry.category.icon} className="size-4 shrink-0" />
-                  {entry.category.name}
-                </span>
-                <div className="flex items-center gap-2">
+                {/* Two lines now, so min-w-0 is load-bearing: without it a long
+                    description makes this column refuse to shrink and the
+                    amount and buttons leave the viewport at 360px. */}
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex items-center gap-2">
+                    <CategoryIcon name={entry.category.icon} className="size-4 shrink-0" />
+                    {entry.category.name}
+                  </span>
+                  {entry.description !== null && (
+                    <EntryDescription
+                      description={entry.description}
+                      expanded={expandedIds.has(entry.id)}
+                      onToggle={() => {
+                        toggleExpanded(entry.id);
+                      }}
+                    />
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
                   <span className={cn("font-medium", entry.type === "income" && "text-emerald-400")}>
                     {entry.type === "income" && "+"}
                     {formatCurrency(entry.amount)}
