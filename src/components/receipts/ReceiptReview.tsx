@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "@/components/entries/CategoryPicker";
+import CategoryIcon from "@/components/categories/CategoryIcon";
 import { formatCurrency } from "@/lib/format";
 import { roundToCents } from "@/lib/money";
 import { sumItems, totalDelta } from "./receipt-total";
@@ -229,11 +230,7 @@ export default function ReceiptReview({
                       "Wybierz kategorię"
                     ) : (
                       <>
-                        <span
-                          aria-hidden="true"
-                          className="size-3 shrink-0 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
+                        <CategoryIcon name={category.icon} className="size-4 shrink-0" />
                         {category.name}
                       </>
                     )}

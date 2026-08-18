@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
+import CategoryIcon from "@/components/categories/CategoryIcon";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
 import { formatCurrency } from "@/lib/format";
 import type { Category, Entry } from "@/types";
@@ -227,11 +228,7 @@ export default function DayEntriesList({
             ) : (
               <div className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="size-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: entry.category.color }}
-                  />
+                  <CategoryIcon name={entry.category.icon} className="size-4 shrink-0" />
                   {entry.category.name}
                 </span>
                 <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { createClient } from "@/lib/supabase";
-import type { Category, CategoryColor, CategoryKind, Entry, EntryType } from "@/types";
+import type { Category, CategoryIconName, CategoryKind, Entry, EntryType } from "@/types";
 
 type SupabaseClient = NonNullable<ReturnType<typeof createClient>>;
 
@@ -91,10 +91,10 @@ interface EntryRow {
   type: "expense" | "income";
   created_at: string;
   description: string | null;
-  category: { id: number; name: string; color: CategoryColor };
+  category: { id: number; name: string; icon: CategoryIconName };
 }
 
-const SELECT_COLUMNS = "id, amount, occurred_on, type, created_at, description, category:categories(id, name, color)";
+const SELECT_COLUMNS = "id, amount, occurred_on, type, created_at, description, category:categories(id, name, icon)";
 
 function toDto(row: EntryRow): Entry {
   return {
@@ -387,6 +387,30 @@ export async function listEntryDaysForMonth(
   return [...new Set((data as { occurred_on: string }[]).map((row) => row.occurred_on))];
 }
 
+// The oldest day this user has an expense on, or null if they have none.
+//
+// Deliberately shares listEntryDaysForMonth's `type = 'expense'` rule rather
+// than reusing reports.ts's getFirstEntryDate, which spans both types because
+// the reports X-axis must agree with the summary functions. Its one caller
+// (src/pages/api/entries/days.ts) uses it as the floor for the same red marking
+// listEntryDaysForMonth feeds, so the two must answer the same question — a
+// floor derived from an income entry would open a window of days the marker
+// then paints red wholesale.
+export async function firstExpenseDate(supabase: SupabaseClient): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("entries")
+    .select("occurred_on")
+    .eq("type", "expense")
+    .order("occurred_on", { ascending: true })
+    .limit(1);
+
+  if (error) {
+    throw error;
+  }
+  const rows = data as { occurred_on: string }[];
+  return rows.length > 0 ? rows[0].occurred_on : null;
+}
+
 const RECENCY_LOOKBACK = 50;
 const RECENCY_CHIP_COUNT = 5;
 
@@ -399,7 +423,7 @@ export async function listCategoriesForEntryForm(supabase: SupabaseClient, kind:
     await Promise.all([
       supabase
         .from("categories")
-        .select("id, name, color, is_recurring, kind, created_at")
+        .select("id, name, icon, is_recurring, kind, created_at")
         .eq("kind", kind)
         .is("deleted_at", null)
         .order("name", { ascending: true }),
@@ -422,7 +446,7 @@ export async function listCategoriesForEntryForm(supabase: SupabaseClient, kind:
     categoriesData as {
       id: number;
       name: string;
-      color: CategoryColor;
+      icon: CategoryIconName;
       is_recurring: boolean;
       kind: CategoryKind;
       created_at: string;
@@ -430,7 +454,7 @@ export async function listCategoriesForEntryForm(supabase: SupabaseClient, kind:
   ).map((row) => ({
     id: row.id,
     name: row.name,
-    color: row.color,
+    icon: row.icon,
     isRecurring: row.is_recurring,
     kind: row.kind,
     createdAt: row.created_at,

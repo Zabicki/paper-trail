@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import CategoryIcon from "@/components/categories/CategoryIcon";
 import type { Category } from "@/types";
 
 interface CategoryPickerProps {
@@ -96,11 +97,9 @@ export default function CategoryPicker({
               value === category.id ? "border-foreground" : "hover:bg-accent border-transparent",
             )}
           >
-            <span
-              aria-hidden="true"
-              className="size-3 shrink-0 rounded-full"
-              style={{ backgroundColor: category.color }}
-            />
+            {/* size-4, not the dot's old size-3: a glyph needs the extra 4px to
+                read at all, and the chip is min-h-11 so it absorbs them. */}
+            <CategoryIcon name={category.icon} className="size-4 shrink-0" />
             {category.isRecurring && <Repeat className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />}
             {category.name}
           </button>

@@ -1,5 +1,5 @@
 begin;
-select plan(18);
+select plan(19);
 
 -- Proves F-01's isolation guarantee on public.categories: a signed-in user
 -- can read and write only their own rows. Impersonates the two fixed seed
@@ -11,6 +11,16 @@ select plan(18);
 -- Also proves S-01's schema additions: per-user case-insensitive name
 -- uniqueness (scoped so it never blocks a *different* user reusing a name),
 -- the fixed color palette check constraint, and is_recurring/color defaults.
+--
+-- ...and S-09's `icon` column DEFAULT. NOT covered (and unprovable here): that
+-- a stored icon name is one of the ~116 the picker offers. The column carries
+-- no CHECK constraint by decision (see
+-- 20260818090000_add_category_icon.sql) — `z.enum(categoryIconValues)` in
+-- src/lib/services/categories.ts is the only guard, so a raw
+-- `update categories set icon = 'nonsense'` succeeds at the database layer.
+-- Same category of gap as the app-layer soft-delete filtering below, and a
+-- permanent manual re-verification requirement per
+-- context/foundation/lessons.md.
 --
 -- ...and S-03's `kind` discriminant: its check constraint and its 'expense'
 -- default. NOT covered (and unprovable here): that kind is immutable after
@@ -40,6 +50,12 @@ select is(
   (select color from public.categories where name = 'Groceries')::text,
   '#64748b',
   'color defaults to the slate swatch when not specified'
+);
+
+select is(
+  (select icon from public.categories where name = 'Groceries')::text,
+  'tag',
+  'icon defaults to the neutral tag glyph when not specified'
 );
 
 select is(

@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(26);
 
 -- Proves S-05's per-category aggregation primitive,
 -- public.entries_category_summary. Like entries_summary's suite, the
@@ -14,7 +14,7 @@ select plan(25);
 --   4. expense-only filtering — income never appears in any row;
 --   5. the p_exclude_recurring filter drops exactly the recurring category;
 --   6. an entry under a SOFT-DELETED category is still counted, and still
---      reports that category's name and colour;
+--      reports that category's name, colour and icon;
 --   7. day / week / month bucket arithmetic, including Monday-first weeks.
 --
 -- NOT covered here (client code, unreachable from pgTAP — the same category of
@@ -23,6 +23,14 @@ select plan(25);
 -- denominator guard, the zod query-parameter validation, the ≤400 bucket-count
 -- guard, and every UI behaviour. All are manual-only and named as a permanent
 -- re-verification requirement in the plan's Testing Strategy.
+--
+-- ALSO NOT covered: that a stored `icon` is one of the ~116 names the picker
+-- offers. S-09 added the column with NO CHECK constraint by decision, so the
+-- allowed set lives only in `z.enum(categoryIconValues)` in
+-- src/lib/services/categories.ts. What IS asserted below is the passthrough:
+-- whatever the column holds, the function reports it faithfully. Rejecting an
+-- off-list name is manual-verify-only, permanently, per
+-- context/foundation/lessons.md.
 --
 -- Fixture dates sit in 2027 for the same reason entries_summary_test.sql's do:
 -- the function takes no user filter, so the post-`reset role` scoping trick
@@ -40,16 +48,21 @@ select plan(25);
 -- 12-hex palette has no per-user uniqueness constraint, so duplicates are a
 -- state the database is entitled to be in and the function must report
 -- faithfully. Resolving them into distinguishable shades is the client's job.
+--
+-- `icon` is given explicitly on every row rather than left to its 'tag'
+-- default, so the passthrough assertion below has a non-default value to
+-- distinguish from a fallback — a default-valued fixture would pass even if the
+-- function returned nothing at all.
 
-insert into public.categories (user_id, name, color, kind, is_recurring, deleted_at) values
-  ('11111111-1111-1111-1111-111111111111', 'CatSum Food A',   '#22c55e', 'expense', false, null),
-  ('11111111-1111-1111-1111-111111111111', 'CatSum Fun A',    '#22c55e', 'expense', false, null),
-  ('11111111-1111-1111-1111-111111111111', 'CatSum Rent A',   '#ef4444', 'expense', true,  null),
+insert into public.categories (user_id, name, color, icon, kind, is_recurring, deleted_at) values
+  ('11111111-1111-1111-1111-111111111111', 'CatSum Food A',   '#22c55e', 'utensils',     'expense', false, null),
+  ('11111111-1111-1111-1111-111111111111', 'CatSum Fun A',    '#22c55e', 'party-popper', 'expense', false, null),
+  ('11111111-1111-1111-1111-111111111111', 'CatSum Rent A',   '#ef4444', 'house',        'expense', true,  null),
   -- Soft-deleted, with an entry still filed under it. The function must not
   -- inherit the service layer's `deleted_at is null` habit.
-  ('11111111-1111-1111-1111-111111111111', 'CatSum Ghost A',  '#8b5cf6', 'expense', false, now()),
-  ('11111111-1111-1111-1111-111111111111', 'CatSum Salary A', '#84cc16', 'income',  false, null),
-  ('22222222-2222-2222-2222-222222222222', 'CatSum Food B',   '#3b82f6', 'expense', false, null);
+  ('11111111-1111-1111-1111-111111111111', 'CatSum Ghost A',  '#8b5cf6', 'clapperboard', 'expense', false, now()),
+  ('11111111-1111-1111-1111-111111111111', 'CatSum Salary A', '#84cc16', 'banknote',     'income',  false, null),
+  ('22222222-2222-2222-2222-222222222222', 'CatSum Food B',   '#3b82f6', 'pizza',        'expense', false, null);
 
 insert into public.entries (user_id, category_id, type, amount, occurred_on) values
   ('11111111-1111-1111-1111-111111111111',
@@ -150,6 +163,17 @@ select is(
      where category_color = '#22c55e')::int,
   2,
   'two distinct categories report the same palette hex — the collision the client must resolve'
+);
+
+-- S-09's addition. Asserted on the soft-deleted category for the same reason
+-- the colour assertion above is: it is the row most likely to be dropped or
+-- defaulted by a careless `deleted_at is null` filter, so proving its own icon
+-- survives the join proves the passthrough for every easier case too.
+select is(
+  (select category_icon from public.entries_category_summary('2027-03-01', '2027-03-31', 'day')
+     where bucket_start is null and category_name = 'CatSum Ghost A'),
+  'clapperboard',
+  'a soft-deleted category still reports its own icon, not the tag fallback'
 );
 
 -- === User A: the FR-015 recurring-cost filter ===

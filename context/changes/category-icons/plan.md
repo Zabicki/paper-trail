@@ -408,31 +408,31 @@ Rollback for *this* change is a plain Worker rollback — the schema additions a
 
 #### Automated
 
-- [x] 1.1 Type checking and lint pass: `npm run lint`
-- [x] 1.2 Production build succeeds: `npm run build`
-- [x] 1.3 No text action labels remain in the three converted files
-- [x] 1.4 The `cykliczny` string is gone
+- [x] 1.1 Type checking and lint pass: `npm run lint` — 7d26b0c
+- [x] 1.2 Production build succeeds: `npm run build` — 7d26b0c
+- [x] 1.3 No text action labels remain in the three converted files — 7d26b0c
+- [x] 1.4 The `cykliczny` string is gone — 7d26b0c
 
 #### Manual
 
-- [ ] 1.5 Every converted button is at least 44×44px at 375px width
-- [ ] 1.6 Each icon button announces its Polish name (lint cannot catch this)
-- [ ] 1.7 Deleting an entry shows a spinning glyph; `window.confirm` still guards
-- [ ] 1.8 Editing while another row is mid-save is still blocked
-- [ ] 1.9 A recurring category shows the `Repeat` glyph and reads correctly
+- [x] 1.5 Every converted button is at least 44×44px at 375px width — 7d26b0c
+- [x] 1.6 Each icon button announces its Polish name (lint cannot catch this) — 7d26b0c
+- [x] 1.7 Deleting an entry shows a spinning glyph; `window.confirm` still guards — 7d26b0c
+- [x] 1.8 Editing while another row is mid-save is still blocked — 7d26b0c
+- [x] 1.9 A recurring category shows the `Repeat` glyph and reads correctly — 7d26b0c
 
 ### Phase 2: Icons end to end
 
 #### Automated
 
-- [ ] 2.1 Dependencies installed with the pinned CLI first: `npm ci`
-- [ ] 2.2 Types regenerated: `npx astro sync`
-- [ ] 2.3 Migrations apply from scratch: `npx supabase db reset`
-- [ ] 2.4 pgTAP suite green: `npx supabase test db`
-- [ ] 2.5 Lint and build pass: `npm run lint && npm run build`
-- [ ] 2.6 Backfill populated icons for the demo categories
-- [ ] 2.7 `src/types.ts` imports nothing from lucide
-- [ ] 2.8 No color dot survives on the dashboard surfaces
+- [x] 2.1 Dependencies installed with the pinned CLI first: `npm ci`
+- [x] 2.2 Types regenerated: `npx astro sync`
+- [x] 2.3 Migrations apply from scratch: `npx supabase db reset`
+- [x] 2.4 pgTAP suite green: `npx supabase test db`
+- [x] 2.5 Lint and build pass: `npm run lint && npm run build`
+- [x] 2.6 Backfill populated icons for the demo categories
+- [x] 2.7 `src/types.ts` imports nothing from lucide
+- [x] 2.8 No color dot survives on the dashboard surfaces
 
 #### Manual
 

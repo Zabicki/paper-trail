@@ -1,10 +1,11 @@
 import { z } from "zod";
 import type { PostgrestError } from "@supabase/supabase-js";
 import type { createClient } from "@/lib/supabase";
-import { DEFAULT_CATEGORY_COLOR } from "@/types";
+import { DEFAULT_CATEGORY_COLOR, DEFAULT_CATEGORY_ICON } from "@/types";
 import type {
   CategoryBucketPoint,
   CategoryColor,
+  CategoryIconName,
   CategorySummary,
   CategoryTotal,
   EntriesSummary,
@@ -270,15 +271,27 @@ export async function getFirstEntryDate(supabase: SupabaseClient): Promise<strin
 // src/components/reports/range.ts (see the note above); a third would be the
 // point at which they stop agreeing.
 
-// Same boundary-assertion pattern as SummaryRow. `category_color` is typed as
-// CategoryColor rather than string because the categories table's CHECK
-// constraint restricts the column to the CATEGORY_COLORS palette — the same
-// assumption EntryRow makes in entries.ts:55.
+// Same boundary-assertion pattern as SummaryRow.
+//
+// `category_color` is on its way out. S-09 Phase 3 makes
+// src/components/reports/distribution.ts derive chart fills from categoryId
+// rather than from a stored hex, at which point nothing reads this — but until
+// then distribution.ts is still its consumer, so it is mapped through onto
+// CategoryTotal.color rather than dropped here. The follow-up change
+// `category-color-drop` removes it from the function and from this interface.
+// It is typed as CategoryColor rather than string because the categories
+// table's CHECK constraint restricts the column to the CATEGORY_COLORS palette.
+//
+// `category_icon` carries no such constraint — there is no CHECK on the column
+// (see 20260818090000_add_category_icon.sql), so this is a boundary ASSERTION
+// rather than a guarantee. CategoryIcon.tsx degrades an unrecognised name to
+// its `tag` fallback rather than crashing a render.
 interface CategorySummaryRow {
   bucket_start: string | null;
   category_id: number | null;
   category_name: string | null;
   category_color: CategoryColor | null;
+  category_icon: CategoryIconName | null;
   total: number | string;
 }
 
@@ -312,6 +325,9 @@ function toCategorySummary(range: DateRange, bucket: SummaryBucket, rows: Catego
       categories.push({
         categoryId: row.category_id,
         name: row.category_name ?? "",
+        icon: row.category_icon ?? DEFAULT_CATEGORY_ICON,
+        // Unread by every consumer except distribution.ts, which stops
+        // reading it in Phase 3. See CategoryTotal.color in src/types.ts.
         color: row.category_color ?? DEFAULT_CATEGORY_COLOR,
         total: amount,
       });

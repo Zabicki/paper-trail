@@ -1,3 +1,153 @@
+// ⚠ THIS FILE MUST NEVER IMPORT FROM "lucide-react". It is reachable from the
+// service layer and from API routes, so an icon-component map in here would
+// drag ~116 React components into every server bundle. Names live here (the
+// services and the zod enum need them); the components live UI-side in
+// src/components/categories/icon-catalogue.ts.
+
+// The curated icon set, as kebab-case lucide names. Every entry must also be
+// filed into exactly one group in icon-catalogue.ts — that module's
+// ICON_COMPONENTS is a `Record<CategoryIconName, …>`, so a name added here
+// without a component and a group fails type-check rather than silently
+// vanishing from the picker.
+export const CATEGORY_ICON_NAMES = [
+  // Jedzenie i napoje
+  "utensils",
+  "utensils-crossed",
+  "coffee",
+  "pizza",
+  "beef",
+  "fish",
+  "apple",
+  "carrot",
+  "croissant",
+  "cake",
+  "ice-cream-cone",
+  "wine",
+  "beer",
+  "cup-soda",
+  "milk",
+  // Transport
+  "car",
+  "car-front",
+  "fuel",
+  "parking-circle",
+  "bus",
+  "train-front",
+  "tram-front",
+  "bike",
+  "plane",
+  "ship",
+  "car-taxi-front",
+  // Dom i rachunki
+  "house",
+  "sofa",
+  "bed-double",
+  "lamp",
+  "wrench",
+  "hammer",
+  "paintbrush",
+  "zap",
+  "flame",
+  "droplet",
+  "wifi",
+  "phone",
+  "tv",
+  "trash-2",
+  "flower-2",
+  "washing-machine",
+  "spray-can",
+  "key",
+  // Zdrowie i uroda
+  "heart-pulse",
+  "pill",
+  "stethoscope",
+  "syringe",
+  "smile",
+  "glasses",
+  "scissors",
+  "sparkles",
+  "bath",
+  "dumbbell",
+  "activity",
+  "brain",
+  "baby",
+  // Rozrywka i czas wolny
+  "party-popper",
+  "clapperboard",
+  "popcorn",
+  "puzzle",
+  "gamepad-2",
+  "music",
+  "headphones",
+  "guitar",
+  "ticket",
+  "book-open",
+  "newspaper",
+  "palette",
+  "camera",
+  "tent",
+  "mountain",
+  "theater",
+  // Zakupy i usługi
+  "shopping-cart",
+  "shopping-bag",
+  "shirt",
+  "footprints",
+  "store",
+  "gift",
+  "smartphone",
+  "laptop",
+  "monitor",
+  "printer",
+  "pencil",
+  "package",
+  "mail",
+  "paw-print",
+  "concierge-bell",
+  // Finanse i praca
+  "banknote",
+  "coins",
+  "wallet",
+  "credit-card",
+  "piggy-bank",
+  "trending-up",
+  "trending-down",
+  "landmark",
+  "receipt-text",
+  "briefcase",
+  "building-2",
+  "graduation-cap",
+  "shield-check",
+  "hand-coins",
+  "heart",
+  "percent",
+  // Inne
+  "tag",
+  "circle",
+  "star",
+  "flag",
+  "bookmark",
+  "box",
+  "more-horizontal",
+  "circle-help",
+  "sun",
+  "snowflake",
+  "calendar",
+  "clock",
+] as const;
+
+export type CategoryIconName = (typeof CATEGORY_ICON_NAMES)[number];
+
+// Matches the `icon text not null default 'tag'` column default in
+// 20260818090000_add_category_icon.sql.
+export const DEFAULT_CATEGORY_ICON: CategoryIconName = "tag";
+
+// Retained past S-09 on purpose. The user no longer picks a colour — the icon
+// is a category's identity — but src/components/reports/distribution.ts still
+// derives its chart fills from this palette, and the `color` column is still
+// `not null` this deploy. The follow-up change `category-color-drop` owns
+// removing these three exports and moving the palette into distribution.ts,
+// which is by then their only consumer.
 export const CATEGORY_COLORS = [
   { value: "#ef4444", label: "Czerwony" },
   { value: "#f97316", label: "Pomarańczowy" },
@@ -26,7 +176,7 @@ export type CategoryKind = "expense" | "income";
 export interface Category {
   id: number;
   name: string;
-  color: CategoryColor;
+  icon: CategoryIconName;
   isRecurring: boolean;
   kind: CategoryKind;
   createdAt: string;
@@ -39,7 +189,7 @@ export interface Entry {
   amount: number;
   occurredOn: string;
   type: EntryType;
-  category: Pick<Category, "id" | "name" | "color">;
+  category: Pick<Category, "id" | "name" | "icon">;
   createdAt: string;
   // The receipt line-item name this entry came from (S-06), or null for
   // anything typed into the manual form. Required rather than optional: the
@@ -96,6 +246,12 @@ export interface EntriesSummary {
 export interface CategoryTotal {
   categoryId: number;
   name: string;
+  icon: CategoryIconName;
+  // Retained one phase longer than the rest of S-09's colour removal.
+  // src/components/reports/distribution.ts is its last reader, and that module
+  // only stops reading a stored hex when Phase 3 derives fills from categoryId
+  // instead — so dropping the field here would break the reports build for the
+  // sake of a field nothing else consumes. Phase 3 deletes it.
   color: CategoryColor;
   total: number;
 }

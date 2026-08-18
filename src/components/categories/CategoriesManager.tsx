@@ -6,18 +6,20 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
-import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR, type Category, type CategoryColor, type CategoryKind } from "@/types";
+import { DEFAULT_CATEGORY_ICON, type Category, type CategoryIconName, type CategoryKind } from "@/types";
+import { ICON_GROUPS, iconMatchesFilter, normalizeForSearch } from "./icon-catalogue";
+import CategoryIcon from "./CategoryIcon";
 
 interface FormState {
   name: string;
-  color: CategoryColor;
+  icon: CategoryIconName;
   isRecurring: boolean;
   kind: CategoryKind;
 }
 
 const EMPTY_FORM: FormState = {
   name: "",
-  color: DEFAULT_CATEGORY_COLOR,
+  icon: DEFAULT_CATEGORY_ICON,
   isRecurring: false,
   kind: "expense",
 };
@@ -90,36 +92,90 @@ function KindPicker({
   );
 }
 
-function ColorSwatchPicker({
+// Replaces S-01's 12-swatch colour radiogroup. Same `role="radiogroup"` shape
+// and the same one-tap selection; the difference is that 116 options need a
+// filter, which 12 did not.
+function IconPicker({
   value,
   onChange,
   idPrefix,
 }: {
-  value: CategoryColor;
-  onChange: (color: CategoryColor) => void;
+  value: CategoryIconName;
+  onChange: (icon: CategoryIconName) => void;
   idPrefix: string;
 }) {
+  const [filterText, setFilterText] = useState("");
+
+  const needle = normalizeForSearch(filterText.trim());
+  // A filter in play collapses the eight group headings into one flat result
+  // grid: with a handful of matches left, headings are chrome rather than
+  // navigation. Same reasoning as CategoryPicker's collapse suspension.
+  const groups =
+    needle.length === 0
+      ? ICON_GROUPS
+      : [
+          {
+            label: "Wyniki",
+            icons: ICON_GROUPS.flatMap((group) => group.icons).filter((icon) => iconMatchesFilter(icon, needle)),
+          },
+        ];
+
+  const matchCount = groups.reduce((count, group) => count + group.icons.length, 0);
+
   return (
-    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Kolor kategorii">
-      {CATEGORY_COLORS.map((swatch) => (
-        <button
-          key={swatch.value}
-          type="button"
-          role="radio"
-          aria-checked={value === swatch.value}
-          aria-label={swatch.label}
-          title={swatch.label}
-          id={`${idPrefix}-${swatch.value}`}
-          onClick={() => {
-            onChange(swatch.value);
-          }}
-          className={cn(
-            "size-6 rounded-full border-2 transition-transform",
-            value === swatch.value ? "border-foreground scale-110" : "border-transparent",
-          )}
-          style={{ backgroundColor: swatch.value }}
-        />
-      ))}
+    <div className="flex flex-col gap-2">
+      <Input
+        type="text"
+        value={filterText}
+        onChange={(event) => {
+          setFilterText(event.target.value);
+        }}
+        placeholder="Szukaj ikony…"
+        aria-label="Szukaj ikony"
+      />
+      <div
+        className="flex max-h-64 flex-col gap-3 overflow-y-auto"
+        role="radiogroup"
+        aria-label="Ikona kategorii"
+        id={`${idPrefix}-group`}
+      >
+        {groups.map((group) => (
+          <div key={group.label} className="flex flex-col gap-1.5">
+            {/* Not a heading element: a radiogroup's children are its radios,
+                and interleaving headings makes the group malformed. A plain
+                span is chrome the group's own label already covers. */}
+            <span className="text-muted-foreground text-xs font-medium">{group.label}</span>
+            <div className="flex flex-wrap gap-1">
+              {group.icons.map((icon) => (
+                <button
+                  key={icon.name}
+                  type="button"
+                  role="radio"
+                  aria-checked={value === icon.name}
+                  // The group label plus the icon's first keyword: "Transport,
+                  // paliwo" identifies the option far better to a screen reader
+                  // than the lucide name "fuel" would.
+                  aria-label={`${group.label}, ${icon.keywords[0]}`}
+                  title={icon.keywords[0]}
+                  onClick={() => {
+                    onChange(icon.name);
+                  }}
+                  className={cn(
+                    // size-11 rather than the swatch's size-6: this is a tap
+                    // target now, matching the 44px min-h-11 rule the rest of
+                    // the app enforces.
+                    "flex size-11 items-center justify-center rounded-md border-2 transition-colors",
+                    value === icon.name ? "border-foreground bg-accent" : "hover:bg-accent border-transparent",
+                  )}
+                >
+                  <CategoryIcon name={icon.name} className="size-5" />
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {matchCount === 0 && <p className="text-muted-foreground text-sm">Brak pasujących ikon.</p>}
+      </div>
     </div>
   );
 }
@@ -201,7 +257,7 @@ export default function CategoriesManager({ onCreated, onChanged }: CategoriesMa
     setEditingId(category.id);
     setEditForm({
       name: category.name,
-      color: category.color,
+      icon: category.icon,
       isRecurring: category.isRecurring,
       kind: category.kind,
     });
@@ -224,7 +280,7 @@ export default function CategoriesManager({ onCreated, onChanged }: CategoriesMa
         // part of the update contract and must not travel with the request.
         body: JSON.stringify({
           name: editForm.name,
-          color: editForm.color,
+          icon: editForm.icon,
           isRecurring: editForm.isRecurring,
         }),
       });
@@ -316,12 +372,12 @@ export default function CategoriesManager({ onCreated, onChanged }: CategoriesMa
             <p className="text-muted-foreground text-sm">Rodzaju nie można zmienić po utworzeniu kategorii.</p>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Kolor</span>
-            <ColorSwatchPicker
-              idPrefix="new-category-color"
-              value={addForm.color}
-              onChange={(color) => {
-                setAddForm((f) => ({ ...f, color }));
+            <span className="text-sm font-medium">Ikona</span>
+            <IconPicker
+              idPrefix="new-category-icon"
+              value={addForm.icon}
+              onChange={(icon) => {
+                setAddForm((f) => ({ ...f, icon }));
               }}
             />
           </div>
@@ -373,13 +429,16 @@ export default function CategoriesManager({ onCreated, onChanged }: CategoriesMa
                           {KIND_DESCRIPTIONS[category.kind]} — rodzaju nie można zmienić.
                         </p>
                       </div>
-                      <ColorSwatchPicker
-                        idPrefix={`edit-color-${category.id}`}
-                        value={editForm.color}
-                        onChange={(color) => {
-                          setEditForm((f) => ({ ...f, color }));
-                        }}
-                      />
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm font-medium">Ikona</span>
+                        <IconPicker
+                          idPrefix={`edit-icon-${category.id}`}
+                          value={editForm.icon}
+                          onChange={(icon) => {
+                            setEditForm((f) => ({ ...f, icon }));
+                          }}
+                        />
+                      </div>
                       <div className="flex items-center gap-2">
                         <Checkbox
                           id={`edit-recurring-${category.id}`}
@@ -410,11 +469,7 @@ export default function CategoriesManager({ onCreated, onChanged }: CategoriesMa
                   ) : (
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className="size-4 shrink-0 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
+                        <CategoryIcon name={category.icon} className="size-4 shrink-0" />
                         {/* The glyph is decorative, so without a label the row
                             would announce nothing about being a large recurring
                             cost — same composition as CategoryPicker's chips. */}

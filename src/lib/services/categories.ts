@@ -1,20 +1,32 @@
 import { z } from "zod";
 import type { createClient } from "@/lib/supabase";
-import { CATEGORY_COLORS, DEFAULT_CATEGORY_COLOR, type Category, type CategoryColor, type CategoryKind } from "@/types";
+import {
+  CATEGORY_ICON_NAMES,
+  DEFAULT_CATEGORY_ICON,
+  type Category,
+  type CategoryIconName,
+  type CategoryKind,
+} from "@/types";
 
 type SupabaseClient = NonNullable<ReturnType<typeof createClient>>;
 
-const categoryColorValues = CATEGORY_COLORS.map((entry) => entry.value) as [CategoryColor, ...CategoryColor[]];
+// The ONLY guard on the allowed icon set. The column carries no CHECK
+// constraint by decision (see 20260818090000_add_category_icon.sql), so this
+// enum is where an off-list name is rejected — and, per
+// context/foundation/lessons.md, that makes the invariant app-layer-only and
+// unprovable by pgTAP. Manual re-verification is required for any future change
+// to this schema or this file.
+const categoryIconValues = CATEGORY_ICON_NAMES as unknown as [CategoryIconName, ...CategoryIconName[]];
 
 export const createCategorySchema = z.object({
   name: z.string().trim().min(1, "Nazwa jest wymagana").max(100, "Nazwa może mieć maksymalnie 100 znaków"),
-  color: z.enum(categoryColorValues).default(DEFAULT_CATEGORY_COLOR),
+  icon: z.enum(categoryIconValues).default(DEFAULT_CATEGORY_ICON),
   isRecurring: z.boolean().default(false),
   kind: z.enum(["expense", "income"]).default("expense"),
 });
 
-// PATCH is full-replace, not a true partial update: color/isRecurring carry
-// defaults, so a caller must always send the full {name, color, isRecurring}
+// PATCH is full-replace, not a true partial update: icon/isRecurring carry
+// defaults, so a caller must always send the full {name, icon, isRecurring}
 // triple or those fields silently reset. Matches the only current caller
 // (CategoriesManager.tsx), which always submits all three.
 //
@@ -45,19 +57,19 @@ export class NotFoundError extends Error {
 interface CategoryRow {
   id: number;
   name: string;
-  color: CategoryColor;
+  icon: CategoryIconName;
   is_recurring: boolean;
   kind: CategoryKind;
   created_at: string;
 }
 
-const SELECT_COLUMNS = "id, name, color, is_recurring, kind, created_at";
+const SELECT_COLUMNS = "id, name, icon, is_recurring, kind, created_at";
 
 function toDto(row: CategoryRow): Category {
   return {
     id: row.id,
     name: row.name,
-    color: row.color,
+    icon: row.icon,
     isRecurring: row.is_recurring,
     kind: row.kind,
     createdAt: row.created_at,
@@ -80,7 +92,10 @@ export async function listCategories(supabase: SupabaseClient): Promise<Category
 export async function createCategory(supabase: SupabaseClient, input: CreateCategoryInput): Promise<Category> {
   const { data, error } = await supabase
     .from("categories")
-    .insert({ name: input.name, color: input.color, is_recurring: input.isRecurring, kind: input.kind })
+    // `color` is no longer written: the user does not pick one. The column is
+    // still `not null` this deploy, so the insert relies on its '#64748b'
+    // default until `category-color-drop` removes it.
+    .insert({ name: input.name, icon: input.icon, is_recurring: input.isRecurring, kind: input.kind })
     .select(SELECT_COLUMNS)
     .single();
 
@@ -101,7 +116,7 @@ export async function updateCategory(
 ): Promise<Category> {
   const { data, error } = await supabase
     .from("categories")
-    .update({ name: input.name, color: input.color, is_recurring: input.isRecurring })
+    .update({ name: input.name, icon: input.icon, is_recurring: input.isRecurring })
     .eq("id", id)
     .is("deleted_at", null)
     .select(SELECT_COLUMNS)
