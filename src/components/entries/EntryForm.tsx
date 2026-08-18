@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
 import CategoryManagerDialog from "@/components/categories/CategoryManagerDialog";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
+import { DESCRIPTION_MAX_CODE_POINTS } from "@/lib/entry-description";
 import type { Category, Entry, EntryType } from "@/types";
 
 interface EntryFormProps {
@@ -20,11 +21,6 @@ interface EntryFormProps {
 }
 
 const CONFIRMATION_DISPLAY_MS = 2500;
-
-// Mirrors the zod bound in src/lib/services/entries.ts and the database's own
-// check constraint. Here it only stops the user typing past the limit — the 400
-// is still the authority.
-const DESCRIPTION_MAX_LENGTH = 200;
 
 const TYPES: EntryType[] = ["expense", "income"];
 
@@ -280,7 +276,7 @@ export default function EntryForm({
                   setDescriptionText(event.target.value);
                 }}
                 placeholder="Opcjonalnie"
-                maxLength={DESCRIPTION_MAX_LENGTH}
+                maxLength={DESCRIPTION_MAX_CODE_POINTS}
                 aria-invalid={error?.field === "description"}
                 disabled={submitting}
                 className="h-11 min-h-11"

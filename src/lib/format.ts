@@ -1,6 +1,6 @@
 // The repo's single source of number formatting. Constructing an
-// Intl.NumberFormat is the expensive part, so the three instances live at
-// module scope rather than being rebuilt on every render.
+// Intl.NumberFormat is the expensive part, so every instance lives at module
+// scope rather than being rebuilt on every render.
 
 const currencyFormatter = new Intl.NumberFormat("pl-PL", {
   style: "currency",
@@ -14,6 +14,14 @@ const currencyFormatter = new Intl.NumberFormat("pl-PL", {
 const compactFormatter = new Intl.NumberFormat("pl-PL", {
   notation: "compact",
   maximumFractionDigits: 1,
+});
+
+// Comma decimal, both places, no currency symbol. Module scope like its
+// siblings — one per item per render is the specific mistake the header warns
+// about, and a grouped receipt description builds several of these per row.
+const plainAmountFormatter = new Intl.NumberFormat("pl-PL", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 const percentDeltaFormatter = new Intl.NumberFormat("pl-PL", {
@@ -36,6 +44,18 @@ export function formatCurrency(amount: number): string {
 
 export function formatCurrencyCompact(amount: number): string {
   return compactFormatter.format(amount);
+}
+
+/**
+ * A bare comma-decimal amount, for use inside an entry description.
+ *
+ * Distinct from formatCurrencyCompact, which DROPS precision (`1,2 tys.`) to fit
+ * an axis tick. This one keeps both decimals and only omits the currency symbol:
+ * the row already shows one, and a `zł` repeated per item inside a joined
+ * description is noise that eats the 200-character budget.
+ */
+export function formatAmountPlain(amount: number): string {
+  return plainAmountFormatter.format(amount);
 }
 
 /**

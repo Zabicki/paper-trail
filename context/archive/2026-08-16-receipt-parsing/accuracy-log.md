@@ -41,6 +41,32 @@ Note that categorisation is scored *over correctly-extracted items only*. An
 item the model never read cannot be miscategorised, and counting it against
 categorisation would double-charge one extraction failure.
 
+### 2026-08-18 — per-category grouping does not change what this log measures
+
+S-10 (`entry-descriptions-and-receipt-grouping`) changed a confirm so it writes
+**one entry per category** instead of one entry per printed line. That grouping
+is a **client-side fold applied at confirm time**, after review. The review panel
+still shows **one row per printed line**, and each line's name, amount and
+category remain individually visible and correctable there.
+
+So every column above is unchanged in meaning, and every one of them is still
+filled from the paper against the review screen — not against the day list:
+
+- **Poz.** is still the true number of line items on the paper.
+- **Ekstrakcja** is still scored per line item, against the review rows.
+- **Kategoryzacja** is still scored per correctly-extracted line item.
+
+What changed is only **how many `entries` rows a confirm writes**, which this log
+never measured. Nothing here is reset and no column is added; the unfilled
+baseline stands and stays comparable across the change. This retires the roadmap's
+S-10 risk line, which assumed grouping would happen inside the parse — where it
+*would* have redefined `Poz.` and both fractions.
+
+This paragraph was added after this change folder was archived, which the archive
+convention otherwise treats as frozen. That is deliberate, not an accident: the
+log is a live instrument that happened to be archived unfilled, and a note about
+what it measures belongs beside it rather than in whichever change later fills it.
+
 ## Log
 
 | # | Data | Sklep | Poz. | Stan | Ekstrakcja | Kategoryzacja | Suma | Rabaty | Mnożniki | Przecinki | Czas | Uwagi |

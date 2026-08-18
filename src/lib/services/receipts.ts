@@ -5,12 +5,22 @@ import { CF_AI_TOKEN, CF_ACCOUNT_ID } from "astro:env/server";
 // byte-identical local functions; see the header of src/lib/money.ts for why
 // that mattered here specifically.
 import { roundToCents } from "@/lib/money";
+import { truncateCodePoints } from "@/lib/text";
 import type { Category, ParsedReceipt, ParsedReceiptItem } from "@/types";
 
 // A product decision, not a platform limit: there is no wall-clock cap on a
-// Worker as long as the client stays connected. 30s is how long a user will
-// plausibly stare at a progress indicator before deciding the app is broken.
-export const RECEIPT_PARSE_TIMEOUT_MS = 30_000;
+// Worker as long as the client stays connected. The ceiling is how long a user
+// will plausibly stare at a progress indicator before deciding the app is
+// broken — which is why the wait is never silent (see the progress copy in
+// ReceiptCapture).
+//
+// Raised from 30s to 60s: cutting a parse off that the provider would have
+// answered costs the user the whole receipt and a re-photograph, which is a
+// worse outcome than a longer wait they can see progressing and cancel.
+//
+// Two paired constants: ReceiptCapture's CLIENT_TIMEOUT_MS must stay ABOVE this
+// one, so the server's typed diagnosis wins the race. Change them together.
+export const RECEIPT_PARSE_TIMEOUT_MS = 60_000;
 
 // The single string a provider swap turns on. AI Gateway's Unified API takes
 // `provider/model`; the endpoint and header contract below are identical
@@ -158,7 +168,10 @@ function sanitise(parsed: z.infer<typeof modelResponseSchema>, allowedCategoryId
     const categoryId = typeof item.categoryId === "string" ? Number(item.categoryId) : (item.categoryId ?? null);
 
     items.push({
-      name: item.name.slice(0, NAME_MAX),
+      // Code points, not .slice(): a cut landing mid-surrogate emits a lone
+      // surrogate PostgREST cannot store, and the confirm is one atomic
+      // statement — so one over-long emoji name would lose the whole receipt.
+      name: truncateCodePoints(item.name, NAME_MAX),
       amount: roundToCents(item.amount),
       // A hallucinated id must not reach the confirm endpoint, where it would
       // 404 the entire receipt. Replaced with null so the user reassigns one

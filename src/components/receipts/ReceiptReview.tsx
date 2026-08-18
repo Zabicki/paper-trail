@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "@/components/entries/CategoryPicker";
 import CategoryIcon from "@/components/categories/CategoryIcon";
+import { composeGroupedDescription } from "@/lib/entry-description";
 import { formatCurrency } from "@/lib/format";
 import { roundToCents } from "@/lib/money";
 import { sumItems, totalDelta } from "./receipt-total";
@@ -37,6 +39,44 @@ interface ReceiptReviewProps {
   // lives in the parent, which owns onBatchSaved and the return to idle.
   onConfirm: (items: ConfirmItem[], saveDate: string) => Promise<void>;
   onDiscard: () => void;
+}
+
+// One saved entry's worth of reviewed lines. Review itself stays one row per
+// printed line — this is only what the confirm folds them into.
+interface CategoryGroup {
+  categoryId: number;
+  amount: number;
+  items: { name: string; amount: number }[];
+}
+
+// Groups the reviewed rows by category, preserving FIRST-APPEARANCE order so the
+// saved order tracks the order things were printed on the paragon.
+//
+// Rows that cannot be stored (no category, unusable amount) are skipped rather
+// than grouped: they are separately hard-blocking, and including them would make
+// the preview promise a write that cannot happen.
+function groupByCategory(rows: { row: ReviewRow; amount: number; amountValid: boolean }[]): CategoryGroup[] {
+  const groups: { categoryId: number; items: { name: string; amount: number }[] }[] = [];
+  const indexByCategory = new Map<number, number>();
+
+  for (const { row, amount, amountValid } of rows) {
+    if (row.categoryId === null || !amountValid) {
+      continue;
+    }
+    const existing = indexByCategory.get(row.categoryId);
+    if (existing === undefined) {
+      indexByCategory.set(row.categoryId, groups.length);
+      groups.push({ categoryId: row.categoryId, items: [{ name: row.name, amount }] });
+    } else {
+      groups[existing].items.push({ name: row.name, amount });
+    }
+  }
+
+  // sumItems, not a bare reduce: it is the same function — and therefore the
+  // same single rounding, applied once to the sum — that produces the panel's
+  // `Suma pozycji`. Rounding per item and again on the total can drift by a cent
+  // and turn a sum the user saw match into a stored mismatch.
+  return groups.map((group) => ({ ...group, amount: sumItems(group.items) }));
 }
 
 interface ReviewRow {
@@ -96,6 +136,7 @@ export default function ReceiptReview({
   const [totalFilterText, setTotalFilterText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [photoOpen, setPhotoOpen] = useState(false);
 
   const evaluated = rows.map((row) => {
     const amount = Number(row.amountText.replace(",", "."));
@@ -108,6 +149,12 @@ export default function ReceiptReview({
 
   const sum = sumItems(evaluated.filter((entry) => entry.amountValid).map((entry) => ({ amount: entry.amount })));
   const delta = totalDelta(sum, parsed.total);
+
+  // Derived ONCE and consumed by both the preview and handleConfirmItems. Two
+  // reduces would be free to disagree, and the preview's entire job is to state
+  // what the confirm is about to write — a requirement that happens to also be
+  // the cheaper shape.
+  const groups = groupByCategory(evaluated);
 
   const missingCategory = rows.some((row) => row.categoryId === null);
   const invalidAmount = evaluated.some((entry) => !entry.amountValid);
@@ -154,17 +201,22 @@ export default function ReceiptReview({
 
   function handleConfirmItems() {
     if (!canConfirmItems) return;
-    const items: ConfirmItem[] = [];
-    for (const { row, amount } of evaluated) {
-      // Narrowing rather than an assertion — hardBlocked already guarantees
-      // this, but the compiler is the one that has to be convinced.
-      if (row.categoryId === null) return;
-      items.push({
-        amount: roundToCents(amount),
-        categoryId: row.categoryId,
-        description: row.name.trim() === "" ? null : row.name.trim(),
-      });
-    }
+    // One entry per CATEGORY, not per printed line. The reduce happens here,
+    // immediately before the POST, which is what keeps FR-012's per-line
+    // correction and the accuracy log's per-line columns intact — review above
+    // is still one row per line.
+    //
+    // createEntriesBatch assigns batch_seq from this array's index, so the
+    // idempotency key stays well-defined over the grouped array and a replay
+    // still dedupes. No server change is needed for any of this.
+    const items: ConfirmItem[] = groups.map((group) => ({
+      amount: group.amount,
+      categoryId: group.categoryId,
+      description: composeGroupedDescription(group.items),
+    }));
+    // hardBlocked already guarantees a non-empty result, but the batch schema's
+    // .min(1) is the thing that would 400 and the check is one line.
+    if (items.length === 0) return;
     void submit(items);
   }
 
@@ -186,7 +238,20 @@ export default function ReceiptReview({
     <div className="flex flex-col gap-4">
       <div className="flex gap-3">
         {imageUrl !== null && (
-          <img src={imageUrl} alt="Zdjęcie paragonu" className="size-24 shrink-0 rounded-md border object-cover" />
+          // A button, not a bare <img>: at 96px square with object-cover the
+          // thumbnail is a locator, not something you can read line items off.
+          // Enlarging it is what makes the review panel checkable against the
+          // paper when a name or an amount looks wrong.
+          <button
+            type="button"
+            onClick={() => {
+              setPhotoOpen(true);
+            }}
+            aria-label="Powiększ zdjęcie paragonu"
+            className="focus-visible:ring-ring size-24 shrink-0 cursor-zoom-in overflow-hidden rounded-md border focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <img src={imageUrl} alt="Zdjęcie paragonu" className="size-full object-cover" />
+          </button>
         )}
         {/* min-w-0 flex-1 so the date input shrinks beside the thumbnail rather
             than overflowing the panel at 360px. */}
@@ -337,6 +402,31 @@ export default function ReceiptReview({
         )}
       </div>
 
+      {/* What will actually be saved. A 12-line paragon collapsing to 4 entries
+          has to be a stated outcome rather than something the user discovers in
+          the day list afterwards. Rendered from the same `groups` the confirm
+          posts, so the two cannot disagree. */}
+      {groups.length > 0 && (
+        <div className="flex flex-col gap-1.5 rounded-lg border p-3 text-sm">
+          <span className="font-medium">Zostanie zapisanych wpisów: {groups.length}</span>
+          {groups.map((group) => {
+            const category = expenseCategories.find((candidate) => candidate.id === group.categoryId) ?? null;
+            return (
+              <div key={group.categoryId} className="flex items-center justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-2">
+                  {category !== null && <CategoryIcon name={category.icon} className="size-4 shrink-0" />}
+                  <span className="truncate">{category?.name ?? "—"}</span>
+                  {/* The line count is the whole point of the preview: it is
+                      what tells the user this row is a fold of several. */}
+                  <span className="text-muted-foreground shrink-0">({group.items.length})</span>
+                </span>
+                <span className="shrink-0 font-medium">{formatCurrency(group.amount)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {missingCategory && <p className="text-destructive text-sm">Każda pozycja musi mieć kategorię.</p>}
       {invalidAmount && <p className="text-destructive text-sm">Każda kwota musi być liczbą większą od zera.</p>}
 
@@ -400,6 +490,39 @@ export default function ReceiptReview({
             {submitting ? "Zapisywanie…" : `Zapisz jeden wpis (${formatCurrency(parsed.total)})`}
           </Button>
         </div>
+      )}
+
+      {/* The enlarged photo. A dialog rather than an inline expand, because the
+          review rows are what the user is comparing against and pushing them
+          down the page would lose their place. Radix gives Escape, a click on
+          the backdrop and a focus trap for free, and DialogContent's own close
+          button is already labelled "Zamknij" — three ways back, none of which
+          can be missed.
+
+          Mounted only while open so a discarded receipt does not keep a
+          full-size bitmap decoded; the object URL itself is owned by
+          ReceiptCapture and is not duplicated here. */}
+      {imageUrl !== null && (
+        <Dialog open={photoOpen} onOpenChange={setPhotoOpen}>
+          {/* Wider and taller than the default dialog: this one exists purely to
+              make small print readable, so it takes as much of the viewport as
+              it can get. */}
+          <DialogContent className="max-h-[95dvh] gap-2 p-3 sm:max-w-3xl">
+            <DialogHeader>
+              {/* Not sr-only: Radix warns without a title, and naming the panel
+                  is also what tells the user the review is still underneath. */}
+              <DialogTitle className="text-base">Zdjęcie paragonu</DialogTitle>
+              <DialogDescription>Zamknij, aby wrócić do sprawdzania pozycji.</DialogDescription>
+            </DialogHeader>
+            {/* Full width, height auto, scrolled vertically — NOT scaled to fit.
+                A paragon is tall and narrow: fitting its whole height into the
+                viewport is exactly what makes the print too small to read, which
+                is the one thing this view is for. */}
+            <div className="overflow-y-auto">
+              <img src={imageUrl} alt="Zdjęcie paragonu, powiększone" className="h-auto w-full rounded-md" />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

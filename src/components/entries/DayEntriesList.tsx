@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 import CategoryPicker from "./CategoryPicker";
 import CategoryIcon from "@/components/categories/CategoryIcon";
 import { parseErrorBody, type ApiErrorBody } from "@/lib/api-error";
-import { DESCRIPTION_ITEM_SEPARATOR, splitDescriptionItems } from "@/lib/entry-description";
+import {
+  DESCRIPTION_ITEM_SEPARATOR,
+  DESCRIPTION_MAX_CODE_POINTS,
+  splitDescriptionItems,
+} from "@/lib/entry-description";
 import { formatCurrency } from "@/lib/format";
 import type { Category, Entry } from "@/types";
 
@@ -26,11 +30,6 @@ interface EditFormState {
   occurredOn: string;
   descriptionText: string;
 }
-
-// Mirrors the zod bound in src/lib/services/entries.ts and the database's own
-// check constraint. Here it only stops the user typing past the limit — the 400
-// is still the authority.
-const DESCRIPTION_MAX_LENGTH = 200;
 
 // PostgREST hands back numeric(10,2) as a JS number, so these totals inherit
 // binary-float rounding. Acceptable here because the sum is bounded to one
@@ -303,7 +302,7 @@ export default function DayEntriesList({
                       setEditForm((f) => ({ ...f, descriptionText: event.target.value }));
                     }}
                     placeholder="Opcjonalnie"
-                    maxLength={DESCRIPTION_MAX_LENGTH}
+                    maxLength={DESCRIPTION_MAX_CODE_POINTS}
                     aria-invalid={editError?.field === "description"}
                     disabled={saving}
                     className="h-11 min-h-11"
@@ -349,8 +348,18 @@ export default function DayEntriesList({
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className={cn("font-medium", entry.type === "income" && "text-emerald-400")}>
-                    {entry.type === "income" && "+"}
+                  {/* Signed and coloured on BOTH sides, so direction is carried
+                      twice over — colour alone fails for the ~8% of men with a
+                      red/green deficiency, and the sign alone is easy to skim
+                      past. Scoped to this list on purpose: the `Wydatki` total
+                      above and every reports surface stay unsigned, where the
+                      surrounding label already says which direction it is.
+
+                      U+2212 MINUS SIGN, not an ASCII hyphen: it is drawn to the
+                      same width and height as the "+" it has to line up with in
+                      the column above and below. */}
+                  <span className={cn("font-medium", entry.type === "income" ? "text-emerald-400" : "text-red-400")}>
+                    {entry.type === "income" ? "+" : "−"}
                     {formatCurrency(entry.amount)}
                   </span>
                   <Button

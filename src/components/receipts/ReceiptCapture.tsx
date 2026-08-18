@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
+import { Camera } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { parseErrorBody } from "@/lib/api-error";
 import { downscaleImage } from "./image-downscale";
 import ReceiptReview, { type ConfirmItem } from "./ReceiptReview";
@@ -11,11 +13,47 @@ interface ReceiptCaptureProps {
   onBatchSaved: (entries: Entry[]) => void;
 }
 
-// Deliberately above the server's RECEIPT_PARSE_TIMEOUT_MS (30s). The server
+// Deliberately above the server's RECEIPT_PARSE_TIMEOUT_MS (60s). The server
 // knows *why* a parse failed and answers with a typed Polish message; this
 // timer only covers the case where no response arrives at all, so it must not
-// fire first and replace a precise diagnosis with a generic one.
-const CLIENT_TIMEOUT_MS = 35_000;
+// fire first and replace a precise diagnosis with a generic one. The 5s margin
+// is what guarantees that ordering — keep it when either value moves.
+const CLIENT_TIMEOUT_MS = 65_000;
+
+// Whether to offer a direct-camera button at all.
+//
+// `capture="environment"` is only honoured by mobile browsers; desktop ignores it
+// and opens the ordinary file dialog, which would make a button reading "Zrób
+// zdjęcie" open a file browser — a small lie, and two controls doing the same
+// thing. A coarse pointer is the reliable, synchronous proxy for "phone or
+// tablet". enumerateDevices() would name actual cameras but is async and
+// permission-shaped, which is far too much for choosing a button.
+//
+// Read through useSyncExternalStore rather than a useState + useEffect pair:
+// matchMedia IS an external store, so this is the shape React documents for it.
+// It gets SSR safety from the server snapshot (this island is server-rendered,
+// so touching `window` during render would crash the build) and, for free,
+// correctness when the pointer type changes under a running page — a tablet
+// whose keyboard is attached or detached.
+const COARSE_POINTER_QUERY = "(pointer: coarse)";
+
+function subscribeToPointerType(onStoreChange: () => void): () => void {
+  const query = window.matchMedia(COARSE_POINTER_QUERY);
+  query.addEventListener("change", onStoreChange);
+  return () => {
+    query.removeEventListener("change", onStoreChange);
+  };
+}
+
+function getPointerIsCoarse(): boolean {
+  return window.matchMedia(COARSE_POINTER_QUERY).matches;
+}
+
+// No camera button in the server-rendered markup: it is the choice that cannot
+// be wrong before hydration tells us what kind of device this is.
+function getPointerIsCoarseOnServer(): boolean {
+  return false;
+}
 
 type Status = "idle" | "parsing" | "review" | "confirming";
 
@@ -44,6 +82,10 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
   // give every retry a fresh key and reopen the hole. It is cleared by toIdle()
   // alongside `parsed`, so the next receipt gets its own.
   const [batchId, setBatchId] = useState<string | null>(null);
+
+  // See the module-scope comment on COARSE_POINTER_QUERY for why this is a store
+  // subscription rather than a one-shot check.
+  const touchDevice = useSyncExternalStore(subscribeToPointerType, getPointerIsCoarse, getPointerIsCoarseOnServer);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -104,8 +146,10 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
       if (isCancelled() || controller.signal.aborted) return;
 
       // Continuous visible progress throughout, per the NFR — the user must
-      // never face an unexplained pause of up to half a minute.
-      setProgress("Odczytywanie paragonu… może potrwać do 30 sekund.");
+      // never face an unexplained pause of up to a minute. The stated ceiling
+      // here has to track RECEIPT_PARSE_TIMEOUT_MS: copy that promises less than
+      // the timeout allows turns a slow-but-working parse into an apparent hang.
+      setProgress("Odczytywanie paragonu… może potrwać do 60 sekund.");
 
       const form = new FormData();
       form.append("image", blob, "paragon.jpg");
@@ -160,6 +204,16 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
       if (abortRef.current === controller) {
         abortRef.current = null;
       }
+    }
+  }
+
+  // Shared by both inputs, so the camera path and the gallery path cannot drift.
+  function handlePicked(event: ChangeEvent<HTMLInputElement>) {
+    const picked = event.target.files?.[0];
+    // Cleared so picking the same photo twice still fires a change.
+    event.target.value = "";
+    if (picked) {
+      void handleFile(picked);
     }
   }
 
@@ -258,22 +312,37 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
 
       {status === "idle" && (
         <div className="flex flex-col gap-2">
+          {/* The direct-camera route, and on a phone the primary one — a paragon
+              is photographed at the till, not found in a gallery. Without this,
+              `accept="image/*"` alone does still reach the camera, but only as
+              one choice inside the OS sheet, which nothing on screen advertises.
+
+              A <label> wrapping a visually-hidden input rather than a Button
+              with a ref-and-click: the native activation behaviour is what makes
+              this work on iOS, and the label's own text becomes the input's
+              accessible name (so no aria-label here — it would override it). */}
+          {touchDevice && (
+            <label className={cn(buttonVariants({ variant: "default" }), "min-h-11 cursor-pointer")}>
+              <Camera aria-hidden="true" className="size-4 shrink-0" />
+              Zrób zdjęcie
+              {/* capture="environment" asks for the REAR camera. Omitting the
+                  value would let a phone open the selfie camera. */}
+              <input type="file" accept="image/*" capture="environment" onChange={handlePicked} className="sr-only" />
+            </label>
+          )}
+
+          {touchDevice && <span className="text-muted-foreground text-xs">lub wybierz zdjęcie z galerii:</span>}
+
           {/* accept="image/*" and nothing more. Listing image/heic inverts
               Safari 17+'s behaviour and makes it convert your JPEG *to* HEIC.
-              No `capture` attribute either: it would force the camera and
-              block picking an existing photo from the library. */}
+              Still no `capture` here on purpose: this is the input that must
+              keep reaching an existing photo, which is why the camera got its
+              own control above rather than this one changing behaviour. */}
           <input
             type="file"
             accept="image/*"
             aria-label="Zdjęcie paragonu"
-            onChange={(event) => {
-              const picked = event.target.files?.[0];
-              // Cleared so picking the same photo twice still fires a change.
-              event.target.value = "";
-              if (picked) {
-                void handleFile(picked);
-              }
-            }}
+            onChange={handlePicked}
             className="file:bg-secondary file:text-secondary-foreground hover:file:bg-secondary/80 text-sm file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-md file:border-0 file:px-3 file:py-2 file:text-sm file:font-medium"
           />
           <div>

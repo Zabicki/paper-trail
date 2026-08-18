@@ -488,47 +488,47 @@ Nothing here changes a query, adds a round trip, or moves a computation across t
 
 #### Automated
 
-- [x] 3.1 Type check passes: `npx tsc --noEmit`
-- [x] 3.2 Linting passes: `npm run lint`
-- [x] 3.3 Production build passes: `npm run build`
-- [x] 3.4 Batch contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty
+- [x] 3.1 Type check passes: `npx tsc --noEmit` — dc5698b
+- [x] 3.2 Linting passes: `npm run lint` — dc5698b
+- [x] 3.3 Production build passes: `npm run build` — dc5698b
+- [x] 3.4 Batch contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty — dc5698b
 
 #### Manual
 
-- [x] 3.5 Past printed date is pre-selected, with a revert to the calendar day
-- [x] 3.6 Confirm files entries to the chosen date
-- [x] 3.7 Success message names the date; calendar marking updates
-- [x] 3.8 Printed date equal to the calendar day shows no revert and no hint
-- [x] 3.9 Unreadable date defaults to the calendar day
-- [x] 3.10 Printed date after today keeps the calendar day and explains why
-- [x] 3.11 Hand-typed date is the one used
-- [x] 3.12 Moving the calendar mid-review does not clobber a chosen date
-- [x] 3.13 Total-only path files to the same chosen date
+- [x] 3.5 Past printed date is pre-selected, with a revert to the calendar day — dc5698b
+- [x] 3.6 Confirm files entries to the chosen date — dc5698b
+- [x] 3.7 Success message names the date; calendar marking updates — dc5698b
+- [x] 3.8 Printed date equal to the calendar day shows no revert and no hint — dc5698b
+- [x] 3.9 Unreadable date defaults to the calendar day — dc5698b
+- [x] 3.10 Printed date after today keeps the calendar day and explains why — dc5698b
+- [x] 3.11 Hand-typed date is the one used — dc5698b
+- [x] 3.12 Moving the calendar mid-review does not clobber a chosen date — dc5698b
+- [x] 3.13 Total-only path files to the same chosen date — dc5698b
 
 ### Phase 4: Per-category fold at confirm
 
 #### Automated
 
-- [ ] 4.1 Type check passes: `npx tsc --noEmit`
-- [ ] 4.2 Linting passes: `npm run lint`
-- [ ] 4.3 Production build passes: `npm run build`
-- [ ] 4.4 `npx supabase test db` still green and unchanged
-- [ ] 4.5 Truncation defect closed: `grep -n "slice(0, NAME_MAX)" src/lib/services/receipts.ts` returns nothing
-- [ ] 4.6 Grouping derived once and shared by the preview and the confirm
-- [ ] 4.7 Server contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty
+- [x] 4.1 Type check passes: `npx tsc --noEmit`
+- [x] 4.2 Linting passes: `npm run lint`
+- [x] 4.3 Production build passes: `npm run build`
+- [x] 4.4 `npx supabase test db` still green and unchanged
+- [x] 4.5 Truncation defect closed: `grep -n "slice(0, NAME_MAX)" src/lib/services/receipts.ts` returns nothing
+- [x] 4.6 Grouping derived once and shared by the preview and the confirm
+- [x] 4.7 Server contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty
 
 #### Manual
 
-- [ ] 4.8 Several lines in one category save as one summed entry
-- [ ] 4.9 Grouped description clamps to three items and expands
-- [ ] 4.10 One line per category saves one entry per line
-- [ ] 4.11 Re-assigning a line moves it between groups in the preview
-- [ ] 4.12 Removing lines updates and can remove a group
-- [ ] 4.13 Preview amounts sum to `Suma pozycji` to the cent
-- [ ] 4.14 Over-long grouped names store a `+N` tail with no mid-item cut and no 500
-- [ ] 4.15 A non-BMP character in an item name saves without a 500
-- [ ] 4.16 Sum-mismatch acknowledgement still blocks and unblocks
-- [ ] 4.17 Total-only path unchanged and still available while blocked
-- [ ] 4.18 Replayed confirm writes no duplicates and reports the same count
-- [ ] 4.19 Soft-deleted category between parse and confirm 404s without partial write
-- [ ] 4.20 `accuracy-log.md` carries the dated fold note
+- [x] 4.8 Several lines in one category save as one summed entry
+- [x] 4.9 Grouped description clamps to three items and expands
+- [x] 4.10 One line per category saves one entry per line
+- [x] 4.11 Re-assigning a line moves it between groups in the preview
+- [x] 4.12 Removing lines updates and can remove a group
+- [x] 4.13 Preview amounts sum to `Suma pozycji` to the cent
+- [x] 4.14 Over-long grouped names store a `+N` tail with no mid-item cut and no 500
+- [x] 4.15 A non-BMP character in an item name saves without a 500
+- [x] 4.16 Sum-mismatch acknowledgement still blocks and unblocks
+- [x] 4.17 Total-only path unchanged and still available while blocked
+- [x] 4.18 Replayed confirm writes no duplicates and reports the same count
+- [x] 4.19 Soft-deleted category between parse and confirm 404s without partial write
+- [x] 4.20 `accuracy-log.md` carries the dated fold note
