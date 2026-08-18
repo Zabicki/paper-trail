@@ -1,7 +1,7 @@
 ---
 change_id: entry-descriptions-and-receipt-grouping
 title: Entry descriptions, and one entry per category from a receipt
-status: implementing
+status: implemented
 created: 2026-08-18
 updated: 2026-08-18
 archived_at: null

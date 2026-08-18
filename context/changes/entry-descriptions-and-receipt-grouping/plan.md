@@ -509,26 +509,26 @@ Nothing here changes a query, adds a round trip, or moves a computation across t
 
 #### Automated
 
-- [x] 4.1 Type check passes: `npx tsc --noEmit`
-- [x] 4.2 Linting passes: `npm run lint`
-- [x] 4.3 Production build passes: `npm run build`
-- [x] 4.4 `npx supabase test db` still green and unchanged
-- [x] 4.5 Truncation defect closed: `grep -n "slice(0, NAME_MAX)" src/lib/services/receipts.ts` returns nothing
-- [x] 4.6 Grouping derived once and shared by the preview and the confirm
-- [x] 4.7 Server contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty
+- [x] 4.1 Type check passes: `npx tsc --noEmit` — 77f0e7a
+- [x] 4.2 Linting passes: `npm run lint` — 77f0e7a
+- [x] 4.3 Production build passes: `npm run build` — 77f0e7a
+- [x] 4.4 `npx supabase test db` still green and unchanged — 77f0e7a
+- [x] 4.5 Truncation defect closed: `grep -n "slice(0, NAME_MAX)" src/lib/services/receipts.ts` returns nothing — 77f0e7a
+- [x] 4.6 Grouping derived once and shared by the preview and the confirm — 77f0e7a
+- [x] 4.7 Server contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty — 77f0e7a
 
 #### Manual
 
-- [x] 4.8 Several lines in one category save as one summed entry
-- [x] 4.9 Grouped description clamps to three items and expands
-- [x] 4.10 One line per category saves one entry per line
-- [x] 4.11 Re-assigning a line moves it between groups in the preview
-- [x] 4.12 Removing lines updates and can remove a group
-- [x] 4.13 Preview amounts sum to `Suma pozycji` to the cent
-- [x] 4.14 Over-long grouped names store a `+N` tail with no mid-item cut and no 500
-- [x] 4.15 A non-BMP character in an item name saves without a 500
-- [x] 4.16 Sum-mismatch acknowledgement still blocks and unblocks
-- [x] 4.17 Total-only path unchanged and still available while blocked
-- [x] 4.18 Replayed confirm writes no duplicates and reports the same count
-- [x] 4.19 Soft-deleted category between parse and confirm 404s without partial write
-- [x] 4.20 `accuracy-log.md` carries the dated fold note
+- [x] 4.8 Several lines in one category save as one summed entry — 77f0e7a
+- [x] 4.9 Grouped description clamps to three items and expands — 77f0e7a
+- [x] 4.10 One line per category saves one entry per line — 77f0e7a
+- [x] 4.11 Re-assigning a line moves it between groups in the preview — 77f0e7a
+- [x] 4.12 Removing lines updates and can remove a group — 77f0e7a
+- [x] 4.13 Preview amounts sum to `Suma pozycji` to the cent — 77f0e7a
+- [x] 4.14 Over-long grouped names store a `+N` tail with no mid-item cut and no 500 — 77f0e7a
+- [x] 4.15 A non-BMP character in an item name saves without a 500 — 77f0e7a
+- [x] 4.16 Sum-mismatch acknowledgement still blocks and unblocks — 77f0e7a
+- [x] 4.17 Total-only path unchanged and still available while blocked — 77f0e7a
+- [x] 4.18 Replayed confirm writes no duplicates and reports the same count — 77f0e7a
+- [x] 4.19 Soft-deleted category between parse and confirm 404s without partial write — 77f0e7a
+- [x] 4.20 `accuracy-log.md` carries the dated fold note — 77f0e7a
