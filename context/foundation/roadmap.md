@@ -3,7 +3,7 @@ project: PaperTrail
 version: 1
 status: draft
 created: 2026-08-15
-updated: 2026-08-17
+updated: 2026-08-18
 prd_version: 2
 main_goal: speed
 top_blocker: decisions
@@ -36,10 +36,10 @@ People who track personal finances in a self-built spreadsheet abandon it at the
 | S-04  | `date-range-spending-view`    | view spending over quick-select date ranges, with recurring costs excludable | S-01, S-02    | FR-013, FR-015              | done |
 | S-05  | `category-distribution-view`  | see spending distributed across own categories, readable at any category count | S-04        | FR-014, FR-015              | done |
 | S-06  | `receipt-parsing`             | photograph a receipt and review line items pre-assigned to own categories    | S-01, S-02    | US-02, FR-010, FR-011, FR-012 | done |
-| S-07  | `dashboard-category-management` | manage categories from the dashboard itself, and read the day view without clutter or misalignment | S-01, S-02, S-03 | FR-004, FR-005, FR-007, FR-009 | ready |
-| S-08  | `reports-axis-and-all-time-range` | read every chart's Y-axis labels, and see "Cały okres" start at their first entry | S-04, S-05 | FR-013, FR-014 | ready |
-| S-09  | `category-icons`              | recognise a category by an icon they chose, everywhere it appears            | S-05, S-07    | FR-004, FR-014, FR-018        | proposed |
-| S-10  | `entry-descriptions-and-receipt-grouping` | say what an entry was, and get one entry per category from a receipt | S-03, S-06 | FR-006, FR-009, FR-012, FR-017 | proposed |
+| S-07  | `dashboard-category-management` | manage categories from the dashboard itself, and read the day view without clutter or misalignment | S-01, S-02, S-03 | FR-004, FR-005, FR-007, FR-009 | done |
+| S-08  | `reports-axis-and-all-time-range` | read every chart's Y-axis labels, and see "Cały okres" start at their first entry | S-04, S-05 | FR-013, FR-014 | done |
+| S-09  | `category-icons`              | recognise a category by an icon they chose, everywhere it appears            | S-05, S-07    | FR-004, FR-014, FR-018        | done |
+| S-10  | `entry-descriptions-and-receipt-grouping` | say what an entry was, and get one entry per category from a receipt | S-03, S-06 | FR-006, FR-009, FR-012, FR-017 | done |
 
 ## Streams
 
@@ -175,7 +175,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Which five categories are "the first five" before `Pokaż więcej`? The picker's list is already recency-ordered by `listCategoriesForEntryForm`; confirm recency is the intended cut rather than alphabetical. Owner: user. Block: no.
   - The overlay needs a modal primitive and none is installed — hand-roll on the already-present `radix-ui`, or generate shadcn's `dialog`. Owner: implementation. Block: no.
 - **Risk:** The widest of the four post-MVP slices, but every item is confined to the dashboard shell and none touches the schema. The one real regression: retiring `/categories` also retires the only surface that can create an *income* category, since the dashboard's picker is scoped to the current entry type — the overlay must carry the kind selector or income categories become uncreatable. The ≤4-interaction NFR that governed S-02 is the acceptance constraint on the collapsed list: `Pokaż więcej` must not add a tap to the common path.
-- **Status:** ready
+- **Status:** done
 
 ### S-08: Reports readability fixes
 
@@ -186,9 +186,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-07, S-09, S-10
 - **Blockers:** —
 - **Unknowns:**
-  - What should "Cały okres" resolve to for a user with no entries at all? The existing precedent is the account-creation floor already used for missing-day clamping. Owner: user. Block: no.
+  - What should "Cały okres" resolve to for a user with no entries at all? The existing precedent is the account-creation floor already used for missing-day clamping. Owner: user. Block: no. **Resolved during planning 2026-08-17**: the account-creation date, same source `api/entries/days.ts:52` already uses. See `context/changes/reports-axis-and-all-time-range/plan-brief.md`.
 - **Risk:** Two fixes of very different size behind one outcome. The axis half is a width allowance on three charts; the all-time half needs a first-entry lookup that exists nowhere in the codebase today. Note that the twenty-year floor was itself a workaround for the bucket-count guard — a real first-entry date removes the condition that guard was tripping on, so the two halves are the same defect seen from opposite ends.
-- **Status:** ready
+- **Status:** done
 
 ### S-09: Category icons replace colors
 
@@ -200,10 +200,10 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-08, S-10
 - **Blockers:** —
 - **Unknowns:**
-  - A curated icon set, or search across the full icon catalogue? Shipping the whole set into a client island is a bundle-size decision, not only a UX one. Owner: user. Block: no.
-  - Does the per-category color get retired outright, or kept as the chart series color? Owner: user. Block: no — but see Risk for the ordering constraint either answer inherits.
+  - A curated icon set, or search across the full icon catalogue? Shipping the whole set into a client island is a bundle-size decision, not only a UX one. Owner: user. Block: no. **Resolved during planning 2026-08-17**: a curated set of 100+ named lucide imports, grouped and filtered by hand-written Polish keywords — sized for the user's expected 50+ categories while staying tree-shaken. See `context/changes/category-icons/plan-brief.md`.
+  - Does the per-category color get retired outright, or kept as the chart series color? Owner: user. Block: no — but see Risk for the ordering constraint either answer inherits. **Resolved during planning 2026-08-17**: retired outright; `distribution.ts` derives fills from `categoryId` instead. The column drop is deferred to a follow-up change (`category-color-drop`) so it trails the code by one deploy.
 - **Risk:** The narrowest concept with the widest reach — a category marker renders at five call sites plus the chart legends, and the distribution module keys its shade de-duplication off the stored color, so charts need their own color derivation once the user stops choosing one. The deployment trap is ordering: CI applies migrations before the Worker deploys, so dropping the color column (or the category-summary function's color return) must trail the code change by one deploy, or the running Worker queries a column that no longer exists.
-- **Status:** proposed
+- **Status:** done
 
 ### S-10: Entries say what they were
 
@@ -214,10 +214,10 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-08, S-09
 - **Blockers:** —
 - **Unknowns:**
-  - Once a receipt collapses to one entry per category, does the existing "save as a single entry at the printed total" shortcut still earn its place? Owner: user. Block: no.
-  - How is a grouped description composed and truncated — plain comma-joined item names, or names with amounts? Owner: user. Block: no.
+  - Once a receipt collapses to one entry per category, does the existing "save as a single entry at the printed total" shortcut still earn its place? Owner: user. Block: no. **Resolved during planning 2026-08-18**: kept unchanged. It is the only exit from a hard-blocked confirm (missing category, invalid amount, sum mismatch), which the NFR "never left without a way forward" depends on, and the accuracy asymmetry that justified it is untouched by grouping. See `context/changes/entry-descriptions-and-receipt-grouping/plan-brief.md`.
+  - How is a grouped description composed and truncated — plain comma-joined item names, or names with amounts? Owner: user. Block: no. **Resolved during planning 2026-08-18**: names *with* amounts, joined by ` · `, so a group is reconstructable from the row alone. Over-long descriptions drop whole items from the tail with a `+N` marker rather than cutting mid-item, and the day list clamps the display to three items with a tap-to-expand.
 - **Risk:** No migration needed: the entry description column shipped with S-06, deliberately written but never shown, so this slice is largely the display-and-edit half that was scoped out then — though the update schema omits the field on purpose and has to be opened up for post-save correction. The behavioural change is grouping: a receipt stops producing one entry per printed line and starts producing one per category, which silently redefines what S-06's accuracy log is measuring. Its pre-grouping numbers stop being comparable unless the change is recorded there.
-- **Status:** proposed
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -267,3 +267,7 @@ Tracked as GitHub issues in [`Zabicki/paper-trail`](https://github.com/Zabicki/p
 - **S-04: User can view spending over quick-select date ranges (last week, last month, year-to-date) and can exclude categories flagged as large recurring costs from the view.** — Archived 2026-08-16 → `context/archive/2026-08-16-date-range-spending-view/`. Lesson: —.
 - **S-05: User can see spending distributed across their own categories, and the view stays readable regardless of how many categories they have defined.** — Archived 2026-08-17 → `context/archive/2026-08-16-category-distribution-view/`. Lesson: —.
 - **S-06: User can upload a photographed receipt and review line items pre-assigned to their own categories, correcting any category or amount before anything is persisted.** — Archived 2026-08-17 → `context/archive/2026-08-16-receipt-parsing/`. Phases 1–3 shipped and reviewed; **Phase 4 (live accuracy assessment) archived unmeasured** — `accuracy-log.md` is an empty scaffold, so the Secondary success bar in FR-011 has no recorded answer. Lesson: —.
+- **S-07: User can create, rename, delete and flag their categories from the dashboard itself — without a separate tab — sees at a glance which are recurring, and reads the day's entries without duplicated sign-out controls or a calendar whose numbers drift off their weekday headers.** — Archived 2026-08-17 → `context/archive/2026-08-17-dashboard-category-management/`. Lesson: —.
+- **S-08: User can read every chart's Y-axis labels without the leading digit clipped, and "Cały okres" plots from their first recorded entry instead of two decades of empty months.** — Archived 2026-08-17 → `context/archive/2026-08-17-reports-axis-and-all-time-range/`. Lesson: —.
+- **S-09: User can assign an icon to each of their categories and recognise categories by that icon everywhere one appears — entry picker, day list, category manager and the reports charts — instead of maintaining a color per category.** — Archived 2026-08-18 → `context/archive/2026-08-17-category-icons/`. Follow-up `category-color-drop` is REQUIRED and not optional: `categories.color`, its CHECK, `category_color` on `entries_category_summary` and the `CATEGORY_COLORS` exports all still exist, because CI applies migrations before the Worker deploys. Also carries a known residual documented at `distribution.ts:212-232` — the chart-fill de-collision walk is invariant to category order but not to membership, so past ~36 categories a bumped category can recolour when its collider leaves the range. Lesson: —.
+- **S-10: User can describe an entry in their own words when logging it manually or correcting a receipt, sees those descriptions in "Wpisy tego dnia" — truncated past three items and expandable — and gets one entry per category from a receipt, dated from the receipt itself and correctable when the model misreads it.** — Archived 2026-08-18 → `context/archive/2026-08-18-entry-descriptions-and-receipt-grouping/`. No migration was needed: the description column shipped with S-06, so this slice was the display-and-edit half plus the fold. Archived without an impl-review. Carries four changes made outside the plan by request: receipt parse timeout 30s → 60s, signed/red expense amounts in the day list, a click-to-enlarge receipt photo, and direct camera capture on touch devices. Lesson: —.
