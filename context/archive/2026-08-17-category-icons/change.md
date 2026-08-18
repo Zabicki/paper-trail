@@ -1,10 +1,10 @@
 ---
 change_id: category-icons
 title: Category icons replace colors, and icon-only edit/delete actions
-status: implemented
+status: archived
 created: 2026-08-17
 updated: 2026-08-18
-archived_at: null
+archived_at: 2026-08-18T07:35:04Z
 ---
 
 ## Notes
