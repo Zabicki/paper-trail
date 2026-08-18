@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/format";
+import CategoryIcon from "@/components/categories/CategoryIcon";
 import { formatCollapsedLabel, POZOSTALE_FILL, type Distribution } from "./distribution";
 import { enumerateBuckets, formatBucketLabel, type DateRange } from "./range";
 import type { CategoryBucketPoint, SummaryBucket } from "@/types";
@@ -100,6 +101,17 @@ function fillForSeries(distribution: Distribution, seriesKey: string): string {
   return seriesKey === COLLAPSED_KEY ? POZOSTALE_FILL : distribution.colorFor(Number(seriesKey));
 }
 
+// Resolved by series key exactly as fillForSeries is, so the glyph and the tint
+// beside it can never describe two different categories. The collapsed series is
+// not a category, so it takes the same neutral ellipsis the ranking's tail row
+// does rather than borrowing a real category's glyph.
+function iconForSeries(distribution: Distribution, seriesKey: string): string {
+  if (seriesKey === COLLAPSED_KEY) {
+    return "more-horizontal";
+  }
+  return distribution.iconFor(Number(seriesKey)) ?? "tag";
+}
+
 // Recharts types the tooltip label as ReactNode. Here it is always the XAxis
 // dataKey value — a bucketStart string — so anything else gets no header rather
 // than a stringified object.
@@ -149,10 +161,10 @@ export default function CategoryTrendChart({ distribution, points, range, bucket
                   // indicator, so the swatch is rendered here — with up to nine
                   // stacked series the colour is what identifies the row.
                   <div className="flex max-w-56 flex-1 items-center gap-2 leading-none">
-                    <span
-                      className="size-2.5 shrink-0 rounded-[2px]"
-                      style={{ backgroundColor: fillForSeries(distribution, String(name)) }}
-                      aria-hidden="true"
+                    <CategoryIcon
+                      name={iconForSeries(distribution, String(name))}
+                      className="size-4 shrink-0"
+                      style={{ color: fillForSeries(distribution, String(name)) }}
                     />
                     <span className="text-muted-foreground min-w-0 flex-1 truncate">{seriesLabel(name)}</span>
                     <span className="text-foreground shrink-0 font-mono font-medium tabular-nums">

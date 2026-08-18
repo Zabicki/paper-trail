@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { PostgrestError } from "@supabase/supabase-js";
 import type { createClient } from "@/lib/supabase";
-import { DEFAULT_CATEGORY_COLOR, DEFAULT_CATEGORY_ICON } from "@/types";
+import { DEFAULT_CATEGORY_ICON } from "@/types";
 import type {
   CategoryBucketPoint,
   CategoryColor,
@@ -273,14 +273,15 @@ export async function getFirstEntryDate(supabase: SupabaseClient): Promise<strin
 
 // Same boundary-assertion pattern as SummaryRow.
 //
-// `category_color` is on its way out. S-09 Phase 3 makes
-// src/components/reports/distribution.ts derive chart fills from categoryId
-// rather than from a stored hex, at which point nothing reads this — but until
-// then distribution.ts is still its consumer, so it is mapped through onto
-// CategoryTotal.color rather than dropped here. The follow-up change
-// `category-color-drop` removes it from the function and from this interface.
-// It is typed as CategoryColor rather than string because the categories
-// table's CHECK constraint restricts the column to the CATEGORY_COLORS palette.
+// `category_color` is DELIBERATELY UNREAD. As of S-09,
+// src/components/reports/distribution.ts derives chart fills from categoryId
+// rather than from a stored hex, so nothing consumes this field — but the
+// function still returns it, because the column is still `not null` and the
+// migration had to stay backward-compatible with the previous Worker. The
+// follow-up change `category-color-drop` removes it from the function and from
+// this interface together. Do not wire it back into a DTO. It is typed as
+// CategoryColor rather than string because the categories table's CHECK
+// constraint restricts the column to the CATEGORY_COLORS palette.
 //
 // `category_icon` carries no such constraint — there is no CHECK on the column
 // (see 20260818090000_add_category_icon.sql), so this is a boundary ASSERTION
@@ -326,9 +327,6 @@ function toCategorySummary(range: DateRange, bucket: SummaryBucket, rows: Catego
         categoryId: row.category_id,
         name: row.category_name ?? "",
         icon: row.category_icon ?? DEFAULT_CATEGORY_ICON,
-        // Unread by every consumer except distribution.ts, which stops
-        // reading it in Phase 3. See CategoryTotal.color in src/types.ts.
-        color: row.category_color ?? DEFAULT_CATEGORY_COLOR,
         total: amount,
       });
       continue;

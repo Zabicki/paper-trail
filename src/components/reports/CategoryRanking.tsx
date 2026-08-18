@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { formatCurrency, formatShare } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import CategoryIcon from "@/components/categories/CategoryIcon";
 import { formatCollapsedLabel, POZOSTALE_FILL, type Distribution } from "./distribution";
 
 // B2 — Ranking kategorii.
@@ -18,6 +19,11 @@ interface CategoryRankingProps {
 
 interface RankingRowProps {
   name: string;
+  // The category's own glyph — its identity. `fill` is a different job: it links
+  // this row to its donut arc and its stack segment. Since S-09 the two coexist
+  // on the row as a TINTED glyph, so the shape says which category and the tint
+  // says which arc.
+  icon: string;
   fill: string;
   total: number;
   share: number;
@@ -30,18 +36,15 @@ interface RankingRowProps {
   indented?: boolean;
 }
 
-function RankingRow({ name, fill, total, share, maxShare, leading, indented = false }: RankingRowProps) {
+function RankingRow({ name, icon, fill, total, share, maxShare, leading, indented = false }: RankingRowProps) {
   return (
     <div className={cn("flex w-full flex-col gap-1.5", indented && "pl-6")}>
       <div className="flex items-center gap-2">
         {leading}
-        <span
-          className="size-2.5 shrink-0 rounded-full"
-          style={{ backgroundColor: fill }}
-          // The swatch repeats the colour the name already identifies; a screen
-          // reader announcing it would add nothing.
-          aria-hidden="true"
-        />
+        {/* `color`, not `backgroundColor`: the glyph is strokes, not a filled
+            box, so the tint has to land on the stroke colour. CategoryIcon sets
+            aria-hidden itself — the name beside it already identifies the row. */}
+        <CategoryIcon name={icon} className="size-4 shrink-0" style={{ color: fill }} />
         {/* min-w-0 is what lets truncate actually bite inside a flex row: a
             category name can be 100 characters (createCategorySchema), and
             without it the name would push the amount off a narrow viewport. */}
@@ -78,6 +81,7 @@ export default function CategoryRanking({ distribution, expanded, onToggleExpand
           <li key={slice.categoryId}>
             <RankingRow
               name={slice.name}
+              icon={slice.icon}
               fill={slice.fill}
               total={slice.total}
               share={slice.share}
@@ -99,6 +103,11 @@ export default function CategoryRanking({ distribution, expanded, onToggleExpand
             >
               <RankingRow
                 name={formatCollapsedLabel(collapsed.length)}
+                // Not a category, so it has no icon of its own. The neutral
+                // ellipsis reads as "the rest" rather than borrowing a real
+                // category's glyph, and the chevron in `leading` coexists with
+                // it — one says "expandable", the other says "not a category".
+                icon="more-horizontal"
                 fill={POZOSTALE_FILL}
                 total={collapsedTotal}
                 share={collapsedShare}
@@ -122,6 +131,7 @@ export default function CategoryRanking({ distribution, expanded, onToggleExpand
                   <li key={slice.categoryId}>
                     <RankingRow
                       name={slice.name}
+                      icon={slice.icon}
                       fill={slice.fill}
                       total={slice.total}
                       share={slice.share}

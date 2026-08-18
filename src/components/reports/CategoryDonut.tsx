@@ -1,6 +1,7 @@
 import { Label, Pie, PieChart } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { formatCurrency, formatShare } from "@/lib/format";
+import CategoryIcon from "@/components/categories/CategoryIcon";
 import { formatCollapsedLabel, POZOSTALE_FILL, type Distribution } from "./distribution";
 
 // B1 — Rozkład wydatków.
@@ -36,6 +37,11 @@ interface DonutDatum {
   // falls back to `entry.fill`, and the same field is what the tooltip below
   // reads for its swatch.
   fill: string;
+  // The category's glyph, travelling on the datum for the same reason `fill`
+  // does: the tooltip narrows its datum back out of Recharts' `any` payload, so
+  // anything the tooltip renders has to be on the datum to survive that.
+  // `more-horizontal` for the collapsed slice, which is not a category.
+  icon: string;
 }
 
 // The donut follows the `Pozostałe` expansion state so it and the ranking
@@ -49,6 +55,7 @@ function donutData(distribution: Distribution, expanded: boolean): DonutDatum[] 
     total: slice.total,
     share: slice.share,
     fill: slice.fill,
+    icon: slice.icon,
   }));
 
   if (expanded || collapsed.length === 0) {
@@ -66,6 +73,7 @@ function donutData(distribution: Distribution, expanded: boolean): DonutDatum[] 
       // bare division would hand the tooltip NaN rather than fail.
       share: total > 0 ? collapsedTotal / total : 0,
       fill: POZOSTALE_FILL,
+      icon: "more-horizontal",
     },
   ];
 }
@@ -78,14 +86,17 @@ function donutDatum(payload: unknown): DonutDatum | null {
   if (typeof payload !== "object" || payload === null) {
     return null;
   }
-  const { key, name, total, share, fill } = payload as Partial<DonutDatum>;
+  const { key, name, total, share, fill, icon } = payload as Partial<DonutDatum>;
   if (typeof key !== "string" || typeof name !== "string" || typeof fill !== "string") {
     return null;
   }
   if (typeof total !== "number" || typeof share !== "number") {
     return null;
   }
-  return { key, name, total, share, fill };
+  // Narrowed like the rest, but tolerated when absent: CategoryIcon already
+  // degrades an unknown name to its tag fallback, so a missing icon costs the
+  // tooltip a precise glyph rather than the whole row.
+  return { key, name, total, share, fill, icon: typeof icon === "string" ? icon : "tag" };
 }
 
 export default function CategoryDonut({ distribution, expanded }: CategoryDonutProps) {
@@ -117,11 +128,7 @@ export default function CategoryDonut({ distribution, expanded }: CategoryDonutP
                     // indicator, so the swatch is rendered here — without it the
                     // tooltip could not say WHICH arc it is describing.
                     <div className="flex max-w-56 flex-1 items-center gap-2 leading-none">
-                      <span
-                        className="size-2.5 shrink-0 rounded-[2px]"
-                        style={{ backgroundColor: datum.fill }}
-                        aria-hidden="true"
-                      />
+                      <CategoryIcon name={datum.icon} className="size-4 shrink-0" style={{ color: datum.fill }} />
                       <span className="text-muted-foreground min-w-0 flex-1 truncate">{datum.name}</span>
                       <span className="text-foreground shrink-0 font-mono font-medium tabular-nums">
                         {formatCurrency(datum.total)}

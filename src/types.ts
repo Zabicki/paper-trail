@@ -247,12 +247,6 @@ export interface CategoryTotal {
   categoryId: number;
   name: string;
   icon: CategoryIconName;
-  // Retained one phase longer than the rest of S-09's colour removal.
-  // src/components/reports/distribution.ts is its last reader, and that module
-  // only stops reading a stored hex when Phase 3 derives fills from categoryId
-  // instead — so dropping the field here would break the reports build for the
-  // sake of a field nothing else consumes. Phase 3 deletes it.
-  color: CategoryColor;
   total: number;
 }
 

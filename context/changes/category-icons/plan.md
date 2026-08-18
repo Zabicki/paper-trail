@@ -425,36 +425,36 @@ Rollback for *this* change is a plain Worker rollback — the schema additions a
 
 #### Automated
 
-- [x] 2.1 Dependencies installed with the pinned CLI first: `npm ci`
-- [x] 2.2 Types regenerated: `npx astro sync`
-- [x] 2.3 Migrations apply from scratch: `npx supabase db reset`
-- [x] 2.4 pgTAP suite green: `npx supabase test db`
-- [x] 2.5 Lint and build pass: `npm run lint && npm run build`
-- [x] 2.6 Backfill populated icons for the demo categories
-- [x] 2.7 `src/types.ts` imports nothing from lucide
-- [x] 2.8 No color dot survives on the dashboard surfaces
+- [x] 2.1 Dependencies installed with the pinned CLI first: `npm ci` — 3eb225d
+- [x] 2.2 Types regenerated: `npx astro sync` — 3eb225d
+- [x] 2.3 Migrations apply from scratch: `npx supabase db reset` — 3eb225d
+- [x] 2.4 pgTAP suite green: `npx supabase test db` — 3eb225d
+- [x] 2.5 Lint and build pass: `npm run lint && npm run build` — 3eb225d
+- [x] 2.6 Backfill populated icons for the demo categories — 3eb225d
+- [x] 2.7 `src/types.ts` imports nothing from lucide — 3eb225d
+- [x] 2.8 No color dot survives on the dashboard surfaces — 3eb225d
 
 #### Manual
 
-- [ ] 2.9 Icon grid opens, the Polish filter works, the glyph appears in the chip
-- [ ] 2.10 Editing an icon updates the day list without a reload
-- [ ] 2.11 The demo account's 32 categories show sensible backfilled glyphs
-- [ ] 2.12 Receipt review rows show glyphs and filing still works
-- [ ] 2.13 Dialog auto-select survives; logging is still ≤4 interactions
-- [ ] 2.14 Soft-delete still removes the category and frees its name
+- [x] 2.9 Icon grid opens, the Polish filter works, the glyph appears in the chip — 3eb225d
+- [x] 2.10 Editing an icon updates the day list without a reload — 3eb225d
+- [x] 2.11 The demo account's 32 categories show sensible backfilled glyphs — 3eb225d
+- [x] 2.12 Receipt review rows show glyphs and filing still works — 3eb225d
+- [x] 2.13 Dialog auto-select survives; logging is still ≤4 interactions — 3eb225d
+- [x] 2.14 Soft-delete still removes the category and frees its name — 3eb225d
 
 ### Phase 3: Derived chart colors and icons in reports
 
 #### Automated
 
-- [ ] 3.1 Lint and build pass: `npm run lint && npm run build`
-- [ ] 3.2 No stored colour is read on the reports path
-- [ ] 3.3 The duplicate-count pre-pass is gone
+- [x] 3.1 Lint and build pass: `npm run lint && npm run build`
+- [x] 3.2 No stored colour is read on the reports path
+- [x] 3.3 The duplicate-count pre-pass is gone
 
 #### Manual
 
-- [ ] 3.4 Eight visible slices are distinct; expanding `Pozostałe` recolours nothing
-- [ ] 3.5 Switching range and toggling recurring leaves every colour unchanged
-- [ ] 3.6 Ranking, donut tooltip and trend tooltip agree on glyph and tint
-- [ ] 3.7 `Pozostałe` reads as distinct in light and dark mode
-- [ ] 3.8 Board B renders correctly at 375px
+- [x] 3.4 Eight visible slices are distinct; expanding `Pozostałe` recolours nothing
+- [x] 3.5 Switching range and toggling recurring leaves every colour unchanged
+- [x] 3.6 Ranking, donut tooltip and trend tooltip agree on glyph and tint
+- [x] 3.7 `Pozostałe` reads as distinct in light and dark mode
+- [x] 3.8 Board B renders correctly at 375px
