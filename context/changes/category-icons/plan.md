@@ -447,14 +447,14 @@ Rollback for *this* change is a plain Worker rollback — the schema additions a
 
 #### Automated
 
-- [x] 3.1 Lint and build pass: `npm run lint && npm run build`
-- [x] 3.2 No stored colour is read on the reports path
-- [x] 3.3 The duplicate-count pre-pass is gone
+- [x] 3.1 Lint and build pass: `npm run lint && npm run build` — c939dae
+- [x] 3.2 No stored colour is read on the reports path — c939dae
+- [x] 3.3 The duplicate-count pre-pass is gone — c939dae
 
 #### Manual
 
-- [x] 3.4 Eight visible slices are distinct; expanding `Pozostałe` recolours nothing
-- [x] 3.5 Switching range and toggling recurring leaves every colour unchanged
-- [x] 3.6 Ranking, donut tooltip and trend tooltip agree on glyph and tint
-- [x] 3.7 `Pozostałe` reads as distinct in light and dark mode
-- [x] 3.8 Board B renders correctly at 375px
+- [x] 3.4 Eight visible slices are distinct; expanding `Pozostałe` recolours nothing — c939dae
+- [x] 3.5 Switching range and toggling recurring leaves every colour unchanged — c939dae
+- [x] 3.6 Ranking, donut tooltip and trend tooltip agree on glyph and tint — c939dae
+- [x] 3.7 `Pozostałe` reads as distinct in light and dark mode — c939dae
+- [x] 3.8 Board B renders correctly at 375px — c939dae
