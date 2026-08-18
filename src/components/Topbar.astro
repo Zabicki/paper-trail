@@ -1,15 +1,29 @@
 ---
 const { user } = Astro.locals;
+
+// `flex-wrap-reverse` is what makes the mobile stack come out in the right
+// order from a single DOM order: on one line (laptop) the email sits left and
+// the links right, and once they no longer fit, wrap-reverse stacks the LAST
+// line on top — so the links land above the email rather than below it. The
+// alternative (nav first in the DOM, reordered on `sm:`) would put the
+// navigation ahead of the identity for screen readers on every viewport.
+//
+// `break-all` on the email is load-bearing, not defensive polish: an address
+// has no spaces, so its min-content width is the whole string. Without it the
+// span cannot shrink, the bar overflows the 360px viewport, and the *document*
+// picks up a horizontal scrollbar — which is what showed as the whole page
+// sitting left of a black gutter, since `bg-cosmic` only paints one
+// viewport-width and `body`'s near-black propagates to the canvas beyond it.
 ---
 
 <div
-  class="mb-4 flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80"
+  class="mb-4 flex flex-wrap-reverse items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80"
 >
   {
     user ? (
       <>
-        <span class="text-blue-100/70">{user.email}</span>
-        <div class="flex items-center gap-3">
+        <span class="min-w-0 break-all text-blue-100/70">{user.email}</span>
+        <div class="flex flex-wrap items-center gap-3">
           <a href="/dashboard" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
             Dashboard
           </a>
@@ -25,8 +39,8 @@ const { user } = Astro.locals;
       </>
     ) : (
       <>
-        <span class="text-blue-100/70">Nie zalogowano</span>
-        <div class="flex gap-3">
+        <span class="min-w-0 break-all text-blue-100/70">Nie zalogowano</span>
+        <div class="flex flex-wrap gap-3">
           <a href="/auth/signin" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
             Zaloguj się
           </a>

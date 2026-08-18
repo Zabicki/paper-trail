@@ -101,10 +101,15 @@ export default function ReportsView({ allTimeStart }: ReportsViewProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Sticky so the recurring filter stays legible while scrolling. A filter
-          silently in effect somewhere off-screen would make every figure below
-          it quietly wrong. */}
-      <div className="bg-background/95 sticky top-0 z-10 flex flex-col gap-3 rounded-xl border border-white/10 p-4 backdrop-blur-md">
+      {/* Deliberately scrolls away with the content. It used to be pinned to the
+          top of the viewport, so that a recurring filter silently in effect
+          off-screen could not make every figure below it quietly wrong — but
+          three stacked controls are ~180px tall, which on a phone is most of the
+          viewport permanently spent on a bar the user has already finished
+          using. The invariant that pinning protected now rides on the caption
+          below instead, which names the active filter alongside the range it
+          applies to. */}
+      <div className="flex flex-col gap-3 rounded-xl border border-white/10 p-4">
         <BoardSwitcher
           value={view.board}
           onChange={(board) => {
@@ -127,6 +132,7 @@ export default function ReportsView({ allTimeStart }: ReportsViewProps) {
 
       <p className="text-muted-foreground text-xs tabular-nums">
         {range.from} – {range.to}
+        {view.recurringHidden && <span> · bez dużych kosztów cyklicznych</span>}
       </p>
 
       {view.board === "categories" ? (
