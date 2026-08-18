@@ -23,7 +23,13 @@ interface EditFormState {
   amountText: string;
   categoryId: number | null;
   occurredOn: string;
+  descriptionText: string;
 }
+
+// Mirrors the zod bound in src/lib/services/entries.ts and the database's own
+// check constraint. Here it only stops the user typing past the limit — the 400
+// is still the authority.
+const DESCRIPTION_MAX_LENGTH = 200;
 
 // PostgREST hands back numeric(10,2) as a JS number, so these totals inherit
 // binary-float rounding. Acceptable here because the sum is bounded to one
@@ -43,7 +49,12 @@ export default function DayEntriesList({
   onDeleted,
 }: DayEntriesListProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<EditFormState>({ amountText: "", categoryId: null, occurredOn: "" });
+  const [editForm, setEditForm] = useState<EditFormState>({
+    amountText: "",
+    categoryId: null,
+    occurredOn: "",
+    descriptionText: "",
+  });
   const [editFilterText, setEditFilterText] = useState("");
   const [editError, setEditError] = useState<ApiErrorBody | null>(null);
   const [saving, setSaving] = useState(false);
@@ -57,6 +68,7 @@ export default function DayEntriesList({
       amountText: entry.amount.toFixed(2),
       categoryId: entry.category.id,
       occurredOn: entry.occurredOn,
+      descriptionText: entry.description ?? "",
     });
     setEditFilterText("");
     setEditError(null);
@@ -79,6 +91,11 @@ export default function DayEntriesList({
           amount: amountValue,
           categoryId: editForm.categoryId,
           occurredOn: editForm.occurredOn,
+          // ALWAYS sent, never conditionally: PATCH is a full replace, so
+          // omitting the key would be a 400 (updateEntrySchema requires it) and
+          // conditionally omitting it would be the silent wipe that requirement
+          // exists to prevent. Cleared means an explicit null.
+          description: editForm.descriptionText.trim() || null,
         }),
       });
       if (!response.ok) {
@@ -206,6 +223,26 @@ export default function DayEntriesList({
                     className="h-11 min-h-11"
                   />
                   {editError?.field === "occurredOn" && <p className="text-destructive text-sm">{editError.error}</p>}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor={`edit-description-${entry.id}`}>Opis</Label>
+                  {/* Clearing this field is how a receipt-generated description
+                      gets removed, so an empty value is valid — editValid does
+                      not look at it. */}
+                  <Input
+                    id={`edit-description-${entry.id}`}
+                    value={editForm.descriptionText}
+                    onChange={(event) => {
+                      setEditForm((f) => ({ ...f, descriptionText: event.target.value }));
+                    }}
+                    placeholder="Opcjonalnie"
+                    maxLength={DESCRIPTION_MAX_LENGTH}
+                    aria-invalid={editError?.field === "description"}
+                    disabled={saving}
+                    className="h-11 min-h-11"
+                  />
+                  {editError?.field === "description" && <p className="text-destructive text-sm">{editError.error}</p>}
                 </div>
 
                 {editError && !editError.field && <p className="text-destructive text-sm">{editError.error}</p>}

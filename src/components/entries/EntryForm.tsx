@@ -21,6 +21,11 @@ interface EntryFormProps {
 
 const CONFIRMATION_DISPLAY_MS = 2500;
 
+// Mirrors the zod bound in src/lib/services/entries.ts and the database's own
+// check constraint. Here it only stops the user typing past the limit — the 400
+// is still the authority.
+const DESCRIPTION_MAX_LENGTH = 200;
+
 const TYPES: EntryType[] = ["expense", "income"];
 
 const TYPE_LABELS: Record<EntryType, string> = {
@@ -80,6 +85,7 @@ export default function EntryForm({
   onCategoriesChanged,
 }: EntryFormProps) {
   const [amountText, setAmountText] = useState("");
+  const [descriptionText, setDescriptionText] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [filterText, setFilterText] = useState("");
   const [error, setError] = useState<ApiErrorBody | null>(null);
@@ -143,7 +149,16 @@ export default function EntryForm({
       const response = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amountValue, categoryId: selectedCategoryId, occurredOn, type }),
+        body: JSON.stringify({
+          amount: amountValue,
+          categoryId: selectedCategoryId,
+          occurredOn,
+          type,
+          // An untouched or whitespace-only field is NULL, not "" — zod's
+          // .min(1) would reject the empty string, and a blank description is
+          // the absence of one.
+          description: descriptionText.trim() || null,
+        }),
       });
       if (!response.ok) {
         setError(await parseErrorBody(response));
@@ -152,6 +167,7 @@ export default function EntryForm({
       const entry = await response.json<Entry>();
       onSaved(entry);
       setAmountText("");
+      setDescriptionText("");
       setCategoryId(null);
       setFilterText("");
       // Back to the default for the next entry in this sitting — a one-off
@@ -250,6 +266,26 @@ export default function EntryForm({
                 collapsible
               />
               {error?.field === "categoryId" && <p className="text-destructive text-sm">{error.error}</p>}
+            </div>
+
+            {/* Last field before the submit button, on purpose: it is optional
+                in every state and must never sit on the tap-budgeted
+                amount → chip → save path. */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="entry-description">Opis</Label>
+              <Input
+                id="entry-description"
+                value={descriptionText}
+                onChange={(event) => {
+                  setDescriptionText(event.target.value);
+                }}
+                placeholder="Opcjonalnie"
+                maxLength={DESCRIPTION_MAX_LENGTH}
+                aria-invalid={error?.field === "description"}
+                disabled={submitting}
+                className="h-11 min-h-11"
+              />
+              {error?.field === "description" && <p className="text-destructive text-sm">{error.error}</p>}
             </div>
 
             {error && !error.field && <p className="text-destructive text-sm">{error.error}</p>}

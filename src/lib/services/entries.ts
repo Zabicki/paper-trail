@@ -24,11 +24,15 @@ export const createEntrySchema = z.object({
 // the category (kinds must match), which is a different entry, not an edit.
 // Delete and re-add instead. Everything else about an entry is correctable.
 //
-// description is omitted for a different reason: it records where the entry
-// came from, not what it is. Editing an amount or a category must leave it
-// alone. Omitting it here rather than ignoring it in updateEntry is what stops
-// PATCH silently accepting a field nothing ever writes.
-export const updateEntrySchema = createEntrySchema.omit({ type: true, description: true });
+// description is now a user field (FR-017), so PATCH has to carry it — but a
+// full-replace body means an OMITTED field would silently wipe a stored value.
+// .nullable() (not .nullish()) makes the key mandatory: clearing a description
+// is an explicit `null`, and forgetting to send it is a 400. This reverses the
+// original decision to omit it, which read description as provenance rather
+// than as something the user writes.
+export const updateEntrySchema = createEntrySchema
+  .omit({ type: true })
+  .extend({ description: z.string().trim().min(1).max(DESCRIPTION_MAX).nullable() });
 
 // One shared occurredOn for the whole receipt, and no `type` parameter at all:
 // receipt items are always expenses (see the plan's "No income receipts").
@@ -321,6 +325,7 @@ export async function updateEntry(supabase: SupabaseClient, id: number, input: U
       amount: input.amount,
       category_id: input.categoryId,
       occurred_on: input.occurredOn,
+      description: input.description,
     })
     .eq("id", id)
     .select(SELECT_COLUMNS)
