@@ -279,9 +279,15 @@ export default function ReceiptReview({
               onClick={() => {
                 setSaveDate(occurredOn);
               }}
-              className="min-h-11 self-start"
+              // `max-w-full` is the load-bearing half: `self-start` sizes the
+              // button to max-content, so beside the 96px thumbnail a long
+              // label pushed the panel past the 360px viewport and the whole
+              // document shifted left of a black gutter (same failure mode as
+              // the top bar's email). The date is dropped from the label too —
+              // it is already visible in the field right above.
+              className="min-h-11 max-w-full self-start"
             >
-              Wróć do dnia z kalendarza ({occurredOn})
+              Ustaw obecny dzień
             </Button>
           )}
           {/* Retained only for the case the initialiser refused: a printed date
