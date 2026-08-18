@@ -468,42 +468,42 @@ Nothing here changes a query, adds a round trip, or moves a computation across t
 
 #### Automated
 
-- [x] 2.1 Type check passes: `npx tsc --noEmit`
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Production build passes: `npm run build`
-- [x] 2.4 Separator not duplicated: `grep -rn '" · "' src/ --include=*.tsx` has no hits outside `src/lib/entry-description.ts`
+- [x] 2.1 Type check passes: `npx tsc --noEmit` — 3497d90
+- [x] 2.2 Linting passes: `npm run lint` — 3497d90
+- [x] 2.3 Production build passes: `npm run build` — 3497d90
+- [x] 2.4 Separator not duplicated: `grep -rn '" · "' src/ --include=*.tsx` has no hits outside `src/lib/entry-description.ts` — 3497d90
 
 #### Manual
 
-- [x] 2.5 One-item description renders with no toggle
-- [x] 2.6 Five-item description shows three plus `+2`, expands and collapses
-- [x] 2.7 Expanding one row does not affect another
-- [x] 2.8 Descriptionless rows keep today's single-line height
-- [x] 2.9 Day navigation collapses everything
-- [x] 2.10 Edit-then-cancel on an expanded row leaves it readable
-- [x] 2.11 A long description does not push the amount or actions off-screen at 360px
-- [x] 2.12 Day totals unaffected
+- [x] 2.5 One-item description renders with no toggle — 3497d90
+- [x] 2.6 Five-item description shows three plus `+2`, expands and collapses — 3497d90
+- [x] 2.7 Expanding one row does not affect another — 3497d90
+- [x] 2.8 Descriptionless rows keep today's single-line height — 3497d90
+- [x] 2.9 Day navigation collapses everything — 3497d90
+- [x] 2.10 Edit-then-cancel on an expanded row leaves it readable — 3497d90
+- [x] 2.11 A long description does not push the amount or actions off-screen at 360px — 3497d90
+- [x] 2.12 Day totals unaffected — 3497d90
 
 ### Phase 3: The receipt's own date
 
 #### Automated
 
-- [ ] 3.1 Type check passes: `npx tsc --noEmit`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Production build passes: `npm run build`
-- [ ] 3.4 Batch contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty
+- [x] 3.1 Type check passes: `npx tsc --noEmit`
+- [x] 3.2 Linting passes: `npm run lint`
+- [x] 3.3 Production build passes: `npm run build`
+- [x] 3.4 Batch contract untouched: `git diff src/lib/services/entries.ts src/pages/api/receipts/entries.ts` is empty
 
 #### Manual
 
-- [ ] 3.5 Past printed date is pre-selected, with a revert to the calendar day
-- [ ] 3.6 Confirm files entries to the chosen date
-- [ ] 3.7 Success message names the date; calendar marking updates
-- [ ] 3.8 Printed date equal to the calendar day shows no revert and no hint
-- [ ] 3.9 Unreadable date defaults to the calendar day
-- [ ] 3.10 Printed date after today keeps the calendar day and explains why
-- [ ] 3.11 Hand-typed date is the one used
-- [ ] 3.12 Moving the calendar mid-review does not clobber a chosen date
-- [ ] 3.13 Total-only path files to the same chosen date
+- [x] 3.5 Past printed date is pre-selected, with a revert to the calendar day
+- [x] 3.6 Confirm files entries to the chosen date
+- [x] 3.7 Success message names the date; calendar marking updates
+- [x] 3.8 Printed date equal to the calendar day shows no revert and no hint
+- [x] 3.9 Unreadable date defaults to the calendar day
+- [x] 3.10 Printed date after today keeps the calendar day and explains why
+- [x] 3.11 Hand-typed date is the one used
+- [x] 3.12 Moving the calendar mid-review does not clobber a chosen date
+- [x] 3.13 Total-only path files to the same chosen date
 
 ### Phase 4: Per-category fold at confirm
 

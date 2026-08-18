@@ -29,7 +29,11 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
   const [error, setError] = useState<string | null>(null);
   const [parsed, setParsed] = useState<ParsedReceipt | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [savedCount, setSavedCount] = useState<number | null>(null);
+  // The date is carried alongside the count because a receipt filed to another
+  // day deliberately does not splice into the visible list (DayView's
+  // selectedDateRef guard), and a bare "Zapisano (4)" over an unchanged list
+  // reads as a failed save. Naming the day is what makes the absence legible.
+  const [saved, setSaved] = useState<{ count: number; date: string } | null>(null);
   // The idempotency key for the confirm POST (review finding F4). Minted once
   // per successful parse and held across retries, which is precisely what makes
   // a retry safe: without it, a POST that commits server-side but loses its
@@ -85,7 +89,7 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
   }
 
   async function handleFile(picked: File) {
-    setSavedCount(null);
+    setSaved(null);
     setError(null);
     setParsed(null);
     setImageUrl(URL.createObjectURL(picked));
@@ -164,7 +168,9 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
     toIdle();
   }
 
-  async function handleConfirm(items: ConfirmItem[]) {
+  // `saveDate` rather than the `occurredOn` prop — named apart from it on
+  // purpose, because they are no longer the same thing.
+  async function handleConfirm(items: ConfirmItem[], saveDate: string) {
     // Unreachable in practice — the review panel only renders once a parse has
     // succeeded, which is where batchId is set — but sending the confirm without
     // a key would silently produce a non-idempotent write, so it fails loudly
@@ -183,14 +189,17 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
       const response = await fetch("/api/receipts/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // `occurredOn` is read here, at the confirm click, not at parse time:
-        // the user can move the calendar mid-review and the entries belong to
-        // whichever day it points at now. The response is then reconciled
-        // against selectedDateRef by the parent, which is the S-02 F1 guard.
+        // The date now comes from the review panel's own field, which is
+        // pre-filled from the paragon's printed date where there is a usable
+        // one. It is still not captured at parse time — the user can change it
+        // right up to the confirm click, and this reads whatever it says then.
+        // The response is reconciled against selectedDateRef by the parent,
+        // which is the S-02 F1 guard and is what correctly declines to splice a
+        // receipt filed to another day into the visible list.
         //
         // `batchId` is the opposite: fixed at parse time and deliberately NOT
         // re-read per attempt, so a retry is recognised as the same write.
-        body: JSON.stringify({ occurredOn, batchId, items }),
+        body: JSON.stringify({ occurredOn: saveDate, batchId, items }),
       });
       if (response.ok) {
         entries = await response.json<Entry[]>();
@@ -211,7 +220,7 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
     }
 
     onBatchSaved(entries);
-    setSavedCount(entries.length);
+    setSaved({ count: entries.length, date: saveDate });
     toIdle();
   }
 
@@ -228,7 +237,11 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
         >
           Dodaj z paragonu
         </Button>
-        {savedCount !== null && <p className="text-sm text-emerald-400">Zapisano wpisy z paragonu ({savedCount}).</p>}
+        {saved !== null && (
+          <p className="text-sm text-emerald-400">
+            Zapisano wpisy z paragonu ({saved.count}) na {saved.date}.
+          </p>
+        )}
       </div>
     );
   }
@@ -302,7 +315,11 @@ export default function ReceiptCapture({ expenseCategories, occurredOn, onBatchS
       )}
 
       {error !== null && <p className="text-destructive text-sm">{error}</p>}
-      {savedCount !== null && <p className="text-sm text-emerald-400">Zapisano wpisy z paragonu ({savedCount}).</p>}
+      {saved !== null && (
+        <p className="text-sm text-emerald-400">
+          Zapisano wpisy z paragonu ({saved.count}) na {saved.date}.
+        </p>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "@/components/entries/CategoryPicker";
 import CategoryIcon from "@/components/categories/CategoryIcon";
@@ -25,13 +26,16 @@ interface ReceiptReviewProps {
   // effect running. The thumbnail is an aid, not load-bearing.
   imageUrl: string | null;
   expenseCategories: Category[];
-  // The day the calendar is showing *now*. A live prop rather than a value
-  // captured at parse time: the user can move the calendar mid-review, and the
-  // entries belong wherever it points at the moment of the confirm click.
+  // The day the calendar is showing *now*, still a live prop — but no longer
+  // the date the entries land on. It is the DEFAULT for the panel's own date
+  // field when the paragon has no usable printed date, and the target of the
+  // revert button. The date actually saved is `saveDate` below.
   occurredOn: string;
-  // Rejects with a user-facing Polish message. The fetch lives in the parent,
-  // which owns onBatchSaved and the return to idle.
-  onConfirm: (items: ConfirmItem[]) => Promise<void>;
+  // Takes the panel's chosen save date as its second argument rather than
+  // reading the live `occurredOn` prop, so a date the user set here is the one
+  // that gets written. Rejects with a user-facing Polish message. The fetch
+  // lives in the parent, which owns onBatchSaved and the return to idle.
+  onConfirm: (items: ConfirmItem[], saveDate: string) => Promise<void>;
   onDiscard: () => void;
 }
 
@@ -64,6 +68,24 @@ export default function ReceiptReview({
       categoryId: item.categoryId,
     })),
   );
+  // Prefer the paragon's own date — the model reads header fields far more
+  // reliably than line items — but NEVER adopt one in the future. A misread year
+  // is the failure that files a receipt somewhere the calendar cannot casually
+  // reach, which is the risk S-06's hint-only guard was protecting against.
+  //
+  // `occurredOn` stands in for "today" because the calendar cannot select a
+  // future day. Do NOT "fix" this into a `new Date()` call — that would
+  // reintroduce the timezone question date-utils.ts already settled.
+  //
+  // A lazy initialiser, so it runs once per mount (i.e. once per parse) and
+  // moving the calendar mid-review cannot clobber a date already chosen here.
+  const [saveDate, setSaveDate] = useState(() =>
+    parsed.receiptDate !== null && parsed.receiptDate <= occurredOn ? parsed.receiptDate : occurredOn,
+  );
+  // Whether the initialiser REJECTED the printed date, decided once at mount for
+  // the same reason: derived live, it would start claiming the date was rejected
+  // simply because the user later moved the calendar backwards.
+  const [receiptDateRejected] = useState(() => parsed.receiptDate !== null && parsed.receiptDate > occurredOn);
   // Only one picker is open at a time: expanding several at once turns the
   // panel into a wall of chips with no visible line items left.
   const [expandedKey, setExpandedKey] = useState<number | null>(null);
@@ -105,7 +127,9 @@ export default function ReceiptReview({
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await onConfirm(items);
+      // saveDate, not the live occurredOn prop: both confirm paths file to the
+      // date shown in the field above.
+      await onConfirm(items, saveDate);
       // No setSubmitting(false) on success: a successful confirm unmounts this
       // panel from the parent, and the button must stay disabled until it goes.
     } catch (caught) {
@@ -164,17 +188,45 @@ export default function ReceiptReview({
         {imageUrl !== null && (
           <img src={imageUrl} alt="Zdjęcie paragonu" className="size-24 shrink-0 rounded-md border object-cover" />
         )}
-        <div className="flex flex-col gap-1 text-sm">
-          <p>
-            Wpisy trafią na: <span className="font-semibold">{occurredOn}</span>
-          </p>
-          {/* A hint, never an automatic date change. Filing a whole receipt to
-              the wrong day is the one high-cost mistake this placement makes
-              possible, and the model reads dates far more reliably than line
-              items — so the hint is nearly free insurance. */}
-          {parsed.receiptDate !== null && parsed.receiptDate !== occurredOn && (
+        {/* min-w-0 flex-1 so the date input shrinks beside the thumbnail rather
+            than overflowing the panel at 360px. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm">
+          <Label htmlFor="receipt-save-date">Wpisy trafią na</Label>
+          {/* Editable, and pre-filled from the paragon's own date where there is
+              a usable one. This softens S-06's "never an automatic date change"
+              guard, so the date has to stay visible at confirm time and the
+              revert below has to stay one tap. */}
+          <Input
+            id="receipt-save-date"
+            type="date"
+            value={saveDate}
+            onChange={(event) => {
+              setSaveDate(event.target.value);
+            }}
+            disabled={submitting}
+            className="h-11 min-h-11"
+          />
+          {saveDate !== occurredOn && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={() => {
+                setSaveDate(occurredOn);
+              }}
+              className="min-h-11 self-start"
+            >
+              Wróć do dnia z kalendarza ({occurredOn})
+            </Button>
+          )}
+          {/* Retained only for the case the initialiser refused: a printed date
+              in the future. It explains why the date was NOT adopted, rather
+              than telling the user to move the calendar — the field above is
+              now where a date gets changed. */}
+          {receiptDateRejected && parsed.receiptDate !== null && (
             <p className="text-amber-300">
-              Na paragonie widnieje data {parsed.receiptDate}. Zmień dzień w kalendarzu, jeśli to pomyłka.
+              Na paragonie widnieje data {parsed.receiptDate} — jest w przyszłości, więc jej nie użyto. Popraw datę
+              powyżej, jeśli to nie pomyłka modelu.
             </p>
           )}
           {parsed.droppedItems > 0 && (
