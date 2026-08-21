@@ -9,6 +9,8 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    env:
+      ASTRO_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,6 +20,12 @@ jobs:
       - run: npm ci
       - run: npx astro sync
       - run: npm run lint
+      # Both gates run before `build` so a type or logic failure surfaces without
+      # paying for a full build first. `npm run typecheck` is `astro check`, which
+      # needs the types `astro sync` generates above — hence the ordering.
+      # Neither step needs a secret: SUPABASE_URL/KEY stay scoped to the build step.
+      - run: npm run typecheck
+      - run: npm run test
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

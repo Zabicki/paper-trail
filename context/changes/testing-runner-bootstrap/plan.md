@@ -736,25 +736,25 @@ previous behaviour was that nothing stood between a merged migration and
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `npm run test`
-- [x] 1.2 Typecheck passes with 0 errors: `npm run typecheck`
-- [x] 1.3 Lint passes, including the new files: `npm run lint`
-- [x] 1.4 Build still passes: `npm run build`
-- [x] 1.5 After `npm ci`, `npx supabase --version` reports `2.98.2`
+- [x] 1.1 Unit tests pass: `npm run test` — f2c6f58
+- [x] 1.2 Typecheck passes with 0 errors: `npm run typecheck` — f2c6f58
+- [x] 1.3 Lint passes, including the new files: `npm run lint` — f2c6f58
+- [x] 1.4 Build still passes: `npm run build` — f2c6f58
+- [x] 1.5 After `npm ci`, `npx supabase --version` reports `2.98.2` — f2c6f58
 
 #### Manual
 
-- [x] 1.6 `npm run test:watch` enters watch mode, re-runs on edit, exits cleanly
-- [x] 1.7 Teeth check: `.slice()` regression turns the surrogate-pair test red, then reverted
-- [x] 1.8 Any ESLint test-file override relaxes only the rules actually tripped
+- [x] 1.6 `npm run test:watch` enters watch mode, re-runs on edit, exits cleanly — f2c6f58
+- [x] 1.7 Teeth check: `.slice()` regression turns the surrogate-pair test red, then reverted — f2c6f58
+- [x] 1.8 Any ESLint test-file override relaxes only the rules actually tripped — f2c6f58
 
 ### Phase 2: CI Fast Lane
 
 #### Automated
 
-- [ ] 2.1 Workflow file is valid YAML and accepted by GitHub Actions
+- [x] 2.1 Workflow file is valid YAML and accepted by GitHub Actions
 - [ ] 2.2 `ci` passes on a pull request with both new steps green
-- [ ] 2.3 `ci` runs no Supabase CLI and needs no secrets beyond the existing build-step pair
+- [x] 2.3 `ci` runs no Supabase CLI and needs no secrets beyond the existing build-step pair
 
 #### Manual
 

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.astro.build)",
+      "WebSearch",
+      "Read(//tmp/**)",
+      "mcp__exa__web_search_exa",
+      "mcp__exa__web_fetch_exa",
+      "Skill(10x-archive)"
+    ]
+  }
+}
