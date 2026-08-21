@@ -769,32 +769,32 @@ extraction is behaviour-preserving by construction.
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `npm run test`
-- [x] 1.2 Typecheck passes: `npm run typecheck`
-- [x] 1.3 Lint passes on both new files: `npm run lint`
-- [x] 1.4 No production file appears in `git diff --name-only`
+- [x] 1.1 Unit tests pass: `npm run test` — 3739c38
+- [x] 1.2 Typecheck passes: `npm run typecheck` — 3739c38
+- [x] 1.3 Lint passes on both new files: `npm run lint` — 3739c38
+- [x] 1.4 No production file appears in `git diff --name-only` — 3739c38
 
 #### Manual
 
-- [x] 1.5 Teeth check: mid-item cut in `composeGroupedDescription` turns the over-long-group case red, reverted
-- [x] 1.6 Teeth check: removing `roundToCents` from `sumItems` turns the `0.1 + 0.2` case red, reverted
-- [x] 1.7 No expectation was produced by calling the function under test
+- [x] 1.5 Teeth check: mid-item cut in `composeGroupedDescription` turns the over-long-group case red, reverted — 3739c38
+- [x] 1.6 Teeth check: removing `roundToCents` from `sumItems` turns the `0.1 + 0.2` case red, reverted — 3739c38
+- [x] 1.7 No expectation was produced by calling the function under test — 3739c38
 
 ### Phase 2: Service Integration and the Shared Fake
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test`
-- [ ] 2.2 Typecheck passes: `npm run typecheck`
-- [ ] 2.3 Lint passes with no `any` and no rule disabled: `npm run lint`
-- [ ] 2.4 The fake is not collected as a suite — the run reports 4 files, not 5
-- [ ] 2.5 No production file appears in `git diff --name-only`
+- [x] 2.1 Unit tests pass: `npm run test`
+- [x] 2.2 Typecheck passes: `npm run typecheck`
+- [x] 2.3 Lint passes with no `any` and no rule disabled: `npm run lint`
+- [x] 2.4 The fake is not collected as a suite — the run reports 4 files, not 5
+- [x] 2.5 No production file appears in `git diff --name-only`
 
 #### Manual
 
-- [ ] 2.6 Teeth check: `batch_seq: index + 1` turns the exact-row-array case red, reverted
-- [ ] 2.7 Teeth check: `ignoreDuplicates: false` turns the conflict-options case red, reverted
-- [ ] 2.8 The characterisation test's comment is unambiguous that the behaviour is accepted, not endorsed
+- [x] 2.6 Teeth check: `batch_seq: index + 1` turns the exact-row-array case red, reverted
+- [x] 2.7 Teeth check: `ignoreDuplicates: false` turns the conflict-options case red, reverted
+- [x] 2.8 The characterisation test's comment is unambiguous that the behaviour is accepted, not endorsed
 
 ### Phase 3: Route Boundary and the F1 Fix
 
