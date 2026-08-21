@@ -1,7 +1,7 @@
 ---
 change_id: testing-runner-bootstrap
 title: Runner bootstrap + CI test floor (test-plan §3 Phase 1)
-status: implementing
+status: implemented
 created: 2026-08-21
 updated: 2026-08-21
 archived_at: null

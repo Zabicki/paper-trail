@@ -794,12 +794,12 @@ previous behaviour was that nothing stood between a merged migration and
 
 #### Automated
 
-- [x] 5.1 `npm run format` leaves edited Markdown unchanged, or the formatting change is committed
-- [x] 5.2 `npm run lint` passes
-- [x] 5.3 No document claims "there is no test framework installed" or describes the four wired gates as "required after §3 Phase 1"
+- [x] 5.1 `npm run format` leaves edited Markdown unchanged, or the formatting change is committed — fab1667
+- [x] 5.2 `npm run lint` passes — fab1667
+- [x] 5.3 No document claims "there is no test framework installed" or describes the four wired gates as "required after §3 Phase 1" — fab1667
 
 #### Manual
 
-- [x] 5.4 test-plan §3 Phase 1 row reads `complete`, so the orchestrator proposes Phase 2 next
-- [x] 5.5 §6.1 is specific enough to add a second unit test from it alone
-- [x] 5.6 The §7 Face-B entry names a concrete re-evaluate trigger
+- [x] 5.4 test-plan §3 Phase 1 row reads `complete`, so the orchestrator proposes Phase 2 next — fab1667
+- [x] 5.5 §6.1 is specific enough to add a second unit test from it alone — fab1667
+- [x] 5.6 The §7 Face-B entry names a concrete re-evaluate trigger — fab1667
