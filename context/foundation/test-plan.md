@@ -74,13 +74,13 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status      | Change folder                               |
-| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ----------- | ------------------------------------------- |
-| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete    | `context/changes/testing-runner-bootstrap/` |
+| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status        | Change folder                                        |
+| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ------------- | ---------------------------------------------------- |
+| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete      | `context/changes/testing-runner-bootstrap/`          |
 | 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | change opened | `context/changes/testing-receipt-confirm-integrity/` |
-| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | not started | —                                           |
-| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | not started | —                                           |
-| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started | —                                           |
+| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | not started   | —                                                    |
+| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | not started   | —                                                    |
+| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started   | —                                                    |
 
 Order rationale: Phase 1 first because nothing else can land without a
 runner, and because #4 is the cheapest high-impact risk with a loaded
@@ -104,7 +104,7 @@ real version instead; as of §3 Phase 1 those are `unit + integration`,
 | ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`             |
 | component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                  |
-| API mocking               | none yet — see §3 Phase 2                                              | —                                                 | Mock at the network edge only. The Supabase client is the boundary worth faking; internal service modules are not; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                |
+| API mocking               | none — hand-rolled fake + `vi.mock`                                    | — (no dependency)                                 | Resolved by §3 Phase 2. The Supabase client is the boundary worth faking; internal service modules are not. A recording fake in `src/lib/services/__fixtures__/supabase-fake.ts` covers the service layer, and Vitest's built-in `vi.mock` covers the route layer. **No MSW, no `getViteConfig`, and no alias stub were needed** — see §6.2 and §6.1's corrected limit; `checked: 2026-08-21`                                                           |
 | database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`) |
 | narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                              |
 | lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -187,15 +187,38 @@ Filled in by §3 Phase 1.
   `resolve.external` list Vitest sets on its `ssr` environment and Vitest dies
   at startup before resolving anything. Verified empirically —
   `context/changes/testing-runner-bootstrap/research.md`, _Addendum: OQ6 spike
-  result_. So a module that **value**-imports an Astro virtual module cannot be
-  unit-tested as-is; today that is `src/lib/supabase.ts`,
-  `src/lib/config-status.ts`, `src/lib/services/receipts.ts`,
-  `src/pages/api/receipts/parse.ts` and `src/middleware.ts` (plus
-  `src/lib/receipt-image.ts`, which imports `cloudflare:workers`). Either
-  extract the pure logic away from the import, or alias-stub the virtual module
-  in `vitest.config.ts`. `import type` is not affected —
-  `verbatimModuleSyntax` erases it, which is why `services/categories.ts`,
-  `services/entries.ts` and `services/reports.ts` are testable as they stand.
+  result_. `import type` is not affected — `verbatimModuleSyntax` erases it,
+  which is why `services/categories.ts`, `services/entries.ts` and
+  `services/reports.ts` are testable as they stand.
+
+  **Corrected by §3 Phase 2: there are three options, not two.** The
+  distinguishing question is whether the module under test reaches the virtual
+  module _directly_ or _transitively_.
+  - **Transitively, through a resolvable local path** → `vi.mock` on that path.
+    The mock replaces the module before it is ever evaluated, so the virtual
+    module is never resolved and no config change is needed. Proven on
+    `src/pages/api/receipts/entries.ts`, which value-imports `@/lib/supabase` at
+    `:2`: all six status branches were asserted in ~400 ms on the default `node`
+    environment, with native `Request`/`Response` and no jsdom. The working
+    shape is a module-scope mutable holder — `vi.mock` factories are hoisted
+    above the imports, so the factory body must not close over a binding
+    evaluated later — plus `const { POST } = await import("./entries")` _after_
+    it. This is the cheapest option and should be tried first.
+  - **Directly** → `vi.mock` cannot help, because mocking the module under test
+    removes the subject, and `vi.mock("astro:env/server", …)` needs a specifier
+    Vitest can resolve, i.e. the alias-stub below anyway. So it remains: extract
+    the pure logic away from the import, or alias-stub the virtual module in
+    `vitest.config.ts`.
+
+  Still genuinely unreachable as they stand, all for the direct-import reason:
+  `src/lib/supabase.ts`, `src/lib/config-status.ts` and
+  `src/lib/services/receipts.ts` (`astro:env/server`),
+  `src/pages/api/receipts/parse.ts` (`astro:env/server` on its own line, not
+  only through the services it calls), `src/middleware.ts` (`astro:middleware`),
+  and `src/lib/receipt-image.ts` (`cloudflare:workers`). For
+  `services/receipts.ts` the extract route is the realistic one — research
+  bounded roughly 135 of its 296 lines as pure.
+
 - **Second limit**: the standalone config inherits **none** of
   `astro.config.mjs`'s Vite settings, including
   `resolve.dedupe: ["react", "react-dom"]` — documented there as preventing a
@@ -203,9 +226,70 @@ Filled in by §3 Phase 1.
 
 ### 6.2 Adding a service integration test
 
-TBD — see §3 Phase 2, which delivers the confirm-boundary pattern:
-submitted payload in, persisted rows out, including the repeated-confirm
-case.
+Filled in by §3 Phase 2.
+
+- **Location**: co-located, same as §6.1 — `src/lib/services/entries.test.ts`
+  sits next to `src/lib/services/entries.ts`.
+- **Shared helpers live under `__fixtures__/`** —
+  `src/lib/services/__fixtures__/supabase-fake.ts`. That directory name is not
+  cosmetic: `vitest.config.ts`'s only discovery glob is `src/**/*.test.ts`, so a
+  helper named `*.test.ts` would be collected as a suite and fail the run with
+  "No test found". `__fixtures__/` also keeps it clear of the co-located
+  `<module>.test.ts` convention that marks a real suite.
+- **What to fake**: the Supabase client, and nothing else. Internal service
+  modules are not a boundary worth faking — faking one would only assert that
+  the test's own stub was called.
+- **The fake**: `createSupabaseFake(responses)` returns `{ client, calls }`.
+  Every builder method (`from`, `select`, `in`, `is`, `eq`, `order`, `upsert`,
+  `insert`, `update`, `delete`, `maybeSingle`, `single`) returns the same
+  chainable object and appends `{ method, args }` to `calls`; `then` makes the
+  chain awaitable. Bridge it to a service's client parameter with a single
+  `as unknown as` **at the call site** — that keeps `any` out of both files,
+  which matters because `eslint.config.js` applies `strictTypeChecked` to test
+  files with no override (see the caveat at the end of this sub-section).
+- **Responses are queued in call order, NOT keyed by table.** This is the one
+  thing a reader gets wrong. A service making several round trips consumes one
+  queued response per `await`, in the order the awaits execute. For
+  `createEntriesBatch` that is: (1) the category check, (2) the batch upsert,
+  (3) the re-select — the third **only** on a replay. So a happy-path test
+  queues two responses and a replay test queues three. Run the queue dry and the
+  fake throws naming how many builder calls it had recorded and which.
+- **Reference test**: `src/lib/services/entries.test.ts`, scoped to
+  `createEntriesBatch`. Its four oracles are named in a header comment: the
+  `unique (user_id, batch_id, batch_seq)` migration for the `onConflict` string,
+  the `entries` table's `type` check and `occurred_on date not null`, the
+  service read as a spec for its three app-layer-only invariants, and an
+  archived impl-review for the accepted replay trade.
+- **Run**: `npm run test`. No Docker, no database, no network — the whole suite
+  is ~460 ms.
+- **The pattern**: _submitted payload in, asserted row array out._ Assert the
+  recorded `upsert` argument, not only the value the service returns. The
+  `batch_seq` assignment, the `occurred_on` shared across every row, the
+  hardcoded `type`, and the conflict options are all invisible in the return
+  value — and they are exactly the fields a refactor can change without a single
+  existing check going red.
+- **Always include the repeated-confirm case.** A 201 from the batch endpoint
+  means "the batch exists", never "the rows you just submitted are in it" — the
+  service discriminates a replay by comparing row counts, and on a replay
+  returns _what is stored_ under that batch id. That branch is the one
+  `supabase/tests/entries_batch_key_test.sql` structurally cannot reach: pgTAP
+  asserts the resulting row _count_, never what the statement _returned_. Do not
+  duplicate what that suite already proves.
+- **Characterisation tests must say so.** Where a case pins accepted behaviour
+  rather than desired behaviour — the retry-after-edit trade is the existing
+  example — the comment must name the decision record and state plainly that it
+  encodes an accepted trade, not an endorsement. A reader mistaking one for the
+  other is the failure mode such a test creates.
+- **Same oracle rule as §6.1**: expectations hand-written from an external
+  source, never derived by calling the code under test. Same teeth rule too —
+  the Phase 2 checks were `batch_seq: index + 1` and `ignoreDuplicates: false`,
+  each confirmed to turn exactly one case red, then reverted.
+- **Caveat — test files get no lint exemption.** `eslint.config.js:41` matches
+  `**/*.{js,jsx,ts,tsx}` with no test override, so `strictTypeChecked` applies.
+  In practice: `consistent-type-definitions` rejects `type X = { … }` in favour
+  of `interface`, and the `no-unsafe-*` family bites any fake that leans on
+  `any`. Type canned responses as `{ data: unknown; error: unknown }` and let
+  the service's own casts do the narrowing.
 
 ### 6.3 Adding a database / RLS test (pgTAP)
 
@@ -267,6 +351,40 @@ place than expected, a mocking decision that should be copied.)
   `npx supabase`, never `supabase/setup-cli@v1`. Copying the neighbouring
   deploy-job block produces `permission denied for table …` on suites that have
   shipped green, which looks exactly like a broken migration (`lessons.md`).
+
+**Phase 2 — Receipt confirm integrity** (`testing-receipt-confirm-integrity`):
+
+- **The `astro:*` blocker did not apply to this path**, and the phase needed no
+  `vitest.config.ts` change and no new dependency. `services/entries.ts` only
+  ever `import type`s `@/lib/supabase`, and the route's value-import is
+  displaced by `vi.mock` before it evaluates. §6.1's limit is corrected
+  accordingly — check whether the virtual-module import is direct or transitive
+  before concluding a module is unreachable.
+- **A 201 from the batch endpoint is evidence the batch exists, never that the
+  submitted rows are in it.** The service discriminates a replay by comparing
+  `insertedRows.length` against `input.items.length` — a length comparison, not
+  a replay flag — and when they differ it returns _what is stored_ under that
+  batch id. Any future test of a batch write must assert the recorded payload,
+  not the status.
+- **`z.iso.date()` gives full calendar validation for free where a shape regex
+  does not.** `/^\d{4}-\d{2}-\d{2}$/` accepts `2026-02-30`, which then reaches
+  Postgres, fails `occurred_on date not null`, and rethrows into an Astro error
+  page — a 500 with a non-JSON body that the client degrades to a generic
+  message. Verified against the installed zod `4.4.3`: `z.iso.date()` rejects
+  `2026-02-30`, `2026-04-31` and `2026-02-29`, accepts `2024-02-29`. Four copies
+  of that regex survive elsewhere (`services/receipts.ts`, `services/reports.ts`
+  ×2, `api/entries/index.ts`); only the two in `services/entries.ts` were fixed.
+- **The U+00A0 formatting trap.** `formatAmountPlain` emits a non-breaking space
+  as the thousands separator, and **only above four digits**: `1234.5` is
+  `"1234,50"` with no separator at all, `1234567.89` is `"1 234 567,89"`. A
+  literal expectation must use the right character _and_ must not assume a
+  separator appears at four digits. Write the U+00A0 into the expectation so it
+  is visible in a diff.
+- **Extraction is what makes a hot-spot component testable at all.** The panel's
+  payload assembly moved to `src/components/receipts/review-model.ts` with its
+  comments intact, following the precedent `receipt-total.ts` set for the same
+  reason. Until §3 Phase 5 stands up a component layer, the extracted module's
+  own tests are the only regression guard on that file.
 
 ## 7. What We Deliberately Don't Test
 

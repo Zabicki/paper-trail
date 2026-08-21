@@ -816,30 +816,30 @@ extraction is behaviour-preserving by construction.
 
 #### Automated
 
-- [x] 4.1 Unit tests pass: `npm run test`
-- [x] 4.2 Typecheck passes: `npm run typecheck`
-- [x] 4.3 Lint passes, including react-compiler on the rewired panel: `npm run lint`
-- [x] 4.4 Build passes: `npm run build`
-- [x] 4.5 `ReceiptReview.tsx` shows a net line reduction
+- [x] 4.1 Unit tests pass: `npm run test` — 114113f
+- [x] 4.2 Typecheck passes: `npm run typecheck` — 114113f
+- [x] 4.3 Lint passes, including react-compiler on the rewired panel: `npm run lint` — 114113f
+- [x] 4.4 Build passes: `npm run build` — 114113f
+- [x] 4.5 `ReceiptReview.tsx` shows a net line reduction — 114113f
 
 #### Manual
 
-- [x] 4.6 Preview count, per-category split, and amounts unchanged against a real receipt
-- [x] 4.7 Save-date behaviour identical: past adopted, future refused with the amber notice, revert works
-- [x] 4.8 "Zapisz jako jeden wpis" still saves one "Paragon" entry for the printed total
-- [x] 4.9 Hard block and delta acknowledgement behave as before
-- [x] 4.10 Teeth check: mis-pairing `categoryId` in `toConfirmItems` turns the pairing case red, reverted
+- [x] 4.6 Preview count, per-category split, and amounts unchanged against a real receipt — 114113f
+- [x] 4.7 Save-date behaviour identical: past adopted, future refused with the amber notice, revert works — 114113f
+- [x] 4.8 "Zapisz jako jeden wpis" still saves one "Paragon" entry for the printed total — 114113f
+- [x] 4.9 Hard block and delta acknowledgement behave as before — 114113f
+- [x] 4.10 Teeth check: mis-pairing `categoryId` in `toConfirmItems` turns the pairing case red, reverted — 114113f
 
 ### Phase 5: Cookbook and Plan Sync
 
 #### Automated
 
-- [ ] 5.1 Prettier passes on the edited markdown: `npm run format`
-- [ ] 5.2 No `TBD — see §3 Phase 2` string remains in `test-plan.md`
-- [ ] 5.3 Full suite still green: `npm run test`
+- [x] 5.1 Prettier passes on the edited markdown: `npm run format`
+- [x] 5.2 No `TBD — see §3 Phase 2` string remains in `test-plan.md`
+- [x] 5.3 Full suite still green: `npm run test`
 
 #### Manual
 
-- [ ] 5.4 §6.2 is specific enough to write a service test from without re-reading this plan
-- [ ] 5.5 §6.1's corrected limit does not overstate the fix
-- [ ] 5.6 The `lessons.md` entry names a class, not this one bug
+- [x] 5.4 §6.2 is specific enough to write a service test from without re-reading this plan
+- [x] 5.5 §6.1's corrected limit does not overstate the fix
+- [x] 5.6 The `lessons.md` entry names a class, not this one bug
