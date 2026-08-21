@@ -6,6 +6,8 @@ import {
   CategoryNotFoundError,
   type CreateEntriesBatchInput,
   createEntriesBatch,
+  createEntriesBatchSchema,
+  createEntrySchema,
 } from "@/lib/services/entries";
 
 // `createEntriesBatch` is the receipt confirm's write boundary: everything the
@@ -42,8 +44,9 @@ import {
 // a `do nothing` replay leaving the row count unchanged. What it cannot see is
 // what the statement RETURNED, which is the branch the replay cases below take.
 //
-// Scope: `createEntriesBatch` only. The other exports in this module serve other
-// risks and other rollout phases.
+// Scope: `createEntriesBatch`, plus the `occurredOn` bound on the two schemas
+// that guard the write paths. The other exports in this module serve other risks
+// and other rollout phases.
 
 // The service's own SupabaseClient type is module-private; this names it without
 // widening the module's API surface just for a test.
@@ -435,6 +438,85 @@ describe("createEntriesBatch", () => {
       ]);
 
       await expect(createEntriesBatch(fake.client as unknown as ServiceClient, input)).rejects.toBe(failure);
+    });
+  });
+});
+
+// The oracle here is the calendar itself — February 2026 has 28 days, April has
+// 30, and 2026 is not a leap year. Nothing in this repository is consulted to
+// know any of that, which is the point: the previous bound was a shape regex
+// that could not know it either.
+//
+// What the shape regex cost (research finding F1): `2026-02-30` passed
+// validation, reached Postgres, was refused by `occurred_on date not null`
+// (20260815164539_create_entries_table.sql:12), and came back as a 500 with a
+// non-JSON body — so the user was told "Coś poszło nie tak" about a receipt
+// whose only problem was a misread printed date. The route half of this is
+// asserted in `src/pages/api/receipts/entries.test.ts`.
+describe("the occurredOn bound", () => {
+  const IMPOSSIBLE = [
+    // February 2026 ends on the 28th.
+    "2026-02-30",
+    // No thirteenth month, no forty-fifth day.
+    "2026-13-45",
+    // April has 30 days.
+    "2026-04-31",
+    // 2026 is not divisible by 4, so there is no 29 February that year. The
+    // pair with the accepted `2024-02-29` below is what proves the check is a
+    // real calendar and not a per-month day-count table.
+    "2026-02-29",
+  ];
+
+  // Kept from the regex era: the swap must not have loosened the shape while
+  // tightening the semantics.
+  const MALFORMED = ["", "14.08.2026", "2026-8-14", "2026-08-14T00:00:00Z", "wczoraj"];
+
+  describe("createEntriesBatchSchema", () => {
+    function body(occurredOn: string) {
+      return {
+        occurredOn,
+        batchId: "11111111-1111-4111-8111-111111111111",
+        items: [{ amount: 12.5, categoryId: FOOD }],
+      };
+    }
+
+    it.each(IMPOSSIBLE)("rejects %s, which is not a day that exists", (occurredOn) => {
+      const result = createEntriesBatchSchema.safeParse(body(occurredOn));
+
+      expect(result.success).toBe(false);
+      // The field name is what the route forwards as `field`, and what the panel
+      // needs to point at the right control.
+      expect(result.error?.issues[0].path).toStrictEqual(["occurredOn"]);
+    });
+
+    it.each(MALFORMED)("rejects %s, which is not an ISO date at all", (occurredOn) => {
+      expect(createEntriesBatchSchema.safeParse(body(occurredOn)).success).toBe(false);
+    });
+
+    it("accepts 2024-02-29, a real leap day", () => {
+      expect(createEntriesBatchSchema.safeParse(body("2024-02-29")).success).toBe(true);
+    });
+
+    it("accepts an ordinary day", () => {
+      expect(createEntriesBatchSchema.safeParse(body("2026-08-21")).success).toBe(true);
+    });
+  });
+
+  // The consistency half. `createEntrySchema` guards the single-entry write, not
+  // the receipt confirm, so it is outside risk #1 — but both schemas carried the
+  // same shape-only regex one screen apart, and fixing one of two identical
+  // copies is the drift `context/foundation/lessons.md` exists to stop.
+  describe("createEntrySchema", () => {
+    function body(occurredOn: string) {
+      return { amount: 12.5, categoryId: FOOD, occurredOn };
+    }
+
+    it.each(IMPOSSIBLE)("rejects %s too", (occurredOn) => {
+      expect(createEntrySchema.safeParse(body(occurredOn)).success).toBe(false);
+    });
+
+    it("accepts an ordinary day", () => {
+      expect(createEntrySchema.safeParse(body("2026-08-21")).success).toBe(true);
     });
   });
 });

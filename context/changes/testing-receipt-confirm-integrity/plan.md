@@ -784,33 +784,33 @@ extraction is behaviour-preserving by construction.
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `npm run test`
-- [x] 2.2 Typecheck passes: `npm run typecheck`
-- [x] 2.3 Lint passes with no `any` and no rule disabled: `npm run lint`
-- [x] 2.4 The fake is not collected as a suite — the run reports 4 files, not 5
-- [x] 2.5 No production file appears in `git diff --name-only`
+- [x] 2.1 Unit tests pass: `npm run test` — dc3de97
+- [x] 2.2 Typecheck passes: `npm run typecheck` — dc3de97
+- [x] 2.3 Lint passes with no `any` and no rule disabled: `npm run lint` — dc3de97
+- [x] 2.4 The fake is not collected as a suite — the run reports 4 files, not 5 — dc3de97
+- [x] 2.5 No production file appears in `git diff --name-only` — dc3de97
 
 #### Manual
 
-- [x] 2.6 Teeth check: `batch_seq: index + 1` turns the exact-row-array case red, reverted
-- [x] 2.7 Teeth check: `ignoreDuplicates: false` turns the conflict-options case red, reverted
-- [x] 2.8 The characterisation test's comment is unambiguous that the behaviour is accepted, not endorsed
+- [x] 2.6 Teeth check: `batch_seq: index + 1` turns the exact-row-array case red, reverted — dc3de97
+- [x] 2.7 Teeth check: `ignoreDuplicates: false` turns the conflict-options case red, reverted — dc3de97
+- [x] 2.8 The characterisation test's comment is unambiguous that the behaviour is accepted, not endorsed — dc3de97
 
 ### Phase 3: Route Boundary and the F1 Fix
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass: `npm run test`
-- [ ] 3.2 Typecheck passes: `npm run typecheck`
-- [ ] 3.3 Lint passes: `npm run lint`
-- [ ] 3.4 Build passes: `npm run build`
-- [ ] 3.5 `grep -rn "DATE_PATTERN" src/lib/services/entries.ts` returns nothing
+- [x] 3.1 Unit tests pass: `npm run test`
+- [x] 3.2 Typecheck passes: `npm run typecheck`
+- [x] 3.3 Lint passes: `npm run lint`
+- [x] 3.4 Build passes: `npm run build`
+- [x] 3.5 `grep -rn "DATE_PATTERN" src/lib/services/entries.ts` returns nothing
 
 #### Manual
 
-- [ ] 3.6 Teeth check: reverting `z.iso.date()` turns the F1 cases red at both levels, restored
-- [ ] 3.7 Each of the six status branches was observed failing at least once during authoring
-- [ ] 3.8 A manual confirm through the browser still saves normally
+- [x] 3.6 Teeth check: reverting `z.iso.date()` turns the F1 cases red at both levels, restored
+- [x] 3.7 Each of the six status branches was observed failing at least once during authoring
+- [x] 3.8 A manual confirm through the browser still saves normally
 
 ### Phase 4: Panel Model Extraction
 
