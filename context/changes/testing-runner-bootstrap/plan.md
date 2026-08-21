@@ -752,9 +752,9 @@ previous behaviour was that nothing stood between a merged migration and
 
 #### Automated
 
-- [x] 2.1 Workflow file is valid YAML and accepted by GitHub Actions
+- [x] 2.1 Workflow file is valid YAML and accepted by GitHub Actions — b2aec29
 - [ ] 2.2 `ci` passes on a pull request with both new steps green
-- [x] 2.3 `ci` runs no Supabase CLI and needs no secrets beyond the existing build-step pair
+- [x] 2.3 `ci` runs no Supabase CLI and needs no secrets beyond the existing build-step pair — b2aec29
 
 #### Manual
 
