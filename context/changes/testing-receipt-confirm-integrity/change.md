@@ -1,7 +1,7 @@
 ---
 change_id: testing-receipt-confirm-integrity
 title: Receipt confirm integrity — prove what the user confirms is what persists, exactly once
-status: implementing
+status: implemented
 created: 2026-08-21
 updated: 2026-08-21
 archived_at: null

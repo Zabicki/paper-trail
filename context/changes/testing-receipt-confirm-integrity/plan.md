@@ -834,12 +834,12 @@ extraction is behaviour-preserving by construction.
 
 #### Automated
 
-- [x] 5.1 Prettier passes on the edited markdown: `npm run format`
-- [x] 5.2 No `TBD — see §3 Phase 2` string remains in `test-plan.md`
-- [x] 5.3 Full suite still green: `npm run test`
+- [x] 5.1 Prettier passes on the edited markdown: `npm run format` — cd5cca1
+- [x] 5.2 No `TBD — see §3 Phase 2` string remains in `test-plan.md` — cd5cca1
+- [x] 5.3 Full suite still green: `npm run test` — cd5cca1
 
 #### Manual
 
-- [x] 5.4 §6.2 is specific enough to write a service test from without re-reading this plan
-- [x] 5.5 §6.1's corrected limit does not overstate the fix
-- [x] 5.6 The `lessons.md` entry names a class, not this one bug
+- [x] 5.4 §6.2 is specific enough to write a service test from without re-reading this plan — cd5cca1
+- [x] 5.5 §6.1's corrected limit does not overstate the fix — cd5cca1
+- [x] 5.6 The `lessons.md` entry names a class, not this one bug — cd5cca1
