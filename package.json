@@ -9,7 +9,10 @@
     "astro": "astro",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "typecheck": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
@@ -52,9 +55,10 @@
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "0.14.1",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "supabase": "^2.23.4",
+    "supabase": "2.98.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.2",
+    "vitest": "4.1.11",
     "wrangler": "^4.123.0"
   },
   "overrides": {
