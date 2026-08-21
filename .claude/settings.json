@@ -16,14 +16,21 @@
       "Edit",
       "Write"
     ],
-    "ask": [
-      "Bash(curl *)",
-      "Bash(wget *)",
-      "Bash(git push *)",
-      "Bash(git push)"
-    ],
-    "deny": [
-      "Bash(rm -rf *)"
+    "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"],
+    "deny": ["Bash(rm -rf *)"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; [ -n \"$f\" ] && npx eslint --fix \"$f\" --quiet; }; true",
+            "timeout": 10000
+          }
+        ]
+      }
     ]
   }
 }
