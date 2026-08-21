@@ -31,9 +31,46 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
+  # Applies the MERGED migration set to an empty database and runs every pgTAP
+  # assertion — the gap per-branch local runs structurally cannot close. Fully
+  # local (`supabase start` provisions its own stack), so the job needs no
+  # secrets and no `environment:`, and therefore no approval gate.
+  db-test:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # npm ci FIRST, and `npx supabase` throughout. This job PROVISIONS a
+      # database, which puts it on the local side of the grants divide: it must
+      # resolve the lockfile's 2.98.2. Do NOT reuse the supabase/setup-cli@v1
+      # 2.114.0 block from the deploy job below — that CLI stops granting
+      # select/insert/update/delete to anon/authenticated on new public tables,
+      # and every pgTAP file then fails "permission denied for table ..." before
+      # a single assertion runs. See context/foundation/lessons.md.
+      - run: npm ci
+      # -x vector: [analytics] enabled = true (supabase/config.toml:371-372)
+      # spawns a log-shipper whose failing health check aborts the whole start.
+      # There is no vector block to disable; the CLI flag is the only lever.
+      - run: npx supabase start -x vector
+      # From-scratch apply of the MERGED migration set, plus seed.sql — which the
+      # pgTAP suites hard-require for the two fixed users their rows FK to.
+      - run: npx supabase db reset
+      - run: npx supabase test db
+      # A Postgres segfault (entries_summary_test.sql:225-249) drops every
+      # connection, so later files fail with connection errors and the real cause
+      # never reaches the pgTAP output.
+      - if: failure()
+        run: docker logs supabase_db_paper-trail --tail 200
+
   deploy:
     if: github.event_name == 'push'
-    needs: ci
+    # db-test gates the one step that reaches production. Both jobs are
+    # push-only, so pull requests skip both and this edge is never exercised there.
+    needs: [ci, db-test]
     runs-on: ubuntu-latest
     environment: production
     steps:

@@ -768,8 +768,8 @@ previous behaviour was that nothing stood between a merged migration and
 
 - [ ] 3.1 `db-test` runs and passes on a push to `master`
 - [ ] 3.2 `npx supabase test db` reports 6 files and the reconciled assertion count, zero failures
-- [ ] 3.3 `deploy` declares `needs: [ci, db-test]` and waits for both
-- [ ] 3.4 Job completes with no secrets and no `production` environment
+- [x] 3.3 `deploy` declares `needs: [ci, db-test]` and waits for both
+- [x] 3.4 Job completes with no secrets and no `production` environment
 
 #### Manual
 
