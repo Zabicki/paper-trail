@@ -836,29 +836,29 @@ behaviour it relied on. No migration ordering concern and nothing for the
 
 #### Automated
 
-- [x] 1.1 Suite passes: `npm run test`
-- [x] 1.2 Type checking passes: `npm run typecheck`
-- [x] 1.3 Linting passes: `npm run lint`
+- [x] 1.1 Suite passes: `npm run test` — 41fb01b
+- [x] 1.2 Type checking passes: `npm run typecheck` — 41fb01b
+- [x] 1.3 Linting passes: `npm run lint` — 41fb01b
 
 #### Manual
 
-- [x] 1.4 Each preset expectation traced by hand against a calendar
-- [x] 1.5 Teeth check: remove `last-3-months`' `+1`, confirm the 92-day-boundary case fails, revert
-- [x] 1.6 Teeth check: `startOfWeek` to Sunday-first, confirm the `enumerateBuckets` alignment case fails, revert
+- [x] 1.4 Each preset expectation traced by hand against a calendar — 41fb01b
+- [x] 1.5 Teeth check: remove `last-3-months`' `+1`, confirm the 92-day-boundary case fails, revert — 41fb01b
+- [x] 1.6 Teeth check: `startOfWeek` to Sunday-first, confirm the `enumerateBuckets` alignment case fails, revert — 41fb01b
 
 ### Phase 2: Distribution Model Units
 
 #### Automated
 
-- [ ] 2.1 Suite passes: `npm run test`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Linting passes: `npm run lint`
+- [x] 2.1 Suite passes: `npm run test`
+- [x] 2.2 Type checking passes: `npm run typecheck`
+- [x] 2.3 Linting passes: `npm run lint`
 
 #### Manual
 
-- [ ] 2.4 Every expected share hand-computed from the fixture's `total`
-- [ ] 2.5 Teeth check: `MIN_SHARE` to `0.2`, confirm only the selection cases go red, revert
-- [ ] 2.6 Teeth check: `shareOf`'s zero guard to a bare division, confirm the zero-total case fails on `NaN`, revert
+- [x] 2.4 Every expected share hand-computed from the fixture's `total`
+- [x] 2.5 Teeth check: `MIN_SHARE` to `0.2`, confirm only the selection cases go red, revert
+- [x] 2.6 Teeth check: `shareOf`'s zero guard to a bare division, confirm the zero-total case fails on `NaN`, revert
 
 ### Phase 3: Harness Extension and Aggregation Truth
 
