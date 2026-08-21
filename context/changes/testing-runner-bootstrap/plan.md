@@ -753,43 +753,43 @@ previous behaviour was that nothing stood between a merged migration and
 #### Automated
 
 - [x] 2.1 Workflow file is valid YAML and accepted by GitHub Actions — b2aec29
-- [ ] 2.2 `ci` passes on a pull request with both new steps green
+- [x] 2.2 `ci` passes on a pull request with both new steps green — b2aec29
 - [x] 2.3 `ci` runs no Supabase CLI and needs no secrets beyond the existing build-step pair — b2aec29
 
 #### Manual
 
-- [ ] 2.4 CI log shows `astro check` reporting `0 errors` over ~83 files
-- [ ] 2.5 CI log shows Vitest file and test counts, not a watch-mode hang
-- [ ] 2.6 Teeth check: a type error in `.astro` frontmatter turns `ci` red at typecheck, then reverted
+- [x] 2.4 CI log shows `astro check` reporting `0 errors` over ~83 files — b2aec29
+- [x] 2.5 CI log shows Vitest file and test counts, not a watch-mode hang — b2aec29
+- [x] 2.6 Teeth check: a type error in `.astro` frontmatter turns `ci` red at typecheck, then reverted — b2aec29
 
 ### Phase 3: CI Database Gate
 
 #### Automated
 
-- [ ] 3.1 `db-test` runs and passes on a push to `master`
-- [ ] 3.2 `npx supabase test db` reports 6 files and the reconciled assertion count, zero failures
-- [x] 3.3 `deploy` declares `needs: [ci, db-test]` and waits for both
-- [x] 3.4 Job completes with no secrets and no `production` environment
+- [x] 3.1 `db-test` runs and passes on a push to `master` — 75ee379
+- [x] 3.2 `npx supabase test db` reports 6 files and the reconciled assertion count, zero failures — 75ee379
+- [x] 3.3 `deploy` declares `needs: [ci, db-test]` and waits for both — 75ee379
+- [x] 3.4 Job completes with no secrets and no `production` environment — 75ee379
 
 #### Manual
 
-- [ ] 3.5 CI log shows CLI `2.98.2`, not 2.114.0
-- [ ] 3.6 No `permission denied for table` anywhere in the output
-- [ ] 3.7 Teeth check: a `categories.color` drop turns `db-test` red and `deploy` never starts, then reverted
-- [ ] 3.8 Wall-clock cost of the job recorded
+- [x] 3.5 CI log shows CLI `2.98.2`, not 2.114.0 — 75ee379
+- [x] 3.6 No `permission denied for table` anywhere in the output — 75ee379
+- [x] 3.7 Teeth check: a `categories.color` drop turns `db-test` red and `deploy` never starts, then reverted — 75ee379
+- [x] 3.8 Wall-clock cost of the job recorded — 75ee379
 
 ### Phase 4: `getViteConfig` Spike
 
 #### Automated
 
-- [ ] 4.1 Scratch config and scratch test removed from the tree
-- [ ] 4.2 `npm run test` green and `npm run lint` clean after cleanup
-- [ ] 4.3 `git status` shows no stray spike artifacts
+- [x] 4.1 Scratch config and scratch test removed from the tree
+- [x] 4.2 `npm run test` green and `npm run lint` clean after cleanup
+- [x] 4.3 `git status` shows no stray spike artifacts
 
 #### Manual
 
-- [ ] 4.4 Research OQ6 has a definite yes/no answer with the commands that produced it
-- [ ] 4.5 The answer names its implications for test-plan Phase 2 and Phase 5
+- [x] 4.4 Research OQ6 has a definite yes/no answer with the commands that produced it
+- [x] 4.5 The answer names its implications for test-plan Phase 2 and Phase 5
 
 ### Phase 5: Documentation
 
