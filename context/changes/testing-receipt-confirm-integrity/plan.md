@@ -800,35 +800,35 @@ extraction is behaviour-preserving by construction.
 
 #### Automated
 
-- [x] 3.1 Unit tests pass: `npm run test`
-- [x] 3.2 Typecheck passes: `npm run typecheck`
-- [x] 3.3 Lint passes: `npm run lint`
-- [x] 3.4 Build passes: `npm run build`
-- [x] 3.5 `grep -rn "DATE_PATTERN" src/lib/services/entries.ts` returns nothing
+- [x] 3.1 Unit tests pass: `npm run test` — b9601fd
+- [x] 3.2 Typecheck passes: `npm run typecheck` — b9601fd
+- [x] 3.3 Lint passes: `npm run lint` — b9601fd
+- [x] 3.4 Build passes: `npm run build` — b9601fd
+- [x] 3.5 `grep -rn "DATE_PATTERN" src/lib/services/entries.ts` returns nothing — b9601fd
 
 #### Manual
 
-- [x] 3.6 Teeth check: reverting `z.iso.date()` turns the F1 cases red at both levels, restored
-- [x] 3.7 Each of the six status branches was observed failing at least once during authoring
-- [x] 3.8 A manual confirm through the browser still saves normally
+- [x] 3.6 Teeth check: reverting `z.iso.date()` turns the F1 cases red at both levels, restored — b9601fd
+- [x] 3.7 Each of the six status branches was observed failing at least once during authoring — b9601fd
+- [x] 3.8 A manual confirm through the browser still saves normally — b9601fd
 
 ### Phase 4: Panel Model Extraction
 
 #### Automated
 
-- [ ] 4.1 Unit tests pass: `npm run test`
-- [ ] 4.2 Typecheck passes: `npm run typecheck`
-- [ ] 4.3 Lint passes, including react-compiler on the rewired panel: `npm run lint`
-- [ ] 4.4 Build passes: `npm run build`
-- [ ] 4.5 `ReceiptReview.tsx` shows a net line reduction
+- [x] 4.1 Unit tests pass: `npm run test`
+- [x] 4.2 Typecheck passes: `npm run typecheck`
+- [x] 4.3 Lint passes, including react-compiler on the rewired panel: `npm run lint`
+- [x] 4.4 Build passes: `npm run build`
+- [x] 4.5 `ReceiptReview.tsx` shows a net line reduction
 
 #### Manual
 
-- [ ] 4.6 Preview count, per-category split, and amounts unchanged against a real receipt
-- [ ] 4.7 Save-date behaviour identical: past adopted, future refused with the amber notice, revert works
-- [ ] 4.8 "Zapisz jako jeden wpis" still saves one "Paragon" entry for the printed total
-- [ ] 4.9 Hard block and delta acknowledgement behave as before
-- [ ] 4.10 Teeth check: mis-pairing `categoryId` in `toConfirmItems` turns the pairing case red, reverted
+- [x] 4.6 Preview count, per-category split, and amounts unchanged against a real receipt
+- [x] 4.7 Save-date behaviour identical: past adopted, future refused with the amber notice, revert works
+- [x] 4.8 "Zapisz jako jeden wpis" still saves one "Paragon" entry for the printed total
+- [x] 4.9 Hard block and delta acknowledgement behave as before
+- [x] 4.10 Teeth check: mis-pairing `categoryId` in `toConfirmItems` turns the pairing case red, reverted
 
 ### Phase 5: Cookbook and Plan Sync
 
