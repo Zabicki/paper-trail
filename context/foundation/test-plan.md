@@ -19,9 +19,9 @@ Tests follow three non-negotiable principles for this project:
 2. **User concerns are first-class evidence.** Risks anchored in "the team
    is worried about X, and the failure would surface somewhere in <area>"
    carry the same weight as PRD lines or hot-spot data.
-3. **Risks are scenarios, not code locations.** This plan documents *what
-   could fail* and *why we believe it's likely* — drawn from documents,
-   interview, and codebase *signal* (churn, structure, test base). It does
+3. **Risks are scenarios, not code locations.** This plan documents _what
+   could fail_ and _why we believe it's likely_ — drawn from documents,
+   interview, and codebase _signal_ (churn, structure, test base). It does
    NOT claim to know which line owns the failure. That knowledge is
    produced by `/10x-research` during each rollout phase. If the plan and
    research disagree about where the failure lives, research is the
@@ -36,18 +36,18 @@ lockfiles, and `context/` documentation. Scoped history over the 30 days to
 
 The top failure scenarios this project must protect against, ordered by
 risk = impact × likelihood. Risks are failure scenarios in user / business
-terms, not test names. The Source column cites the *evidence that surfaced
-this risk* — never a specific file as "where the failure lives" (that is
+terms, not test names. The Source column cites the _evidence that surfaced
+this risk_ — never a specific file as "where the failure lives" (that is
 research's job, see §1 principle #3).
 
-| # | Risk (failure scenario) | Impact | Likelihood | Source (evidence — not anchor) |
-|---|---|---|---|---|
-| 1 | Confirming a reviewed receipt persists something other than what was on screen — wrong per-category split, wrong receipt-derived date, wrong amount, or a duplicate batch on retry | High | High | interview Q1 (stated top fear), interview Q3; `prd.md` explicit-confirmation guarantee ("never a silent write"); archive: non-idempotent confirm caught only at impl-review, and a later slice redefined per-category grouping after the parse feature shipped; `roadmap.md` records off-plan changes to this flow landing without impl-review; hot-spot dir `src/components/receipts/` — 14 commits/30d |
-| 2 | A KPI or chart reads plausibly but is wrong — rows silently dropped, the recurring-cost filter disagreeing with the numbers displayed, or a range resolving to the wrong window | High | High | interview Q3; archive: a reports slice rejected at impl-review because the row ceiling truncated instead of erroring, leaving ranking rows printing 0% beside real amounts; a later slice fixed a clipped axis and an all-time range, both found after ship; `roadmap.md` records the filter invariant being deliberately moved out of a pinned bar into a caption; hot-spot dirs `src/components/reports/` — 40 commits/30d, `src/lib/services/` — 21 commits/30d |
-| 3 | One user's financial data becomes reachable by another | High | Medium | `prd.md` strict per-user isolation guarantee and the decision to ship no admin role; `tech-stack.md`: anon key only, no service-role bypass, so RLS is the sole isolation boundary; `CLAUDE.md` hard rules require RLS in the creating migration *and* `private, no-store` on authenticated responses, and state that both fail **silently**; archive: cross-user invariants recorded as having no database backstop, and an aggregation path silently dropping entries filed under another user's category |
-| 4 | A schema migration reaches the hosted database ahead of the Worker that matches it, and live data routes fail | High | Medium | `CLAUDE.md`: CI applies migrations between build and deploy, so every migration must be backward-compatible with the *previous* Worker; this already broke the first deploy — every data route 500'd against an empty schema; `roadmap.md` carries an open REQUIRED column-drop follow-up of exactly this shape; archive records the pgTAP suite never having run against the merged migration set; hot-spot dir `supabase/migrations/` — 14 commits/30d |
-| 5 | The day list shows something the database does not contain — a row duplicated after save, or an inline edit applied to the wrong row or the wrong day | Medium | High | interview Q4 (named explicitly as the scariest gap); archive: a stale-day race at save, a duplicate row from optimistic save, and shared inline-edit state leaking across rows and across day changes; hot-spot dir `src/components/entries/` — 35 commits/30d, and the three top-churning files in the repo all sit in it |
-| 6 | The app becomes unusable on a phone because one element gives the *whole document* horizontal scroll | Medium | High | interview Q2, interview Q3; `lessons.md` carries two separate entries for the identical symptom arising from opposite mechanisms; `roadmap.md`: both fixes shipped straight to `master` with no plan, impl-review, or change folder; `prd.md`'s input-friction thesis assumes a phone |
+| #   | Risk (failure scenario)                                                                                                                                                            | Impact | Likelihood | Source (evidence — not anchor)                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Confirming a reviewed receipt persists something other than what was on screen — wrong per-category split, wrong receipt-derived date, wrong amount, or a duplicate batch on retry | High   | High       | interview Q1 (stated top fear), interview Q3; `prd.md` explicit-confirmation guarantee ("never a silent write"); archive: non-idempotent confirm caught only at impl-review, and a later slice redefined per-category grouping after the parse feature shipped; `roadmap.md` records off-plan changes to this flow landing without impl-review; hot-spot dir `src/components/receipts/` — 14 commits/30d                                                                                                    |
+| 2   | A KPI or chart reads plausibly but is wrong — rows silently dropped, the recurring-cost filter disagreeing with the numbers displayed, or a range resolving to the wrong window    | High   | High       | interview Q3; archive: a reports slice rejected at impl-review because the row ceiling truncated instead of erroring, leaving ranking rows printing 0% beside real amounts; a later slice fixed a clipped axis and an all-time range, both found after ship; `roadmap.md` records the filter invariant being deliberately moved out of a pinned bar into a caption; hot-spot dirs `src/components/reports/` — 40 commits/30d, `src/lib/services/` — 21 commits/30d                                          |
+| 3   | One user's financial data becomes reachable by another                                                                                                                             | High   | Medium     | `prd.md` strict per-user isolation guarantee and the decision to ship no admin role; `tech-stack.md`: anon key only, no service-role bypass, so RLS is the sole isolation boundary; `CLAUDE.md` hard rules require RLS in the creating migration _and_ `private, no-store` on authenticated responses, and state that both fail **silently**; archive: cross-user invariants recorded as having no database backstop, and an aggregation path silently dropping entries filed under another user's category |
+| 4   | A schema migration reaches the hosted database ahead of the Worker that matches it, and live data routes fail                                                                      | High   | Medium     | `CLAUDE.md`: CI applies migrations between build and deploy, so every migration must be backward-compatible with the _previous_ Worker; this already broke the first deploy — every data route 500'd against an empty schema; `roadmap.md` carries an open REQUIRED column-drop follow-up of exactly this shape; archive records the pgTAP suite never having run against the merged migration set; hot-spot dir `supabase/migrations/` — 14 commits/30d                                                    |
+| 5   | The day list shows something the database does not contain — a row duplicated after save, or an inline edit applied to the wrong row or the wrong day                              | Medium | High       | interview Q4 (named explicitly as the scariest gap); archive: a stale-day race at save, a duplicate row from optimistic save, and shared inline-edit state leaking across rows and across day changes; hot-spot dir `src/components/entries/` — 35 commits/30d, and the three top-churning files in the repo all sit in it                                                                                                                                                                                  |
+| 6   | The app becomes unusable on a phone because one element gives the _whole document_ horizontal scroll                                                                               | Medium | High       | interview Q2, interview Q3; `lessons.md` carries two separate entries for the identical symptom arising from opposite mechanisms; `roadmap.md`: both fixes shipped straight to `master` with no plan, impl-review, or change folder; `prd.md`'s input-friction thesis assumes a phone                                                                                                                                                                                                                       |
 
 Risk #3 is the abuse-lens row (authorization / ownership, not merely
 authentication). Two further abuse candidates surfaced from the archive —
@@ -59,14 +59,14 @@ silently re-litigated here.
 
 ### Risk Response Guidance
 
-| Risk | What would prove protection | Must challenge | Context `/10x-research` must ground | Likely cheapest layer | Anti-pattern to avoid |
-|---|---|---|---|---|---|
-| #1 | Confirming writes exactly the set shown — same count, same per-category split, same amounts, same date the user saw — and a repeated confirm does not double it | That a 200 means the right rows landed; that the rendered review and the submitted payload are the same object; that grouping is decided in exactly one place | Where the confirm payload is assembled versus where it is rendered; the batch-write boundary and its idempotency mechanism; what the save date resolves to when the printed date is absent or reverted; behaviour on partial write | unit (grouping and date resolution) + integration (confirm boundary → persisted rows) | **Oracle problem** — computing the expected rows by calling the same grouping helper under test. Expectations must be hand-written from the reviewed screen, not derived from the implementation |
-| #2 | A figure is either correct or absent — never a plausible number derived from a partial result set — and filter state always matches the numbers displayed | That a successful query means a *complete* result set (the real failure was truncation, not an error); that "all time" resolves to a sane window; that a percentage and its absolute amount share one total | The row-count ceiling on the data path and the behaviour at it; where the total is computed relative to per-category rows; how range presets resolve to concrete dates; where filter state lives relative to the caption that reports it | unit (distribution model) + integration (aggregation with a fixture sized **past** the ceiling) | Fixtures too small to reach the boundary that actually broke — a five-category fixture cannot reproduce a thirty-four-category truncation |
-| #3 | A request authenticated as user A cannot read, aggregate, or mutate any row owned by user B — including through an aggregation path or a reference to B's category — and no authenticated response is edge-cacheable | That "logged in" implies "owns this resource"; that RLS on base tables covers aggregate and RPC paths; that a green pgTAP suite covers app-layer ownership filtering (it provably cannot) | Which reads go through RLS versus an aggregate path; where ownership is enforced in application code rather than in policy; which responses carry cache headers | pgTAP extension for anything expressible in SQL; route-boundary integration for app-layer-only ownership | Testing only that A sees A's own data. The test that matters is **A explicitly requesting B's id and being refused** |
-| #4 | The migration set applies cleanly from scratch, and the *previous* Worker's queries still succeed against the new schema | That a green deploy means the schema matches the code; that per-branch pgTAP runs prove the merged migration set | Which columns and functions the currently deployed Worker reads; what the pending drop would remove; whether migrations are validated anywhere before the hosted push | A CI job: from-scratch migration run plus the pgTAP suite. This is a gate, not a test | Running the suite only against the branch's own migration — precisely what let the merged-set gap through before |
-| #5 | After a save, edit, or delete, the visible list equals what a fresh read would return; an edit opened on one row never applies to another row and never survives a day change | That an optimistic update matches the server's result; that switching days resets per-row state; that a failed request leaves the list in a truthful state | How list state is derived and updated after each mutation; where per-row edit state is keyed; behaviour on request failure and on rapid day navigation | component tests on the list island with a mocked data boundary | Asserting the component's internal state instead of what a user would see rendered; happy-path-only, with no failure case and no rapid-navigation case |
-| #6 | At 320, 360, and 390 CSS px, no page gives the document horizontal scroll, with realistic worst-case user strings (long email, long category name, long description) | That fixing the *named* element fixed the page — the reported element is usually not the overflowing one; that a fix for one mechanism covers the other | Which pages and components mix user-supplied strings with controls; which rely on intrinsic-width utilities; whether built CSS alone suffices or a signed-in render is required | headless assertion of document scroll width against client width, run against built CSS — `lessons.md` establishes this needs no dev server and no sign-in for at least one of the two mechanisms | A pixel snapshot. It fails on every Tailwind change and still never tells you the document overflows |
+| Risk | What would prove protection                                                                                                                                                                                          | Must challenge                                                                                                                                                                                              | Context `/10x-research` must ground                                                                                                                                                                                                      | Likely cheapest layer                                                                                                                                                                             | Anti-pattern to avoid                                                                                                                                                                            |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| #1   | Confirming writes exactly the set shown — same count, same per-category split, same amounts, same date the user saw — and a repeated confirm does not double it                                                      | That a 200 means the right rows landed; that the rendered review and the submitted payload are the same object; that grouping is decided in exactly one place                                               | Where the confirm payload is assembled versus where it is rendered; the batch-write boundary and its idempotency mechanism; what the save date resolves to when the printed date is absent or reverted; behaviour on partial write       | unit (grouping and date resolution) + integration (confirm boundary → persisted rows)                                                                                                             | **Oracle problem** — computing the expected rows by calling the same grouping helper under test. Expectations must be hand-written from the reviewed screen, not derived from the implementation |
+| #2   | A figure is either correct or absent — never a plausible number derived from a partial result set — and filter state always matches the numbers displayed                                                            | That a successful query means a _complete_ result set (the real failure was truncation, not an error); that "all time" resolves to a sane window; that a percentage and its absolute amount share one total | The row-count ceiling on the data path and the behaviour at it; where the total is computed relative to per-category rows; how range presets resolve to concrete dates; where filter state lives relative to the caption that reports it | unit (distribution model) + integration (aggregation with a fixture sized **past** the ceiling)                                                                                                   | Fixtures too small to reach the boundary that actually broke — a five-category fixture cannot reproduce a thirty-four-category truncation                                                        |
+| #3   | A request authenticated as user A cannot read, aggregate, or mutate any row owned by user B — including through an aggregation path or a reference to B's category — and no authenticated response is edge-cacheable | That "logged in" implies "owns this resource"; that RLS on base tables covers aggregate and RPC paths; that a green pgTAP suite covers app-layer ownership filtering (it provably cannot)                   | Which reads go through RLS versus an aggregate path; where ownership is enforced in application code rather than in policy; which responses carry cache headers                                                                          | pgTAP extension for anything expressible in SQL; route-boundary integration for app-layer-only ownership                                                                                          | Testing only that A sees A's own data. The test that matters is **A explicitly requesting B's id and being refused**                                                                             |
+| #4   | The migration set applies cleanly from scratch, and the _previous_ Worker's queries still succeed against the new schema                                                                                             | That a green deploy means the schema matches the code; that per-branch pgTAP runs prove the merged migration set                                                                                            | Which columns and functions the currently deployed Worker reads; what the pending drop would remove; whether migrations are validated anywhere before the hosted push                                                                    | A CI job: from-scratch migration run plus the pgTAP suite. This is a gate, not a test                                                                                                             | Running the suite only against the branch's own migration — precisely what let the merged-set gap through before                                                                                 |
+| #5   | After a save, edit, or delete, the visible list equals what a fresh read would return; an edit opened on one row never applies to another row and never survives a day change                                        | That an optimistic update matches the server's result; that switching days resets per-row state; that a failed request leaves the list in a truthful state                                                  | How list state is derived and updated after each mutation; where per-row edit state is keyed; behaviour on request failure and on rapid day navigation                                                                                   | component tests on the list island with a mocked data boundary                                                                                                                                    | Asserting the component's internal state instead of what a user would see rendered; happy-path-only, with no failure case and no rapid-navigation case                                           |
+| #6   | At 320, 360, and 390 CSS px, no page gives the document horizontal scroll, with realistic worst-case user strings (long email, long category name, long description)                                                 | That fixing the _named_ element fixed the page — the reported element is usually not the overflowing one; that a fix for one mechanism covers the other                                                     | Which pages and components mix user-supplied strings with controls; which rely on intrinsic-width utilities; whether built CSS alone suffices or a signed-in render is required                                                          | headless assertion of document scroll width against client width, run against built CSS — `lessons.md` establishes this needs no dev server and no sign-in for at least one of the two mechanisms | A pixel snapshot. It fails on every Tailwind change and still never tells you the document overflows                                                                                             |
 
 ## 3. Phased Rollout
 
@@ -74,13 +74,13 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
-|---|---|---|---|---|---|---|
-| 1 | Runner bootstrap + CI test floor | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4 | unit, CI gate, pgTAP on merged migrations | change opened | `context/changes/testing-runner-bootstrap/` |
-| 2 | Receipt confirm integrity | Prove that what the user confirms is what persists, exactly once | #1 | unit, service integration | not started | — |
-| 3 | Reports aggregation truth | Prove a displayed figure is correct or absent, never plausibly wrong | #2 | unit, integration with oversized fixture | not started | — |
-| 4 | Isolation beyond the database | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable | #3 | pgTAP extension, route integration, response-header assertion | not started | — |
-| 5 | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone | #5, #6 | component tests, headless overflow check | not started | — |
+| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status      | Change folder                               |
+| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ----------- | ------------------------------------------- |
+| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete    | `context/changes/testing-runner-bootstrap/` |
+| 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | not started | —                                           |
+| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | not started | —                                           |
+| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | not started | —                                           |
+| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started | —                                           |
 
 Order rationale: Phase 1 first because nothing else can land without a
 runner, and because #4 is the cheapest high-impact risk with a loaded
@@ -95,22 +95,25 @@ The classic test base for this project. Tool rows carry a `checked:` date so
 future readers can see which lines need re-verification. Recommendations in
 this section are grounded in local manifests and configs only — no docs or
 search MCP was exposed in the authoring session, so **versions below are
-unpinned candidates for Phase 1 to resolve against current releases**, not
-verified selections.
+unpinned candidates for the named rollout phase to resolve against current
+releases**, not verified selections. Rows resolved by a shipped phase carry a
+real version instead; as of §3 Phase 1 those are `unit + integration`,
+`typecheck`, and `database / RLS`.
 
-| Layer | Tool | Version | Notes |
-|---|---|---|---|
-| unit + integration | none yet — see §3 Phase 1 | — | Candidate: Vitest, because the project already builds on Vite via Astro and would share one config and transform chain; `checked: 2026-08-21` |
-| component (React islands) | none yet — see §3 Phase 5 | — | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21` |
-| API mocking | none yet — see §3 Phase 2 | — | Mock at the network edge only. The Supabase client is the boundary worth faking; internal service modules are not; `checked: 2026-08-21` |
-| database / RLS | pgTAP via Supabase CLI | CLI pinned `2.98.2` | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Local-only — never runs in CI until §3 Phase 1. Cannot reach application code (`lessons.md`) |
-| narrow-viewport overflow | none yet — see §3 Phase 5 | — | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21` |
-| lint | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json` | Wired and enforced in CI today |
-| typecheck | `@astrojs/check` | per `package.json` | **Installed but never invoked** — no script, no CI step. Phase 1 wires it |
-| e2e | none — deliberate | — | Every risk in §2 has a cheaper layer that reaches it. See §7 |
-| AI-native | none — deferred | — | An offline receipt-classification eval was proposed and cut by decision. See §7 |
+| Layer                     | Tool                                                                   | Version                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`             |
+| component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                  |
+| API mocking               | none yet — see §3 Phase 2                                              | —                                                 | Mock at the network edge only. The Supabase client is the boundary worth faking; internal service modules are not; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                |
+| database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`) |
+| narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                              |
+| lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| typecheck                 | `@astrojs/check` (`astro check`)                                       | per `package.json`                                | Wired by §3 Phase 1: `npm run typecheck`, and a CI step in the `ci` job after `astro sync` and before `build`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach                                                                                                                                                                                                                                       |
+| e2e                       | none — deliberate                                                      | —                                                 | Every risk in §2 has a cheaper layer that reaches it. See §7                                                                                                                                                                                                                                                                                                                                                                                            |
+| AI-native                 | none — deferred                                                        | —                                                 | An offline receipt-classification eval was proposed and cut by decision. See §7                                                                                                                                                                                                                                                                                                                                                                         |
 
 **Stack grounding tools (current session):**
+
 - Docs: none — no Context7 or framework-docs MCP exposed; stack facts taken from `package.json`, `astro.config.mjs`, `CLAUDE.md`, and `tech-stack.md`; checked: 2026-08-21
 - Search: none — no Exa.ai or web-search MCP exposed; no tool version or release status was verified online, hence the unpinned candidates above; checked: 2026-08-21
 - Runtime/browser: none — no Playwright or browser MCP exposed; the Phase 5 headless check is a candidate approach, not a verified integration; checked: 2026-08-21
@@ -122,16 +125,24 @@ The full set of gates that must pass before a change reaches production.
 "Required after §3 Phase N" means the gate is enforced once that rollout
 phase lands; before that, the gate is planned.
 
-| Gate | Where | Required? | Catches |
-|---|---|---|---|
-| lint | local (pre-commit) + CI | required — wired today | syntactic drift, type drift reachable by type-checked rules |
-| typecheck | CI | required after §3 Phase 1 | type drift the lint rules do not reach |
-| unit + integration | local + CI | required after §3 Phase 1 | logic regressions in services and pure model code |
-| pgTAP on the merged migration set | CI | required after §3 Phase 1 | RLS and schema regressions; merged-set gaps that per-branch runs miss |
-| from-scratch migration apply | CI | required after §3 Phase 1 | a migration that cannot be applied to a clean database |
-| component tests | local + CI | required after §3 Phase 5 | list-state and inline-edit regressions in React islands |
-| narrow-viewport overflow check | CI on PR | required after §3 Phase 5 | document-level horizontal scroll at phone widths |
-| post-edit hook | local (agent loop) | recommended after §3 Phase 5 | the overflow and unit checks at edit time, before review |
+| Gate                              | Where                   | Required?                                                        | Catches                                                                   |
+| --------------------------------- | ----------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| lint                              | local (pre-commit) + CI | required — wired today                                           | syntactic drift, type drift reachable by type-checked rules               |
+| typecheck                         | CI (`ci` job)           | required — wired                                                 | type drift the lint rules do not reach, including in `.astro` frontmatter |
+| unit + integration                | local + CI (`ci` job)   | required — wired                                                 | logic regressions in services and pure model code                         |
+| pgTAP on the merged migration set | CI (`db-test` job)      | required — wired; runs on `master` pushes, **not** pull requests | RLS and schema regressions; merged-set gaps that per-branch runs miss     |
+| from-scratch migration apply      | CI (`db-test` job)      | required — wired; runs on `master` pushes, **not** pull requests | a migration that cannot be applied to a clean database                    |
+| component tests                   | local + CI              | required after §3 Phase 5                                        | list-state and inline-edit regressions in React islands                   |
+| narrow-viewport overflow check    | CI on PR                | required after §3 Phase 5                                        | document-level horizontal scroll at phone widths                          |
+| post-edit hook                    | local (agent loop)      | recommended after §3 Phase 5                                     | the overflow and unit checks at edit time, before review                  |
+
+The two `db-test` gates run on `master` pushes only, because the wall-clock
+cost of `supabase start` on a runner was unmeasured when they were wired.
+Production is still protected — `deploy` declares `needs: [ci, db-test]`, so a
+red database gate leaves the hosted schema untouched — but a bad migration is
+discovered _after_ merge rather than in the pull request that introduced it.
+Widening the trigger to pull requests is a cost decision, not a correctness
+one.
 
 The post-edit hook is a **recommended local** convenience, never a CI
 substitute. Configuration of hooks is out of scope for this plan.
@@ -144,8 +155,51 @@ the relevant rollout phase ships; before that, the sub-section reads
 
 ### 6.1 Adding a unit test
 
-TBD — see §3 Phase 2, which delivers the first pattern for pure model code
-(receipt grouping and save-date resolution).
+Filled in by §3 Phase 1.
+
+- **Location**: co-located beside the module under test —
+  `src/lib/text.test.ts` sits next to `src/lib/text.ts`. No separate `tests/`
+  tree; the discovery glob is `src/**/*.test.ts` (`vitest.config.ts`).
+- **Naming**: `<module>.test.ts`.
+- **Reference test**: `src/lib/text.test.ts` — code-point counting and
+  truncation, the shape a new unit test should copy.
+- **Run**: `npm run test` (single pass, terminates — this is what CI and any
+  future hook use) or `npm run test:watch` (watch mode). `npm run typecheck`
+  covers the test file too: `tsconfig.json`'s `include` is `**/*`, so a new
+  `*.test.ts` is inside the TS project automatically, and `eslint.config.js`
+  uses `projectService: true`, so type-aware lint reaches it with no extra
+  config.
+- **The anti-pattern that matters most** (§2, risk #1): expectations must be
+  **hand-written from an external oracle**, never derived by calling the code
+  under test. `text.test.ts` names its three oracles in a header comment — a
+  database `check` constraint, Postgres' documented `char_length()` semantics,
+  and a UTF-16 spec fact — and reimplements its surrogate-pair predicate rather
+  than importing one. A test that computes its expectation from the
+  implementation passes for a broken implementation.
+- **A test is not done until it has been seen red.** The Phase 1 teeth check
+  was: break `truncateCodePoints` to use `.slice()`, confirm the surrogate-pair
+  case fails legibly, revert.
+- **Limit — `astro:*` does not resolve.** `vitest.config.ts` is standalone and
+  maps `@/*` by an explicit `resolve.alias` (Vite does not read
+  `tsconfig.paths`). Astro's sanctioned `getViteConfig` route, which _would_
+  resolve `astro:env/server`, is **unusable in this project**: with
+  `adapter: cloudflare()` loaded, `@cloudflare/vite-plugin` rejects the
+  `resolve.external` list Vitest sets on its `ssr` environment and Vitest dies
+  at startup before resolving anything. Verified empirically —
+  `context/changes/testing-runner-bootstrap/research.md`, _Addendum: OQ6 spike
+  result_. So a module that **value**-imports an Astro virtual module cannot be
+  unit-tested as-is; today that is `src/lib/supabase.ts`,
+  `src/lib/config-status.ts`, `src/lib/services/receipts.ts`,
+  `src/pages/api/receipts/parse.ts` and `src/middleware.ts` (plus
+  `src/lib/receipt-image.ts`, which imports `cloudflare:workers`). Either
+  extract the pure logic away from the import, or alias-stub the virtual module
+  in `vitest.config.ts`. `import type` is not affected —
+  `verbatimModuleSyntax` erases it, which is why `services/categories.ts`,
+  `services/entries.ts` and `services/reports.ts` are testable as they stand.
+- **Second limit**: the standalone config inherits **none** of
+  `astro.config.mjs`'s Vite settings, including
+  `resolve.dedupe: ["react", "react-dom"]` — documented there as preventing a
+  real hydration crash. §6.5 will have to restate it rather than inherit it.
 
 ### 6.2 Adding a service integration test
 
@@ -194,6 +248,26 @@ or three lines capturing anything surprising the phase taught — a fixture
 location worth reusing, a boundary that turned out to be in a different
 place than expected, a mocking decision that should be copied.)
 
+**Phase 1 — Runner bootstrap + CI test floor** (`testing-runner-bootstrap`):
+
+- Astro's sanctioned `getViteConfig` is a dead end under the Cloudflare
+  adapter, and it fails at _startup_ with a Vite-environment error that says
+  nothing about Astro or `astro:env` — so it reads as a config mistake rather
+  than an incompatibility. Don't re-derive it; see §6.1 and the research
+  addendum.
+- `npx astro sync` is **not** a precondition for resolving `astro:env/server`
+  under Vitest — `.astro/` holds type declarations only, and the virtual module
+  is generated from `env.schema` at config-resolution time. It _is_ required
+  for `astro check` and type-aware lint.
+- The first unit target was chosen for having a **genuinely external oracle**
+  (a database `check` constraint plus a spec fact), not for being easy to
+  reach. A pure module with no external oracle proves the harness and nothing
+  else.
+- CI-command form is load-bearing in the `db-test` job: `npm ci` then
+  `npx supabase`, never `supabase/setup-cli@v1`. Copying the neighbouring
+  deploy-job block produces `permission denied for table …` on suites that have
+  shipped green, which looks exactly like a broken migration (`lessons.md`).
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5) plus two
@@ -212,7 +286,7 @@ these unless the underlying assumption changes.
   in §3 Phase 5 is deliberately not this. (Source: Phase 2 interview Q5.)
 - **Auth and session mechanics themselves** — sign-in, token refresh, and
   password reset are baseline scaffold that no slice re-implements. We test
-  what auth *gates* (risk #3), not the mechanism. Re-evaluate if a slice
+  what auth _gates_ (risk #3), not the mechanism. Re-evaluate if a slice
   modifies the auth flow. (Source: Phase 2 interview Q5.)
 - **An end-to-end layer** — every risk in §2 has a cheaper layer that
   reaches it, so promoting any of them to e2e would cost wall-clock and
@@ -228,16 +302,49 @@ these unless the underlying assumption changes.
   platform logs against the store-nothing disclosure shown to users. Both
   are recorded in the archive as accepted by decision. Re-evaluate if the
   product gains untrusted users or the disclosure text is challenged.
+- **The deploy-window gap: the _old_ Worker against the _new_ schema
+  (risk #4, Face B)** — §3 Phase 1's `db-test` job covers Face A only: a
+  migration that cannot apply, or code running against a schema that is not
+  there. Both fail loudly. Face B is the migration that applies cleanly but is
+  backward-_incompatible_ with the Worker still serving during the window
+  between `supabase db push` and `wrangler deploy` — a dropped or narrowed
+  column the live Worker still reads. That one fails silently, and a green
+  `db-test` must not be read as covering it. Not gated because gating it needs
+  a "last deployed SHA" concept this repo does not have; what makes it
+  tolerable today is that no `select("*")` exists anywhere in `src/`, every
+  read names its columns explicitly, and the one declared-but-unused column
+  (`category_color`, `src/lib/services/reports.ts:294`) is never dereferenced.
+  **Re-evaluate the moment a migration drops or narrows something the deployed
+  Worker actually reads** — the pending `categories.color` drop
+  (`context/archive/2026-08-17-category-icons/plan.md:382-388`) is exactly that
+  trigger. (Source: §3 Phase 1 plan, _What We're NOT Doing_.)
+- **The incremental `db push` path** — `db-test` replays the merged migration
+  set into an _empty_ database. That is not evidence the next incremental push
+  onto the existing production schema succeeds: `20260818090000_add_category_icon.sql`
+  does `drop function … ; create function …` and runs a one-shot data backfill,
+  both of which behave differently on clean replay. Gating it needs a shadow
+  database seeded to the last-deployed schema. Re-evaluate if an incremental
+  push ever fails against hosted. (Source: §3 Phase 1 plan, _What We're NOT
+  Doing_.)
+- **Line or statement coverage as a metric** — §1 makes _risk_ coverage the
+  metric. Deliberately not reported, which also keeps a `coverage/` directory
+  out of a `tsconfig.json` whose `exclude` replaces TypeScript's defaults.
+  Re-evaluate never as a gate; a one-off local run to find an untested area is
+  fine. (Source: §1 principle.)
 - **The interaction-count and time budget from the PRD north star** — the
-  PRD does not define *interaction* as a unit, so any assertion would
+  PRD does not define _interaction_ as a unit, so any assertion would
   encode an arbitrary definition rather than the requirement. Stays a
   manual acceptance check. Re-evaluate if the PRD pins the unit.
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-08-21
-- Stack versions last verified: 2026-08-21 (local manifests only — no docs
-  or search MCP was available, so §4 candidate tools are unpinned)
+- Strategy (§1–§5) last reviewed: 2026-08-21 (§3 Phase 1 marked complete;
+  four §5 gates flipped from planned to wired)
+- Stack versions last verified: 2026-08-21 — `unit + integration`
+  (Vitest `4.1.11`), `typecheck` (`astro check`) and `database / RLS`
+  (Supabase CLI `2.98.2`) resolved against the installed tree by §3 Phase 1.
+  The remaining §4 rows are still unpinned candidates: no docs or search MCP
+  was available in either session
 - AI-native tool references last verified: 2026-08-21 (none adopted)
 
 Refresh (`/10x-test-plan --refresh`) when:

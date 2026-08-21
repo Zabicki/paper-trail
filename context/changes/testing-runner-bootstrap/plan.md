@@ -5,8 +5,8 @@
 Stand up the project's first JavaScript test runner and convert four planned
 quality gates into enforced CI gates: typecheck, unit tests, pgTAP on the merged
 migration set, and a from-scratch migration apply. This is rollout phase 1 of
-`context/foundation/test-plan.md` §3, covering risk #4 — *a schema migration
-reaches the hosted database ahead of the Worker that matches it*.
+`context/foundation/test-plan.md` §3, covering risk #4 — _a schema migration
+reaches the hosted database ahead of the Worker that matches it_.
 
 The change ships a real unit test with an external oracle (not a smoke test), a
 Docker-backed `db-test` CI job that runs all existing pgTAP assertions before
@@ -51,7 +51,7 @@ cleanup detour before being made a required gate.
 
 - **`src/lib/text.ts` imports nothing** (`:1-42`) — no `astro:*`, no Supabase, no
   React, no `Intl`, no `Date`, no DOM. A failure in its test can only be the
-  harness. This is why the runner can be proven *before* the `astro:env/server`
+  harness. This is why the runner can be proven _before_ the `astro:env/server`
   question is solved, and research states plainly that the virtual-module
   question must not block the bootstrap.
 - **`text.ts` has a genuinely external, triple-sourced oracle**: the database
@@ -61,7 +61,7 @@ cleanup detour before being made a required gate.
   fact that `'a😀b'.slice(0,2)` yields a lone surrogate while
   `[...'a😀b'].length === 3`. The module's own header (`text.ts:11-19`) argues
   against the plausible-but-wrong `Intl.Segmenter` alternative, which would
-  *under*-count against the database bound.
+  _under_-count against the database bound.
 - **The `slice` defect the header describes is already fixed** —
   `src/lib/services/receipts.ts:174` calls `truncateCodePoints`. The test pins
   the fix against regression; it does not catch a live bug.
@@ -69,11 +69,11 @@ cleanup detour before being made a required gate.
   `^2.23.4`; the real `2.98.2` pin lives only in `package-lock.json:13359`; the
   workflow's existing `supabase/setup-cli@v1` block (`ci.yml:50-52`) pins
   `2.114.0`. CLI ≥ 2.114.0 stops granting `select/insert/update/delete` to
-  `anon`/`authenticated` on new `public` tables, so a job that *provisions* a
+  `anon`/`authenticated` on new `public` tables, so a job that _provisions_ a
   database with it produces one whose own app role cannot read its own tables —
   all assertions fail `permission denied` before the first one runs
   (`context/foundation/lessons.md:15-23`). `link` + `db push` against hosted is
-  unaffected, which is why the existing pin is safe *where it is* and wrong
+  unaffected, which is why the existing pin is safe _where it is_ and wrong
   anywhere that runs `supabase start`.
 - **`[analytics] enabled = true` at `supabase/config.toml:371-372`** is what
   spawns the vector log-shipper whose failing health check aborts the whole
@@ -85,14 +85,13 @@ cleanup detour before being made a required gate.
 - **`eslint.config.js:85` calls `includeIgnoreFile(gitignorePath)`** on the root
   `.gitignore`, so anything gitignored is automatically lint-ignored — no
   separate ESLint ignore entry is needed for generated output.
-- **`tsconfig.json:3` is `include: [".astro/types.d.ts", "**/*"]`**, so a new
-  `*.test.ts` is automatically inside the TS project; `eslint.config.js:18` uses
-  `projectService: true`, so type-aware linting will reach it without a
+- **`tsconfig.json:3` is `include: [".astro/types.d.ts", "**/_"]`**, so a new
+`_.test.ts`is automatically inside the TS project;`eslint.config.js:18`uses`projectService: true`, so type-aware linting will reach it without a
   "file not in tsconfig" error.
-- **`tsconfig.json:4` is `exclude: ["dist"]`**, which *replaces* TypeScript's
+- **`tsconfig.json:4` is `exclude: ["dist"]`**, which _replaces_ TypeScript's
   defaults — any new generated directory lands inside the TS program unless
-  explicitly excluded. (Avoided here by not producing one; see *What We're NOT
-  Doing*.)
+  explicitly excluded. (Avoided here by not producing one; see _What We're NOT
+  Doing_.)
 - **Vitest 4.1.11 is current**, peer range `vite: ^6 || ^7 || ^8`, which matches
   this repo's `overrides: { vite: "^7.3.2" }` (`package.json:60-62`). ≥4.1 is
   also the floor `getViteConfig` requires.
@@ -131,7 +130,7 @@ against `master` and observe that `db-test` goes red on the merge commit before
 - **Not building the Face-B gate** (old Worker vs new schema). Risk #4 has two
   faces. Face A — the migration cannot apply, or code runs against a schema that
   isn't there — fails loudly and is what this change gates. Face B — the migration
-  applies cleanly but is backward-*incompatible* with the Worker still running
+  applies cleanly but is backward-_incompatible_ with the Worker still running
   during the deploy window — fails silently, and gating it requires a
   "last deployed SHA" concept that does not exist in this repo. Research confirms
   the currently loaded trigger is safe: there is no `select("*")` anywhere in
@@ -144,19 +143,19 @@ against `master` and observe that `db-test` goes red on the merge commit before
   `drop function … ; create function …` and `:40-90` runs a one-shot data
   backfill, both of which behave differently on clean replay. Gating it needs a
   shadow database seeded to the last-deployed schema. Out of scope.
-- **Not adding coverage reporting.** test-plan §1 makes *risk* coverage the
+- **Not adding coverage reporting.** test-plan §1 makes _risk_ coverage the
   metric, not line coverage. Skipping it also avoids adding a `coverage/`
   directory that would need excluding from `tsconfig.json` (whose `exclude`
   replaces the defaults) as well as gitignoring.
 - **Not running unit tests or pgTAP pre-commit.** `.husky/pre-commit` runs
   `npx lint-staged` only; hook configuration is explicitly a later lesson's scope
-  and test-plan §5 lists the post-edit hook as *recommended after §3 Phase 5*.
+  and test-plan §5 lists the post-edit hook as _recommended after §3 Phase 5_.
 - **Not adding component-test, API-mocking, or headless-browser tooling.** Those
   belong to test-plan §3 Phases 2–5.
 - **Not resolving the 2026-10-30 Supabase grants deprecation.** It has a real
   deadline inside the project's horizon and needs a CLI bump to ≥2.102.0, which
   directly conflicts with hard-pinning `2.98.2` in this change. Flagged in
-  *Open Risks*, deliberately not solved here.
+  _Open Risks_, deliberately not solved here.
 - **Not adding a speculative ESLint override for test files.** Research predicted
   one might be needed; `text.test.ts` is pure string manipulation, so the override
   is added only if `npm run lint` actually trips.
@@ -251,7 +250,7 @@ proves the alias resolves.
 nothing DOM-related is under test in this phase. Deliberately does **not** go
 through `getViteConfig`; see Phase 4.
 
-Note the standing consequence, recorded here because Phase 5 of the *test-plan*
+Note the standing consequence, recorded here because Phase 5 of the _test-plan_
 will need it: a standalone config inherits none of `astro.config.mjs`'s Vite
 settings, including the `resolve.dedupe: ["react", "react-dom"]` fix that
 `astro.config.mjs:18-27` documents as preventing a real hydration crash.
@@ -387,36 +386,36 @@ A snippet is warranted here because the CLI invocation form is the phase's
 load-bearing trap and reads as an arbitrary style choice otherwise:
 
 ```yaml
-  db-test:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      # npm ci FIRST, and `npx supabase` throughout. This job PROVISIONS a
-      # database, which puts it on the local side of the grants divide: it must
-      # resolve the lockfile's 2.98.2. Do NOT reuse the supabase/setup-cli@v1
-      # 2.114.0 block from the deploy job below — that CLI stops granting
-      # select/insert/update/delete to anon/authenticated on new public tables,
-      # and every pgTAP file then fails "permission denied for table ..." before
-      # a single assertion runs. See context/foundation/lessons.md.
-      - run: npm ci
-      # -x vector: [analytics] enabled = true (supabase/config.toml:371-372)
-      # spawns a log-shipper whose failing health check aborts the whole start.
-      # There is no vector block to disable; the CLI flag is the only lever.
-      - run: npx supabase start -x vector
-      # From-scratch apply of the MERGED migration set, plus seed.sql — which the
-      # pgTAP suites hard-require for the two fixed users their rows FK to.
-      - run: npx supabase db reset
-      - run: npx supabase test db
-      # A Postgres segfault (entries_summary_test.sql:225-249) drops every
-      # connection, so later files fail with connection errors and the real cause
-      # never reaches the pgTAP output.
-      - if: failure()
-        run: docker logs supabase_db_paper-trail --tail 200
+db-test:
+  if: github.event_name == 'push'
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+    # npm ci FIRST, and `npx supabase` throughout. This job PROVISIONS a
+    # database, which puts it on the local side of the grants divide: it must
+    # resolve the lockfile's 2.98.2. Do NOT reuse the supabase/setup-cli@v1
+    # 2.114.0 block from the deploy job below — that CLI stops granting
+    # select/insert/update/delete to anon/authenticated on new public tables,
+    # and every pgTAP file then fails "permission denied for table ..." before
+    # a single assertion runs. See context/foundation/lessons.md.
+    - run: npm ci
+    # -x vector: [analytics] enabled = true (supabase/config.toml:371-372)
+    # spawns a log-shipper whose failing health check aborts the whole start.
+    # There is no vector block to disable; the CLI flag is the only lever.
+    - run: npx supabase start -x vector
+    # From-scratch apply of the MERGED migration set, plus seed.sql — which the
+    # pgTAP suites hard-require for the two fixed users their rows FK to.
+    - run: npx supabase db reset
+    - run: npx supabase test db
+    # A Postgres segfault (entries_summary_test.sql:225-249) drops every
+    # connection, so later files fail with connection errors and the real cause
+    # never reaches the pgTAP output.
+    - if: failure()
+      run: docker logs supabase_db_paper-trail --tail 200
 ```
 
 `npx supabase start` on a fresh runner already applies migrations from scratch, so
@@ -599,12 +598,12 @@ Worker actually reads.
 
 **Intent**: Two standing claims become false the moment this ships.
 
-**Contract**: The *Commands* section's "**There is no test framework installed.**
+**Contract**: The _Commands_ section's "**There is no test framework installed.**
 No vitest/playwright/jest, no test script, no test files" is replaced with the
-runner, the scripts, and a pointer to test-plan §6.1. The *Environment & deploy*
+runner, the scripts, and a pointer to test-plan §6.1. The _Environment & deploy_
 section's "The CLI is pinned to `2.98.2` in `devDependencies`" becomes accurate —
 after Phase 1 it genuinely is, so this is a wording fix, not a caveat. Add the
-`db-test` job to the *CI/CD* section's description of what the workflow does, and
+`db-test` job to the _CI/CD_ section's description of what the workflow does, and
 state that it must never adopt the deploy job's `setup-cli` pin.
 
 #### 5. lessons.md amendments
@@ -613,8 +612,8 @@ state that it must never adopt the deploy job's `setup-cli` pin.
 
 **Intent**: One lesson's scope shrinks, another's context line is wrong.
 
-**Contract**: The *"Soft-delete and other app-layer-only invariants aren't provable
-by pgTAP"* rule (`:5-13`) keeps its substance — pgTAP still cannot reach
+**Contract**: The _"Soft-delete and other app-layer-only invariants aren't provable
+by pgTAP"_ rule (`:5-13`) keeps its substance — pgTAP still cannot reach
 application code — but its implicit "therefore permanently manual-only" conclusion
 no longer holds now that a JS runner exists. Amend the **Rule** to route
 app-layer-only invariants to a unit or service test rather than to permanent manual
@@ -647,7 +646,7 @@ manual testing was successful.
 
 ## Testing Strategy
 
-This change *is* test infrastructure, so its own strategy is mostly about proving
+This change _is_ test infrastructure, so its own strategy is mostly about proving
 the gates have teeth rather than merely being present.
 
 ### Unit Tests:
@@ -688,7 +687,7 @@ failure short-circuits the more expensive step.
 ## Migration Notes
 
 No schema changes. `supabase/migrations/` is untouched — this change only causes
-those migrations to be *executed* somewhere they previously were not.
+those migrations to be _executed_ somewhere they previously were not.
 
 The `deploy` job's behaviour changes in one way: it now waits on `db-test`. A red
 `db-test` leaves production entirely untouched, which is the intended outcome; the
@@ -782,25 +781,25 @@ previous behaviour was that nothing stood between a merged migration and
 
 #### Automated
 
-- [x] 4.1 Scratch config and scratch test removed from the tree
-- [x] 4.2 `npm run test` green and `npm run lint` clean after cleanup
-- [x] 4.3 `git status` shows no stray spike artifacts
+- [x] 4.1 Scratch config and scratch test removed from the tree — f7d51ae
+- [x] 4.2 `npm run test` green and `npm run lint` clean after cleanup — f7d51ae
+- [x] 4.3 `git status` shows no stray spike artifacts — f7d51ae
 
 #### Manual
 
-- [x] 4.4 Research OQ6 has a definite yes/no answer with the commands that produced it
-- [x] 4.5 The answer names its implications for test-plan Phase 2 and Phase 5
+- [x] 4.4 Research OQ6 has a definite yes/no answer with the commands that produced it — f7d51ae
+- [x] 4.5 The answer names its implications for test-plan Phase 2 and Phase 5 — f7d51ae
 
 ### Phase 5: Documentation
 
 #### Automated
 
-- [ ] 5.1 `npm run format` leaves edited Markdown unchanged, or the formatting change is committed
-- [ ] 5.2 `npm run lint` passes
-- [ ] 5.3 No document claims "there is no test framework installed" or describes the four wired gates as "required after §3 Phase 1"
+- [x] 5.1 `npm run format` leaves edited Markdown unchanged, or the formatting change is committed
+- [x] 5.2 `npm run lint` passes
+- [x] 5.3 No document claims "there is no test framework installed" or describes the four wired gates as "required after §3 Phase 1"
 
 #### Manual
 
-- [ ] 5.4 test-plan §3 Phase 1 row reads `complete`, so the orchestrator proposes Phase 2 next
-- [ ] 5.5 §6.1 is specific enough to add a second unit test from it alone
-- [ ] 5.6 The §7 Face-B entry names a concrete re-evaluate trigger
+- [x] 5.4 test-plan §3 Phase 1 row reads `complete`, so the orchestrator proposes Phase 2 next
+- [x] 5.5 §6.1 is specific enough to add a second unit test from it alone
+- [x] 5.6 The §7 Face-B entry names a concrete re-evaluate trigger

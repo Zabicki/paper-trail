@@ -8,13 +8,13 @@
 
 **Problem**: pgTAP drives raw SQL via role/JWT impersonation — it verifies RLS and schema constraints, but cannot reach application code (e.g. the TypeScript service layer's `.is("deleted_at", null)` filtering). A soft-delete's actual effect (row disappears from the owner's own list, name becomes reusable) was only proven by manual browser testing, with no automated regression guard.
 
-**Rule**: When a table's invariant is enforced in application code rather than RLS/schema (soft-delete visibility, computed defaults applied in the service layer, etc.), the plan must explicitly name which parts pgTAP can verify vs. which remain manual-only — and flag that manual step as a permanent re-verification requirement for any future change touching that code path.
+**Rule**: When a table's invariant is enforced in application code rather than RLS/schema (soft-delete visibility, computed defaults applied in the service layer, etc.), the plan must explicitly name which parts pgTAP can verify vs. which parts it structurally cannot. pgTAP's reach has not changed — it still cannot see the service layer — but "therefore manual forever" no longer follows: **since `testing-runner-bootstrap` (2026-08-21) a JS runner exists**, so app-layer-only invariants route to a unit or service test (`context/foundation/test-plan.md` §6.1) rather than to a permanent manual-verification note. Reserve the manual flag for what neither layer reaches, and say which layer you are sending each invariant to.
 
 **Applies to**: Any table or service that layers app-level filtering (soft-delete, ownership beyond RLS, etc.) on top of what RLS/pgTAP already covers.
 
 ## A broken toolchain looks exactly like a broken migration — pin the tool before writing code to accommodate it
 
-**Context**: S-05 Phase 1; `npx supabase db reset` / `npx supabase test db`; CLI pinned to `2.98.2` in `devDependencies`
+**Context**: S-05 Phase 1; `npx supabase db reset` / `npx supabase test db`; CLI pinned to `2.98.2` in `devDependencies` — _aspirational when this was written: `package.json` actually carried `^2.23.4` and only `package-lock.json` held `2.98.2`. `testing-runner-bootstrap` (2026-08-21) made the pin exact, and put the same trap in CI's reach by adding a `db-test` job that provisions a database_
 
 **Problem**: With no `node_modules` yet, `npx supabase` silently resolved to a cached `2.114.0` instead of the pinned `2.98.2`. That CLI stopped granting `select/insert/update/delete` to `anon`/`authenticated` on new `public` tables, so `db reset` produced a database whose own app role could not read its own tables. All four pgTAP files failed with `permission denied for table …` before a single assertion ran — _including two that had shipped green_. The evidence pointed convincingly at a platform change, and the response was a new grants migration plus an edit to a shipped RLS test, both approved on that diagnosis. `npm ci` then installed the pinned CLI, the grants came back on their own, and both changes had to be reverted. Same Postgres image (`17.6.1.106`) throughout; the divergence was entirely in the CLI's init step.
 
