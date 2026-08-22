@@ -98,6 +98,21 @@ interface Fixtures {
    * net that deletes whatever ends up carrying it.
    */
   entryDescription: string;
+
+  /**
+   * An expense category no other run can produce, owned by this test and holding
+   * no entries but the ones this test files under it — and the safety net that
+   * removes it afterwards.
+   *
+   * Distinct from FIXTURE_CATEGORY, which is shared and accumulates whatever any
+   * spec leaves behind. That sharing is fine when a spec only needs *a* category
+   * to satisfy the entry form; it is not fine when a spec asserts an aggregate,
+   * because the expected figure would then depend on the state of the account.
+   * A category minted per run makes "the report's total for this category" equal
+   * "the amount this test entered", with no reading of the app's own output to
+   * derive it from.
+   */
+  reportCategory: string;
 }
 
 export const test = base.extend<Fixtures>({
@@ -119,5 +134,40 @@ export const test = base.extend<Fixtures>({
     await use(description);
 
     await deleteEntriesDescribed(page, new URL(baseURL ?? "http://localhost:4321").origin, date, description);
+  },
+
+  // Created over the API rather than through the category manager dialog, for
+  // the reason auth.setup.ts gives for FIXTURE_CATEGORY: this is setup, not the
+  // behaviour under test, and driving a second UI flow would put it in the
+  // failure path of every spec that needs a category of its own.
+  //
+  // The teardown is a soft delete (src/lib/services/categories.ts sets
+  // `deleted_at`), so it cannot fail on a category that still holds rows and it
+  // never cascades into one. Note the consequence for anything asserting an
+  // aggregate: `entries_category_summary` applies no `deleted_at` filter to the
+  // joined category (src/lib/services/reports.ts:277), so a torn-down category
+  // keeps appearing in reports for as long as its entries exist. What actually
+  // keeps the account clean is `entryDescription`'s teardown removing the rows;
+  // this one only stops the picker filling up with dead chips.
+  reportCategory: async ({ page, baseURL }, use, testInfo) => {
+    const name = `E2E Raport ${String(Date.now())}-${String(testInfo.parallelIndex)}`;
+    const origin = new URL(baseURL ?? "http://localhost:4321").origin;
+
+    // 201 only, never the 409 auth.setup.ts tolerates: a name carrying this
+    // run's timestamp colliding means the uniqueness this fixture promises is
+    // broken, and a spec asserting an exact total on a category that already
+    // holds someone else's rows would fail later, somewhere less legible.
+    const response = await page.request.post("/api/categories", { data: { name, kind: "expense" } });
+    expect(
+      response.status(),
+      `Report category could not be provisioned: ${String(response.status())} ${await response.text()}`,
+    ).toBe(201);
+    const { id } = (await response.json()) as { id: number };
+
+    await use(name);
+
+    // The `origin` header is load-bearing on this DELETE for exactly the reason
+    // spelled out on deleteEntriesDescribed above.
+    await page.request.delete(`/api/categories/${String(id)}`, { headers: { origin } });
   },
 });
