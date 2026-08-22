@@ -74,13 +74,13 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status      | Change folder                                                   |
-| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
-| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete    | `context/archive/2026-08-21-testing-runner-bootstrap/`          |
-| 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | complete    | `context/archive/2026-08-21-testing-receipt-confirm-integrity/` |
-| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | complete    | `context/archive/2026-08-21-testing-reports-aggregation-truth/` |
-| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | complete    | `context/archive/2026-08-22-testing-cross-user-isolation/`      |
-| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started | —                                                               |
+| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status        | Change folder                                                   |
+| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ------------- | --------------------------------------------------------------- |
+| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete      | `context/archive/2026-08-21-testing-runner-bootstrap/`          |
+| 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | complete      | `context/archive/2026-08-21-testing-receipt-confirm-integrity/` |
+| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | complete      | `context/archive/2026-08-21-testing-reports-aggregation-truth/` |
+| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | complete      | `context/archive/2026-08-22-testing-cross-user-isolation/`      |
+| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | change opened | `context/changes/testing-client-state-viewport/`                |
 
 Order rationale: Phase 1 first because nothing else can land without a
 runner, and because #4 is the cheapest high-impact risk with a loaded
@@ -100,23 +100,23 @@ releases**, not verified selections. Rows resolved by a shipped phase carry a
 real version instead; as of §3 Phase 1 those are `unit + integration`,
 `typecheck`, and `database / RLS`.
 
-| Layer                     | Tool                                                                   | Version                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`                                                                                                              |
-| component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| API mocking               | none — hand-rolled fake + `vi.mock`                                    | — (no dependency)                                 | Resolved by §3 Phase 2. The Supabase client is the boundary worth faking; internal service modules are not. A recording fake in `src/lib/services/__fixtures__/supabase-fake.ts` covers the service layer, and Vitest's built-in `vi.mock` covers the route layer. **No MSW, no `getViteConfig`, and no alias stub were needed** — see §6.2 and §6.1's corrected limit. Extended by §3 Phase 3 with `limit` and a **terminal** `rpc`, so the fake now reaches RPC-based paths (both reports aggregates) as well as builder chains; `checked: 2026-08-22` |
-| database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`)                                                                                                  |
-| narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                               |
-| lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| typecheck                 | `@astrojs/check` (`astro check`)                                       | per `package.json`                                | Wired by §3 Phase 1: `npm run typecheck`, and a CI step in the `ci` job after `astro sync` and before `build`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach                                                                                                                                                                                                                                                                                                                                        |
-| e2e                       | none — deliberate                                                      | —                                                 | Every risk in §2 has a cheaper layer that reaches it. See §7                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| AI-native                 | none — deferred                                                        | —                                                 | An offline receipt-classification eval was proposed and cut by decision. See §7                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Layer                     | Tool                                                                   | Version                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`                                                                                                                                                                                                      |
+| component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| API mocking               | none — hand-rolled fake + `vi.mock`                                    | — (no dependency)                                 | Resolved by §3 Phase 2. The Supabase client is the boundary worth faking; internal service modules are not. A recording fake in `src/lib/services/__fixtures__/supabase-fake.ts` covers the service layer, and Vitest's built-in `vi.mock` covers the route layer. **No MSW, no `getViteConfig`, and no alias stub were needed** — see §6.2 and §6.1's corrected limit. Extended by §3 Phase 3 with `limit` and a **terminal** `rpc`, so the fake now reaches RPC-based paths (both reports aggregates) as well as builder chains; `checked: 2026-08-22`                                                                                         |
+| database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`)                                                                                                                                                                                          |
+| narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| typecheck                 | `@astrojs/check` (`astro check`)                                       | per `package.json`                                | Wired by §3 Phase 1: `npm run typecheck`, and a CI step in the `ci` job after `astro sync` and before `build`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| e2e                       | Playwright (`@playwright/test`)                                        | `1.62.1` (pinned exact)                           | **Reverses this row's earlier "none — deliberate".** One reviewed spec exists (`tests/e2e/seed.spec.ts`, risk #5) plus a `setup` project that signs in and writes `storageState`. Nothing is mocked: it drives a real `astro dev` server on workerd against a real local Supabase stack, because the risk lives in the seams between middleware, hydration, the API and RLS — faking any of them would test the fake. Serial by necessity (`workers: 1`): every spec signs in as the one seed user from `supabase/seed.sql` and shares that account's rows. Local only — no CI step. See §6.6 and the reversal note in §7; `checked: 2026-08-22` |
+| AI-native                 | none — deferred                                                        | —                                                 | An offline receipt-classification eval was proposed and cut by decision. See §7                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 **Stack grounding tools (current session):**
 
 - Docs: none — no Context7 or framework-docs MCP exposed; stack facts taken from `package.json`, `astro.config.mjs`, `CLAUDE.md`, and `tech-stack.md`; checked: 2026-08-21
 - Search: none — no Exa.ai or web-search MCP exposed; no tool version or release status was verified online, hence the unpinned candidates above; checked: 2026-08-21
-- Runtime/browser: none — no Playwright or browser MCP exposed; the Phase 5 headless check is a candidate approach, not a verified integration; checked: 2026-08-21
+- Runtime/browser: Playwright `1.62.1` is installed and driving a real browser against the running app (`npm run test:e2e`); no browser MCP is exposed, so specs are authored from the code and verified by running them rather than from a live accessibility snapshot. The Phase 5 headless viewport check remains a separate, still-unbuilt candidate — note that `context/changes/testing-client-state-viewport/plan.md` specifies the bare `playwright` package for it, which `@playwright/test` now supersedes; that reconciliation belongs to that change. checked: 2026-08-22
 - Provider/platform: none — no GitHub, Cloudflare, or Supabase MCP exposed; CI facts read directly from `.github/workflows/ci.yml`; checked: 2026-08-21
 
 ## 5. Quality Gates
@@ -134,6 +134,7 @@ phase lands; before that, the gate is planned.
 | from-scratch migration apply      | CI (`db-test` job)      | required — wired; runs on `master` pushes, **not** pull requests | a migration that cannot be applied to a clean database                    |
 | component tests                   | local + CI              | required after §3 Phase 5                                        | list-state and inline-edit regressions in React islands                   |
 | narrow-viewport overflow check    | CI on PR                | required after §3 Phase 5                                        | document-level horizontal scroll at phone widths                          |
+| e2e (Playwright)                  | local only              | **not required — not wired in CI**                               | cross-boundary regressions: hydration, session, API and RLS in one flow   |
 | post-edit hook                    | local (agent loop)      | recommended after §3 Phase 5                                     | the overflow and unit checks at edit time, before review                  |
 
 The two `db-test` gates run on `master` pushes only, because the wall-clock
@@ -143,6 +144,16 @@ red database gate leaves the hosted schema untouched — but a bad migration is
 discovered _after_ merge rather than in the pull request that introduced it.
 Widening the trigger to pull requests is a cost decision, not a correctness
 one.
+
+The e2e gate is deliberately listed as **not required**, and the honest
+reason is that it is not wired: `.github/workflows/ci.yml` has no Playwright
+step, so nothing enforces it on a pull request. Wiring it is not free — the
+runner would need `npx playwright install --with-deps chromium` **and** a live
+Supabase stack, which is the same `supabase start` cost that already keeps the
+two `db-test` gates off pull requests. Until that cost is paid, a green CI run
+is not evidence the e2e suite passes; run `npm run test:e2e` locally before
+merging anything that touches the day view. Promoting this row to required is a
+cost decision for a future rollout phase.
 
 The post-edit hook is a **recommended local** convenience, never a CI
 substitute. Configuration of hooks is out of scope for this plan.
@@ -491,7 +502,55 @@ TBD — see §3 Phase 5, which delivers both the list-state component pattern
 (assert rendered output after save, edit, delete, failure, and day change)
 and the document-overflow assertion at 320/360/390.
 
-### 6.6 Per-rollout-phase notes
+### 6.6 Adding an E2E test
+
+- **Location**: `tests/e2e/<feature>.spec.ts`, one test per file. Not co-located
+  — these specs belong to no module; they drive the assembled app.
+- **Rules**: `tests/e2e/README.md` is the durable rules file. Read it first.
+  The generic three-rule block in `CLAUDE.md` sits inside the 10x CLI's
+  regeneration markers and will be overwritten; the README will not.
+- **Reference test**: `tests/e2e/seed.spec.ts` — the seed. Every other spec is
+  modelled on it, so point generation prompts at it **by path** rather than
+  pasting it: a path cannot drift from the file it names, and a pasted sample
+  makes an agent reproduce that specific flow instead of generalising from it.
+- **Run**: `npm run test:e2e` (whole suite), `npm run test:e2e:ui` (debug), or
+  `npx playwright test tests/e2e/<feature>.spec.ts --project=chromium` for one
+  spec. Needs `npx supabase start -x vector` and a free port 4321 —
+  `reuseExistingServer: false` is a deliberate sibling-worktree guard.
+- **Authentication is not your problem.** `tests/e2e/auth.setup.ts` runs first
+  as a `setup` project dependency, signs in as the seed user from
+  `supabase/seed.sql`, provisions the fixture category, and writes
+  `storageState`. Specs start signed in and must never drive the login form —
+  auth _mechanics_ stay §7 negative space; we test what auth gates.
+- **Import `test` and `expect` from `./fixtures`, never `@playwright/test`.**
+  That one line is what keeps a spec inside the fixture layer.
+- **Unique data and failure-safe cleanup.** Take the unique id from the
+  `entryDescription` fixture rather than minting your own. Its teardown runs
+  after `use()`, so it fires even when the test fails — which is the run that
+  actually leaks. A spec that only deletes its row on its last line cleans up
+  exactly when cleanup was not needed; that gap left a stray row in the local
+  database, which is what prompted the fixture.
+- **Two app-specific traps**, both silent:
+  - `await waitForHydration(page)` after every `goto` and `reload`, before
+    touching an island. Astro serves fillable inputs before React hydrates, and
+    hydration re-renders them from React's own initial state — anything typed
+    in the gap is discarded with no error.
+  - An API-level write from a test needs an explicit `origin` header. Astro's
+    `security.checkOrigin` is on by default and answers `403 Cross-site DELETE
+form submissions are forbidden`; a browser sends `Origin` itself, an
+    `APIRequestContext` does not. JSON POSTs are exempt from the check, which
+    is why `auth.setup.ts`'s POST needs no header and the teardown DELETE does.
+- **Prove the assertion, don't assume it.** Before a spec counts as done,
+  deliberately break the behaviour its risk names and confirm it goes red — the
+  seed was verified this way (GET `/api/entries` forced to `[]`, which failed
+  the reload step while the pre-reload step still passed, i.e. exactly risk #5).
+  Revert the break immediately; never commit it.
+- **Reach for this layer last.** E2E earns its place only when a risk crosses
+  several boundaries or exists only in the rendered, hydrated UI. If §6.1–§6.4
+  can prove it, use those — they are faster, less flaky, and gated in CI, which
+  this layer is not.
+
+### 6.7 Per-rollout-phase notes
 
 (Filled in as phases land. After each phase, `/10x-implement` appends two
 or three lines capturing anything surprising the phase taught — a fixture
@@ -674,10 +733,21 @@ these unless the underlying assumption changes.
   password reset are baseline scaffold that no slice re-implements. We test
   what auth _gates_ (risk #3), not the mechanism. Re-evaluate if a slice
   modifies the auth flow. (Source: Phase 2 interview Q5.)
-- **An end-to-end layer** — every risk in §2 has a cheaper layer that
-  reaches it, so promoting any of them to e2e would cost wall-clock and
-  flake without adding signal. Re-evaluate if a risk appears whose failure
-  requires the full deployed shape. (Source: §1 principle #1.)
+- **A broad end-to-end layer — reversed in part, 2026-08-22.** This entry
+  used to read "an end-to-end layer" flat: every risk in §2 had a cheaper
+  layer, so promoting any of them to e2e would cost wall-clock and flake
+  without adding signal. That held for the layer as a _sweep_ and still does.
+  It did not survive contact with risk #5, whose failure — the day list showing
+  what the database does not contain — lives in the seam between SSR, island
+  hydration, the API and RLS, and is reproducible by no single cheaper layer:
+  a component test renders against a fake, a route test never hydrates, and
+  pgTAP cannot reach application code. So a **narrow** e2e layer now exists
+  (Playwright, `tests/e2e/`, §4 and §6.6). What stays deliberately out is the
+  sweep: no test per page or per button, no e2e for anything §6.1–§6.4 can
+  prove, and no pixel or snapshot assertions (see the separate entry above).
+  The budget is roughly one reviewed spec per browser-level risk. Re-evaluate
+  the _narrowness_ if the suite starts growing faster than §2's risk list.
+  (Source: §1 principle #1, amended by the risk #5 rollout.)
 - **Offline receipt-classification accuracy eval** — proposed as a sixth
   rollout phase and cut by decision at brief review. It remains the only
   thing that would answer the PRD's stated accuracy floor, which is
@@ -728,7 +798,7 @@ these unless the underlying assumption changes.
   risk #3 now has automated coverage at the route and middleware layers: six
   ownership surfaces assert A being refused B's id, and five middleware cases
   pin `Cache-Control: private, no-store` on authenticated and auth-varying
-  responses. The database half needed no new work — see §6.6 Phase 4. Earlier:
+  responses. The database half needed no new work — see §6.7 Phase 4. Earlier:
   2026-08-22, §3 Phase 3 marked complete —
   risk #2 now has automated coverage at the unit, service, and route layers;
   §4's `API mocking` row re-dated for the fake's RPC extension. Earlier:

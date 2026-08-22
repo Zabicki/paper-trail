@@ -33,3 +33,9 @@ pnpm-debug.log*
 .claude/prompts/
 .claude/skills/
 supabase/snippets/
+
+# playwright
+test-results/
+playwright-report/
+playwright/.cache/
+tests/e2e/.auth/
