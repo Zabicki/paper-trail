@@ -1,10 +1,10 @@
 ---
 change_id: testing-reports-aggregation-truth
 title: "Reports aggregation truth: prove a displayed figure is correct or absent"
-status: implemented
+status: archived
 created: 2026-08-21
 updated: 2026-08-22
-archived_at: null
+archived_at: 2026-08-22T09:22:58Z
 ---
 
 ## Notes
