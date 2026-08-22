@@ -1,7 +1,7 @@
 ---
 change_id: e2e-ci-gate
 title: Decide whether the Playwright e2e suite becomes a CI gate, and wire it if so
-status: new
+status: implementing
 created: 2026-08-22
 updated: 2026-08-22
 archived_at: null
