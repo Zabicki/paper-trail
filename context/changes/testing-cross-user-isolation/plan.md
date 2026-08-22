@@ -715,34 +715,34 @@ window.
 
 #### Automated
 
-- [x] 1.1 Full suite green with an unchanged test count: `npm run test`
-- [x] 1.2 Lint passes: `npm run lint`
-- [x] 1.3 Typecheck passes: `npx astro sync && npm run typecheck`
-- [x] 1.4 No file named `*.test.ts` was added under `__fixtures__/`
+- [x] 1.1 Full suite green with an unchanged test count: `npm run test` — 66a1e38
+- [x] 1.2 Lint passes: `npm run lint` — 66a1e38
+- [x] 1.3 Typecheck passes: `npx astro sync && npm run typecheck` — 66a1e38
+- [x] 1.4 No file named `*.test.ts` was added under `__fixtures__/` — 66a1e38
 
 #### Manual
 
-- [x] 1.5 The three retrofitted files show a construction-only diff
-- [x] 1.6 The seed uuids match `supabase/seed.sql` character for character
-- [x] 1.7 Teeth check: changing the identity constant breaks nothing, result recorded
+- [x] 1.5 The three retrofitted files show a construction-only diff — 66a1e38
+- [x] 1.6 The seed uuids match `supabase/seed.sql` character for character — 66a1e38
+- [x] 1.7 Teeth check: changing the identity constant breaks nothing, result recorded — 66a1e38
 
 ### Phase 2: Ownership refusal at all six surfaces
 
 #### Automated
 
-- [ ] 2.1 Full suite green: `npm run test`
-- [ ] 2.2 Test count increased by at least 8 over the Phase 1 baseline
-- [ ] 2.3 Lint passes: `npm run lint`
-- [ ] 2.4 Typecheck passes: `npm run typecheck`
-- [ ] 2.5 Every new file carries the "this does not prove RLS" header comment
+- [x] 2.1 Full suite green: `npm run test`
+- [x] 2.2 Test count increased by at least 8 over the Phase 1 baseline
+- [x] 2.3 Lint passes: `npm run lint`
+- [x] 2.4 Typecheck passes: `npm run typecheck`
+- [x] 2.5 Every new file carries the "this does not prove RLS" header comment
 
 #### Manual
 
-- [ ] 2.6 Each archived `curl` verification maps to a named test case
-- [ ] 2.7 The three ambiguous-404 bodies are byte-identical to the route source
-- [ ] 2.8 No test asserts only a status where a body is available
-- [ ] 2.9 Teeth check (a): dropping `.select("id")` from `deleteEntry` turns the DELETE case red
-- [ ] 2.10 Teeth check (b): short-circuiting `assertCategoryUsable` turns the foreign-`categoryId` cases red
+- [x] 2.6 Each archived `curl` verification maps to a named test case
+- [x] 2.7 The three ambiguous-404 bodies are byte-identical to the route source
+- [x] 2.8 No test asserts only a status where a body is available
+- [x] 2.9 Teeth check (a): dropping `.select("id")` from `deleteEntry` turns the DELETE case red
+- [x] 2.10 Teeth check (b): short-circuiting `assertCategoryUsable` turns the foreign-`categoryId` cases red
 
 ### Phase 3: Edge-cacheability
 

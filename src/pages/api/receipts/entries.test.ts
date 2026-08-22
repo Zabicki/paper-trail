@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createRouteClient, routeContext, USER_A, type Identity } from "@/lib/services/__fixtures__/route-context";
+import {
+  createRouteClient,
+  routeContext,
+  USER_A,
+  USER_B,
+  type Identity,
+} from "@/lib/services/__fixtures__/route-context";
 import type { FakeResponse } from "@/lib/services/__fixtures__/supabase-fake";
 import type { createClient } from "@/lib/supabase";
 
@@ -52,6 +58,8 @@ type RouteContext = Parameters<typeof POST>[0];
 const BATCH_ID = "11111111-1111-4111-8111-111111111111";
 const FOOD = 7;
 const TRANSPORT = 9;
+/** A category the OTHER seed user owns; A never learns whether this id exists. */
+const FOREIGN_CATEGORY = 3131;
 
 /** A well-formed confirm body; individual tests override one field at a time. */
 function confirmBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -187,6 +195,64 @@ describe("POST /api/receipts/entries", () => {
       error: "Nie znaleziono kategorii",
       field: "categoryId",
     });
+  });
+
+  // Risk #3 in `context/foundation/test-plan.md` §2 — one user's financial data
+  // becoming reachable by another — on the batch path, and the claim here is
+  // ATOMICITY: when any single item names a category the caller does not own,
+  // the WHOLE receipt is refused. That is a claim about what did NOT reach the
+  // database, which no return value can show, so it is asserted against the
+  // recorded calls.
+  //
+  // WHAT THIS CASE DOES NOT PROVE. It does NOT prove RLS. The fake has no caller
+  // identity and no row store — `USER_B` below names which actor the foreign
+  // category belongs to and enforces nothing. The honest claim is: *given a
+  // category lookup that returns fewer rows than the request named, the batch is
+  // refused and nothing is written.* Proving that RLS is what withholds the row
+  // is pgTAP's job (`supabase/tests/categories_rls_test.sql`).
+  //
+  // AND ON THIS PATH THERE IS NO pgTAP TO DEFER TO FOR THE FK. Postgres FK
+  // checks are not subject to RLS on the referenced table
+  // (`supabase/migrations/20260815164539_create_entries_table.sql:31-36`), so
+  // the database would accept these rows. `createEntriesBatch`'s set-cardinality
+  // check (`src/lib/services/entries.ts:241-263`) is the only refusal, and this
+  // change added no pgTAP — so this case is one of that invariant's two
+  // automated guards, the other being `src/pages/api/entries/[id].test.ts`.
+  //
+  // Closes the hand-run `curl` verification archived at
+  // `context/archive/2026-08-16-receipt-parsing/plan.md:493` — "`curl` with
+  // another user's `categoryId` returns `404` and inserts nothing".
+  it(`refuses the whole batch when one item names a category owned by ${USER_B.id}`, async () => {
+    const fake = fakeClient(
+      // Two ids asked for, one row back. Absent, soft-deleted and someone-else's
+      // are indistinguishable here on purpose, exactly as the single 404 above
+      // is (`src/lib/services/entries.ts:255-257`).
+      [{ data: [{ id: FOOD, kind: "expense" }], error: null }],
+      SIGNED_IN,
+    );
+    holder.client = fake.client;
+
+    const response = await POST(
+      postRequest(
+        confirmBody({
+          items: [
+            { amount: 12.5, categoryId: FOOD, description: "Chleb 4,50" },
+            { amount: 30, categoryId: FOREIGN_CATEGORY, description: "Bilet" },
+          ],
+        }),
+      ),
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json<unknown>()).resolves.toStrictEqual({
+      error: "Nie znaleziono kategorii",
+      field: "categoryId",
+    });
+    // THE ATOMICITY ASSERTION. The batch is one `upsert`, so a partial write is
+    // not expressible — but a refusal that fired AFTER the write would be, and
+    // the return value would look identical. Only the recorded calls can tell
+    // the two apart: the caller's own valid line must not have landed either.
+    expect(fake.calls.map((call) => call.method)).not.toContain("upsert");
   });
 
   it("answers 400 'Kategoria nie pasuje do typu wpisu' for an income category", async () => {
