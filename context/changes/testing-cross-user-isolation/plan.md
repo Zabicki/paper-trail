@@ -730,37 +730,37 @@ window.
 
 #### Automated
 
-- [x] 2.1 Full suite green: `npm run test`
-- [x] 2.2 Test count increased by at least 8 over the Phase 1 baseline
-- [x] 2.3 Lint passes: `npm run lint`
-- [x] 2.4 Typecheck passes: `npm run typecheck`
-- [x] 2.5 Every new file carries the "this does not prove RLS" header comment
+- [x] 2.1 Full suite green: `npm run test` — 74e6ed2
+- [x] 2.2 Test count increased by at least 8 over the Phase 1 baseline — 74e6ed2
+- [x] 2.3 Lint passes: `npm run lint` — 74e6ed2
+- [x] 2.4 Typecheck passes: `npm run typecheck` — 74e6ed2
+- [x] 2.5 Every new file carries the "this does not prove RLS" header comment — 74e6ed2
 
 #### Manual
 
-- [x] 2.6 Each archived `curl` verification maps to a named test case
-- [x] 2.7 The three ambiguous-404 bodies are byte-identical to the route source
-- [x] 2.8 No test asserts only a status where a body is available
-- [x] 2.9 Teeth check (a): dropping `.select("id")` from `deleteEntry` turns the DELETE case red
-- [x] 2.10 Teeth check (b): short-circuiting `assertCategoryUsable` turns the foreign-`categoryId` cases red
+- [x] 2.6 Each archived `curl` verification maps to a named test case — 74e6ed2
+- [x] 2.7 The three ambiguous-404 bodies are byte-identical to the route source — 74e6ed2
+- [x] 2.8 No test asserts only a status where a body is available — 74e6ed2
+- [x] 2.9 Teeth check (a): dropping `.select("id")` from `deleteEntry` turns the DELETE case red — 74e6ed2
+- [x] 2.10 Teeth check (b): short-circuiting `assertCategoryUsable` turns the foreign-`categoryId` cases red — 74e6ed2
 
 ### Phase 3: Edge-cacheability
 
 #### Automated
 
-- [ ] 3.1 Full suite green: `npm run test`
-- [ ] 3.2 `src/middleware.test.ts` contributes 5 passing cases
-- [ ] 3.3 Lint passes: `npm run lint`
-- [ ] 3.4 Typecheck passes: `npm run typecheck`
-- [ ] 3.5 No change to `vitest.config.ts` and no new dependency
+- [x] 3.1 Full suite green: `npm run test`
+- [x] 3.2 `src/middleware.test.ts` contributes 5 passing cases
+- [x] 3.3 Lint passes: `npm run lint`
+- [x] 3.4 Typecheck passes: `npm run typecheck`
+- [x] 3.5 No change to `vitest.config.ts` and no new dependency
 
 #### Manual
 
-- [ ] 3.6 The `/` case was observed red before `src/middleware.ts` was edited
-- [ ] 3.7 `/dashboard` and `/api/entries/summary` show `private, no-store` signed in
-- [ ] 3.8 Signed out, `GET /` shows the 302 carrying the header
-- [ ] 3.9 The middleware comment no longer claims coverage the code does not provide
-- [ ] 3.10 Teeth check: dropping the `locals.user` disjunct turns the signed-in `/api/**` case red
+- [x] 3.6 The `/` case was observed red before `src/middleware.ts` was edited
+- [x] 3.7 `/dashboard` and `/api/entries/summary` show `private, no-store` signed in
+- [x] 3.8 Signed out, `GET /` shows the 302 carrying the header
+- [x] 3.9 The middleware comment no longer claims coverage the code does not provide
+- [x] 3.10 Teeth check: dropping the `locals.user` disjunct turns the signed-in `/api/**` case red
 
 ### Phase 4: Cookbook and plan sync
 
