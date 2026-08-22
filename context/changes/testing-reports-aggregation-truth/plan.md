@@ -850,32 +850,32 @@ behaviour it relied on. No migration ordering concern and nothing for the
 
 #### Automated
 
-- [x] 2.1 Suite passes: `npm run test`
-- [x] 2.2 Type checking passes: `npm run typecheck`
-- [x] 2.3 Linting passes: `npm run lint`
+- [x] 2.1 Suite passes: `npm run test` — 7b39e78
+- [x] 2.2 Type checking passes: `npm run typecheck` — 7b39e78
+- [x] 2.3 Linting passes: `npm run lint` — 7b39e78
 
 #### Manual
 
-- [x] 2.4 Every expected share hand-computed from the fixture's `total`
-- [x] 2.5 Teeth check: `MIN_SHARE` to `0.2`, confirm only the selection cases go red, revert
-- [x] 2.6 Teeth check: `shareOf`'s zero guard to a bare division, confirm the zero-total case fails on `NaN`, revert
+- [x] 2.4 Every expected share hand-computed from the fixture's `total` — 7b39e78
+- [x] 2.5 Teeth check: `MIN_SHARE` to `0.2`, confirm only the selection cases go red, revert — 7b39e78
+- [x] 2.6 Teeth check: `shareOf`'s zero guard to a bare division, confirm the zero-total case fails on `NaN`, revert — 7b39e78
 
 ### Phase 3: Harness Extension and Aggregation Truth
 
 #### Automated
 
-- [ ] 3.1 Suite passes: `npm run test`
-- [ ] 3.2 Type checking passes: `npm run typecheck`
-- [ ] 3.3 Linting passes: `npm run lint`
-- [ ] 3.4 The oversized fixture case runs in the suite's existing time envelope
+- [x] 3.1 Suite passes: `npm run test`
+- [x] 3.2 Type checking passes: `npm run typecheck`
+- [x] 3.3 Linting passes: `npm run lint`
+- [x] 3.4 The oversized fixture case runs in the suite's existing time envelope
 
 #### Manual
 
-- [ ] 3.5 Hosted `max_rows` verified in the Supabase console; value and date recorded
-- [ ] 3.6 Teeth check: tripwire to `>`, confirm the exactly-1000 case fails, revert
-- [ ] 3.7 Teeth check: accumulate `total` instead of reading the `()` row, confirm assignment and cross-board cases fail, revert
-- [ ] 3.8 Teeth check: move the `MAX_BUCKETS` check after the `rpc` call, confirm the "no rpc recorded" assertion fails, revert
-- [ ] 3.9 Cross-board fixture traced by hand before running anything
+- [x] 3.5 Hosted `max_rows` verified in the Supabase console; value and date recorded
+- [x] 3.6 Teeth check: tripwire to `>`, confirm the exactly-1000 case fails, revert
+- [x] 3.7 Teeth check: accumulate `total` instead of reading the `()` row, confirm assignment and cross-board cases fail, revert
+- [x] 3.8 Teeth check: move the `MAX_BUCKETS` check after the `rpc` call, confirm the "no rpc recorded" assertion fails, revert
+- [x] 3.9 Cross-board fixture traced by hand before running anything
 
 ### Phase 4: Route Boundary and the Date-Validation Fix
 

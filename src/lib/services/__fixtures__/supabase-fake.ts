@@ -26,6 +26,16 @@
 // So a happy-path test queues two responses and a replay test queues three.
 // Queue too few and the fake throws naming how many calls it had recorded;
 // queue too many and the surplus is simply never read.
+//
+// `rpc` IS THE ONE EXCEPTION TO "CONSUMED ON AWAIT". Every method above is a
+// chain link that returns the chainable object, and `then` pulls from the queue
+// when the chain is awaited. `supabase.rpc(…)` is not a chain link — the
+// services await it directly — so it must both record AND resolve, which means
+// it consumes its queued response at CALL time rather than at await time. The
+// practical consequence is that a `Promise.all([rpc(a), rpc(b)])` consumes two
+// entries in ARRAY order, because both calls are made synchronously before
+// either is awaited. getEntriesSummary is exactly that shape: current range
+// first, previous range second.
 
 /** One canned PostgREST result. */
 export interface FakeResponse {
@@ -57,6 +67,7 @@ export interface QueryFake {
   is: (...args: unknown[]) => QueryFake;
   eq: (...args: unknown[]) => QueryFake;
   order: (...args: unknown[]) => QueryFake;
+  limit: (...args: unknown[]) => QueryFake;
   upsert: (...args: unknown[]) => QueryFake;
   insert: (...args: unknown[]) => QueryFake;
   update: (...args: unknown[]) => QueryFake;
@@ -64,6 +75,12 @@ export interface QueryFake {
   maybeSingle: (...args: unknown[]) => QueryFake;
   single: (...args: unknown[]) => QueryFake;
   then: (onFulfilled: (value: FakeResponse) => unknown) => Promise<unknown>;
+  /**
+   * Terminal, not a chain link — see the `rpc` note in this file's header. It
+   * records the call and resolves the next queued response, so it returns a
+   * promise rather than the chainable object.
+   */
+  rpc: (...args: unknown[]) => Promise<FakeResponse>;
 }
 
 export interface SupabaseFake {
@@ -112,6 +129,7 @@ export function createSupabaseFake(responses: FakeResponse[]): SupabaseFake {
     is: (...args) => record("is", args),
     eq: (...args) => record("eq", args),
     order: (...args) => record("order", args),
+    limit: (...args) => record("limit", args),
     upsert: (...args) => record("upsert", args),
     insert: (...args) => record("insert", args),
     update: (...args) => record("update", args),
@@ -121,6 +139,14 @@ export function createSupabaseFake(responses: FakeResponse[]): SupabaseFake {
     // Resolved lazily: nextResponse() runs when the chain is awaited, not when
     // it is built, which is what keeps the queue in await order.
     then: (onFulfilled) => Promise.resolve(nextResponse()).then(onFulfilled),
+    // `rpc` is terminal — the services await it directly rather than continuing
+    // a chain — so unlike every method above it must both record AND resolve.
+    // The call is recorded BEFORE the queue is consumed, so a queue-exhaustion
+    // error still names the rpc that hit it.
+    rpc: (...args) => {
+      record("rpc", args);
+      return Promise.resolve(nextResponse());
+    },
   };
 
   return { client, calls };
