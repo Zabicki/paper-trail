@@ -497,20 +497,20 @@ proves flaky in practice.
 
 #### Automated
 
-- [ ] 1.1 The `e2e` job appears and passes on a pull request
+- [x] 1.1 The `e2e` job appears and passes on a pull request — 6adfb08
 - [ ] 1.2 The `e2e` job appears and passes on a push to `master`
-- [ ] 1.3 Job log shows CLI `2.98.2` and no `permission denied for table`
-- [ ] 1.4 Job log contains no `Using secrets defined in` line
+- [x] 1.3 Job log shows CLI `2.98.2` and no `permission denied for table` — 6adfb08
+- [x] 1.4 Job log contains no `Using secrets defined in` line — 6adfb08
 - [ ] 1.5 `deploy` is queued behind three jobs on a `master` push
-- [ ] 1.6 Local gate still passes unchanged
+- [x] 1.6 Local gate still passes unchanged — 6adfb08
 
 #### Manual
 
-- [ ] 1.7 Teeth check: forced-`[]` break turns `e2e` red and leaves `ci` green; reverted
-- [ ] 1.8 Failure artifact downloaded and trace opened on that red run
-- [ ] 1.9 Every step duration recorded, especially the browser install and the suite
-- [ ] 1.10 Pull-request wall-clock compared against the 98 s baseline; caching verdict noted
-- [ ] 1.11 No `secrets.*` reference in the new job
+- [x] 1.7 Teeth check: forced-`[]` break turns `e2e` red and leaves `ci` green; reverted — 6adfb08
+- [x] 1.8 Failure artifact downloaded and trace opened on that red run — 6adfb08
+- [x] 1.9 Every step duration recorded, especially the browser install and the suite — 6adfb08
+- [x] 1.10 Pull-request wall-clock compared against the 98 s baseline; caching verdict noted — 6adfb08
+- [x] 1.11 No `secrets.*` reference in the new job — 6adfb08
 
 ### Phase 2: Documents and close-out
 
