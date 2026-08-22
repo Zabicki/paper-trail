@@ -7,6 +7,7 @@ import {
   getCategorySummary,
   getEntriesSummary,
   getFirstEntryDate,
+  summaryQuerySchema,
 } from "@/lib/services/reports";
 import type { SummaryBucket } from "@/types";
 
@@ -969,5 +970,113 @@ describe("error propagation", () => {
     await expect(
       getCategorySummary(fake.client as unknown as ServiceClient, query("2026-08-01", "2026-08-03")),
     ).rejects.toBe(failure);
+  });
+});
+
+// --- The range bounds the two reports routes validate against ---
+
+// The oracle is the calendar itself: February 2026 has 28 days, April has 30,
+// there is no thirteenth month, and 2026 is not divisible by 4. Nothing in this
+// repository is consulted to know any of that — which is the whole point, since
+// the bound this replaces was a shape regex that could not know it either.
+//
+// WHAT THE SHAPE REGEX COST, and why it belongs to risk #2 rather than to input
+// hygiene. `/^\d{4}-\d{2}-\d{2}$/` accepted `2026-02-30`. That value then took
+// two different meanings on the two sides of this module:
+//
+//   - `bucketCountUpperBound` normalised it through `Date.UTC(2026, 1, 30)`,
+//     i.e. 2026-03-02, and sized the MAX_BUCKETS check against THAT window;
+//   - the RPC received the literal string `2026-02-30`, which Postgres refused
+//     to cast to `date`.
+//
+// So the guard that exists to keep the response under `max_rows` was being
+// computed over a window the database was never asked about. The user-visible
+// end of it was a 500 with a non-JSON body — `src/lib/api-error.ts:9-11`
+// degrades that to the generic "Coś poszło nie tak" — rather than a 400 naming
+// the offending field. The route half is asserted in
+// `src/pages/api/entries/summary.test.ts` and its category-summary twin.
+//
+// The exact Polish messages are asserted, not merely the failure: both routes
+// forward `issue.message` verbatim as the response body's `error`, so these are
+// user-facing copy and a silent change to either is a copy regression.
+describe("the summary range bounds", () => {
+  const IMPOSSIBLE = [
+    // February 2026 ends on the 28th.
+    "2026-02-30",
+    // No thirteenth month, no forty-fifth day.
+    "2026-13-45",
+    // April has 30 days.
+    "2026-04-31",
+    // 2026 is not divisible by 4. Paired with the accepted `2024-02-29` below,
+    // this is what proves the check is a real calendar rather than a
+    // per-month day-count table.
+    "2026-02-29",
+  ];
+
+  // Kept from the regex era: the swap must not have loosened the shape while
+  // tightening the semantics.
+  const MALFORMED = ["", "14.08.2026", "2026-8-14", "2026-08-14T00:00:00Z", "wczoraj"];
+
+  function input(overrides: Record<string, unknown>): Record<string, unknown> {
+    return { from: "2026-08-01", to: "2026-08-31", bucket: "day", ...overrides };
+  }
+
+  it.each(IMPOSSIBLE)("rejects %s as a start date, naming `from`", (from) => {
+    const result = summaryQuerySchema.safeParse(input({ from }));
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toStrictEqual(["from"]);
+    expect(result.error?.issues[0].message).toBe("Nieprawidłowa data początkowa");
+  });
+
+  it.each(IMPOSSIBLE)("rejects %s as an end date, naming `to`", (to) => {
+    const result = summaryQuerySchema.safeParse(input({ to }));
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toStrictEqual(["to"]);
+    expect(result.error?.issues[0].message).toBe("Nieprawidłowa data końcowa");
+  });
+
+  it.each(MALFORMED)("still rejects %s, which is not an ISO date at all", (value) => {
+    expect(summaryQuerySchema.safeParse(input({ from: value })).success).toBe(false);
+    expect(summaryQuerySchema.safeParse(input({ to: value })).success).toBe(false);
+  });
+
+  it("carries the same message when the parameter is missing entirely", () => {
+    // The routes pass `params.get("from")` straight through, so an absent query
+    // parameter arrives as `null` — zod's invalid_type case, not
+    // invalid_format. A single message argument has to cover both, or the user
+    // gets a raw English zod string in a Polish UI for the commonest mistake.
+    const result = summaryQuerySchema.safeParse(input({ from: null }));
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toStrictEqual(["from"]);
+    expect(result.error?.issues[0].message).toBe("Nieprawidłowa data początkowa");
+  });
+
+  it("accepts 2024-02-29, a real leap day", () => {
+    expect(summaryQuerySchema.safeParse(input({ from: "2024-02-29", to: "2024-03-31" })).success).toBe(true);
+  });
+
+  it("accepts an ordinary range and defaults the recurring filter to shown", () => {
+    const result = summaryQuerySchema.safeParse(input({}));
+
+    expect(result.success).toBe(true);
+    // `recurring` is absent from the fixture: the default is what makes
+    // /reports work without the parameter in the URL, and it is the "shown"
+    // half of FR-015 that the caption has to agree with.
+    expect(result.data).toStrictEqual({ from: "2026-08-01", to: "2026-08-31", bucket: "day", recurring: "shown" });
+  });
+
+  it("leaves the bucket and recurring messages untouched", () => {
+    // Neither field changed in this swap; asserted so a future edit to the
+    // date fields cannot quietly take the other two with it.
+    const badBucket = summaryQuerySchema.safeParse(input({ bucket: "fortnight" }));
+    expect(badBucket.error?.issues[0].message).toBe("Nieprawidłowy podział zakresu");
+    expect(badBucket.error?.issues[0].path).toStrictEqual(["bucket"]);
+
+    const badFilter = summaryQuerySchema.safeParse(input({ recurring: "maybe" }));
+    expect(badFilter.error?.issues[0].message).toBe("Nieprawidłowa wartość filtra");
+    expect(badFilter.error?.issues[0].path).toStrictEqual(["recurring"]);
   });
 });

@@ -16,11 +16,37 @@ import type {
 
 type SupabaseClient = NonNullable<ReturnType<typeof createClient>>;
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
+// z.iso.date(), not a /^\d{4}-\d{2}-\d{2}$/ shape check — the same swap
+// services/entries.ts made for `occurredOn`, but for a different failure. The
+// regex accepted `2026-02-30`, and bucketCountUpperBound below then normalised
+// it through `Date.UTC(2026, 1, 30)` → 2026-03-02, so **the ceiling guard was
+// computed over a different window than the one sent to Postgres**. Postgres
+// refused the `date` cast, and the resulting error — not a RangeTooLargeError —
+// was rethrown into an Astro error page: a 500 with a non-JSON body. That is "a
+// range resolving to the wrong window", `context/foundation/test-plan.md` §2
+// risk #2 in its own words.
+//
+// The Polish strings are load-bearing, not decoration: both routes forward
+// `issue.message` verbatim as the response `error` and `issue.path[0]` as
+// `field` (`api/entries/summary.ts:40-41`,
+// `api/entries/category-summary.ts:44-45`). Against the installed zod 4.4.3, a
+// single string argument to z.iso.date() covers BOTH the invalid-type case — a
+// missing query parameter arrives as `null`, since the routes pass
+// `params.get(…)` straight through — and the invalid-format case, so one
+// argument per field preserves exactly the copy the previous two-message form
+// produced. Verified empirically against 4.4.3, the way entries.ts verified its
+// own swap; it is not a documentation claim.
+//
+// Strictly narrowing: every input accepted before is still accepted. The ones
+// it newly turns away previously produced the 500 above, so no working client
+// loses a behaviour it relied on.
+//
+// The same shape-only regex survives in two other modules — services/receipts.ts
+// (parse-side) and api/entries/index.ts (a GET query parameter with no write
+// behind it). Both are deliberately left alone; neither is on the reports path.
 export const summaryQuerySchema = z.object({
-  from: z.string("Nieprawidłowa data początkowa").regex(DATE_PATTERN, { message: "Nieprawidłowa data początkowa" }),
-  to: z.string("Nieprawidłowa data końcowa").regex(DATE_PATTERN, { message: "Nieprawidłowa data końcowa" }),
+  from: z.iso.date("Nieprawidłowa data początkowa"),
+  to: z.iso.date("Nieprawidłowa data końcowa"),
   bucket: z.enum(["day", "week", "month"], { message: "Nieprawidłowy podział zakresu" }),
   // "shown" rather than a boolean so the value round-trips through the URL as
   // something a human reading /reports?recurring=hidden can interpret.

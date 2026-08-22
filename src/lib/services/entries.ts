@@ -22,10 +22,12 @@ const DESCRIPTION_MAX = 200;
 //
 // Reachable because the receipt parser's own date check is shape-only too, so a
 // misread printed date arrives at the panel and is adopted as the save date.
-// Three other modules still carry the same shape-only regex — services/receipts.ts,
-// services/reports.ts and api/entries/index.ts — and are deliberately left alone
-// here: the first is parse-side, the second belongs to risk #2, and the third
-// guards a GET query parameter with no write behind it.
+// Three other modules carried the same shape-only regex when this was written.
+// services/reports.ts has since been converted too (rollout Phase 3 of
+// `context/foundation/test-plan.md`, where the regex was letting the bucket
+// ceiling be computed over a different window than the one queried). Two
+// survive and are deliberately left alone: services/receipts.ts is parse-side,
+// and api/entries/index.ts guards a GET query parameter with no write behind it.
 export const createEntrySchema = z.object({
   amount: z.number().positive().max(999999.99),
   categoryId: z.number().int().positive(),

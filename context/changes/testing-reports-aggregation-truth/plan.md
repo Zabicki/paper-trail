@@ -864,34 +864,34 @@ behaviour it relied on. No migration ordering concern and nothing for the
 
 #### Automated
 
-- [x] 3.1 Suite passes: `npm run test`
-- [x] 3.2 Type checking passes: `npm run typecheck`
-- [x] 3.3 Linting passes: `npm run lint`
-- [x] 3.4 The oversized fixture case runs in the suite's existing time envelope
+- [x] 3.1 Suite passes: `npm run test` — 6578d90
+- [x] 3.2 Type checking passes: `npm run typecheck` — 6578d90
+- [x] 3.3 Linting passes: `npm run lint` — 6578d90
+- [x] 3.4 The oversized fixture case runs in the suite's existing time envelope — 6578d90
 
 #### Manual
 
-- [x] 3.5 Hosted `max_rows` verified in the Supabase console; value and date recorded
-- [x] 3.6 Teeth check: tripwire to `>`, confirm the exactly-1000 case fails, revert
-- [x] 3.7 Teeth check: accumulate `total` instead of reading the `()` row, confirm assignment and cross-board cases fail, revert
-- [x] 3.8 Teeth check: move the `MAX_BUCKETS` check after the `rpc` call, confirm the "no rpc recorded" assertion fails, revert
-- [x] 3.9 Cross-board fixture traced by hand before running anything
+- [x] 3.5 Hosted `max_rows` verified in the Supabase console; value and date recorded — 6578d90
+- [x] 3.6 Teeth check: tripwire to `>`, confirm the exactly-1000 case fails, revert — 6578d90
+- [x] 3.7 Teeth check: accumulate `total` instead of reading the `()` row, confirm assignment and cross-board cases fail, revert — 6578d90
+- [x] 3.8 Teeth check: move the `MAX_BUCKETS` check after the `rpc` call, confirm the "no rpc recorded" assertion fails, revert — 6578d90
+- [x] 3.9 Cross-board fixture traced by hand before running anything — 6578d90
 
 ### Phase 4: Route Boundary and the Date-Validation Fix
 
 #### Automated
 
-- [ ] 4.1 Suite passes: `npm run test`
-- [ ] 4.2 Type checking passes: `npm run typecheck`
-- [ ] 4.3 Linting passes: `npm run lint`
-- [ ] 4.4 Full build passes: `npm run build`
+- [x] 4.1 Suite passes: `npm run test`
+- [x] 4.2 Type checking passes: `npm run typecheck`
+- [x] 4.3 Linting passes: `npm run lint`
+- [x] 4.4 Full build passes: `npm run build`
 
 #### Manual
 
-- [ ] 4.5 `/reports` exercised across presets and both toggle positions; figures unchanged
-- [ ] 4.6 `?from=2026-02-30` returns a 400 with a JSON body naming `from`
-- [ ] 4.7 Teeth check: revert one route's `instanceof` branch, confirm only that route's 400 case fails, restore
-- [ ] 4.8 Teeth check: drop one Polish message, confirm the exact-message assertion fails, restore
+- [x] 4.5 `/reports` exercised across presets and both toggle positions; figures unchanged
+- [x] 4.6 `?from=2026-02-30` returns a 400 with a JSON body naming `from`
+- [x] 4.7 Teeth check: revert one route's `instanceof` branch, confirm only that route's 400 case fails, restore
+- [x] 4.8 Teeth check: drop one Polish message, confirm the exact-message assertion fails, restore
 
 ### Phase 5: Cookbook and Plan Sync
 
