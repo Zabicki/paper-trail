@@ -138,9 +138,11 @@ jobs:
 
   deploy:
     if: github.event_name == 'push'
-    # db-test gates the one step that reaches production. Both jobs are
-    # push-only, so pull requests skip both and this edge is never exercised there.
-    needs: [ci, db-test]
+    # db-test and e2e both gate the one step that reaches production: a red
+    # database suite or a red browser suite must leave the hosted schema and the
+    # Worker untouched. deploy stays push-only, so on a pull request ci and e2e
+    # both run and this edge is never evaluated — db-test is skipped there too.
+    needs: [ci, db-test, e2e]
     runs-on: ubuntu-latest
     environment: production
     steps:
