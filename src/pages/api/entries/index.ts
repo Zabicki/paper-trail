@@ -29,7 +29,8 @@ export const GET: APIRoute = async (context) => {
   }
 
   const entries = await listEntriesForDay(supabase, date);
-  return new Response(JSON.stringify(entries), { status: 200 });
+  // TEETH CHECK — deliberate break proving the e2e CI gate has teeth. REVERT.
+  return new Response(JSON.stringify(entries.slice(0, 0)), { status: 200 });
 };
 
 export const POST: APIRoute = async (context) => {
