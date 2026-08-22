@@ -766,13 +766,13 @@ window.
 
 #### Automated
 
-- [x] 4.1 Full suite still green: `npm run test`
-- [x] 4.2 Lint and format pass: `npm run lint` and `npm run format`
-- [x] 4.3 No `TBD` remains in §6.4
-- [x] 4.4 §3's Phase 4 Status cell reads `complete`
+- [x] 4.1 Full suite still green: `npm run test` — f226cc4
+- [x] 4.2 Lint and format pass: `npm run lint` and `npm run format` — f226cc4
+- [x] 4.3 No `TBD` remains in §6.4 — f226cc4
+- [x] 4.4 §3's Phase 4 Status cell reads `complete` — f226cc4
 
 #### Manual
 
-- [x] 4.5 §6.4 read cold answers "how do I add an ownership test for a new route?"
-- [x] 4.6 §6.1's false clause is gone and `src/middleware.ts` is off the unreachable list
-- [x] 4.7 §1–§5 are otherwise byte-identical to their pre-phase state
+- [x] 4.5 §6.4 read cold answers "how do I add an ownership test for a new route?" — f226cc4
+- [x] 4.6 §6.1's false clause is gone and `src/middleware.ts` is off the unreachable list — f226cc4
+- [x] 4.7 §1–§5 are otherwise byte-identical to their pre-phase state — f226cc4
