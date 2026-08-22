@@ -74,13 +74,13 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status        | Change folder                                                   |
-| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ------------- | --------------------------------------------------------------- |
-| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete      | `context/archive/2026-08-21-testing-runner-bootstrap/`          |
-| 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | complete      | `context/archive/2026-08-21-testing-receipt-confirm-integrity/` |
-| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | complete      | `context/archive/2026-08-21-testing-reports-aggregation-truth/` |
-| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | change opened | `context/changes/testing-cross-user-isolation/`                 |
-| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started   | —                                                               |
+| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status      | Change folder                                                   |
+| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
+| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete    | `context/archive/2026-08-21-testing-runner-bootstrap/`          |
+| 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | complete    | `context/archive/2026-08-21-testing-receipt-confirm-integrity/` |
+| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | complete    | `context/archive/2026-08-21-testing-reports-aggregation-truth/` |
+| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | complete    | `context/archive/2026-08-22-testing-cross-user-isolation/`      |
+| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started | —                                                               |
 
 Order rationale: Phase 1 first because nothing else can land without a
 runner, and because #4 is the cheapest high-impact risk with a loaded
@@ -204,10 +204,27 @@ Filled in by §3 Phase 1.
     above the imports, so the factory body must not close over a binding
     evaluated later — plus `const { POST } = await import("./entries")` _after_
     it. This is the cheapest option and should be tried first.
-  - **Directly** → `vi.mock` cannot help, because mocking the module under test
-    removes the subject, and `vi.mock("astro:env/server", …)` needs a specifier
-    Vitest can resolve, i.e. the alias-stub below anyway. So it remains: extract
-    the pure logic away from the import, or alias-stub the virtual module in
+  - **Directly** → the transitive trick is unavailable, because the module you
+    would mock _is_ the subject. **Corrected by §3 Phase 4** (the mechanism was
+    proven by §3 Phase 3): this bullet used to add that
+    `vi.mock("astro:env/server", …)` "needs a specifier Vitest can resolve,
+    i.e. the alias-stub below anyway", and that is false. **With a factory
+    supplied**, Vitest 4's mock registry intercepts the specifier before Vite's
+    resolver is consulted, so the mock never reaches resolution and needs no
+    alias stub and no config change. Working example:
+    `src/middleware.test.ts`, which mocks `astro:middleware` as
+    `{ defineMiddleware: (fn) => fn }` — a runtime identity helper, so the real
+    `onRequest` body is still the subject — and asserts the five
+    `Cache-Control` cases on the actual middleware. A factory-**less**
+    `vi.mock("astro:env/server")` asks Vitest to auto-mock the real module and
+    therefore still requires resolution; it still fails.
+
+    The genuine limit is intact underneath the correction: this only helps where
+    the virtual module's exports are incidental to what the module does. Where
+    they are the point — `src/lib/supabase.ts` exists to read `SUPABASE_URL` /
+    `SUPABASE_KEY` out of `astro:env/server` — a factory replaces the subject's
+    entire input, so the two original options still stand: extract the pure
+    logic away from the import, or alias-stub the virtual module in
     `vitest.config.ts`.
 
   **Third data point, from §3 Phase 3: `src/components/` is not automatically
@@ -227,14 +244,18 @@ Filled in by §3 Phase 1.
   module that resolves "now" internally would not be — that is the difference
   between a pure unit target and a test that has to fake the environment.
 
-  Still genuinely unreachable as they stand, all for the direct-import reason:
+  Still not reached as they stand, all for the direct-import reason:
   `src/lib/supabase.ts`, `src/lib/config-status.ts` and
   `src/lib/services/receipts.ts` (`astro:env/server`),
   `src/pages/api/receipts/parse.ts` (`astro:env/server` on its own line, not
-  only through the services it calls), `src/middleware.ts` (`astro:middleware`),
-  and `src/lib/receipt-image.ts` (`cloudflare:workers`). For
-  `services/receipts.ts` the extract route is the realistic one — research
-  bounded roughly 135 of its 296 lines as pure.
+  only through the services it calls), and `src/lib/receipt-image.ts`
+  (`cloudflare:workers`). For `services/receipts.ts` the extract route is the
+  realistic one — research bounded roughly 135 of its 296 lines as pure.
+  `src/middleware.ts` came **off** this list in §3 Phase 4: it is unit-tested
+  today (`src/middleware.test.ts`) by the factory-mock route above. For the
+  remaining five the blocker is now a judgement rather than a mechanism — a
+  factory mock would resolve, but each of them exists to read what the virtual
+  module supplies, so mocking it stubs out the behaviour under test.
 
 - **Second limit**: the standalone config inherits **none** of
   `astro.config.mjs`'s Vite settings, including
@@ -346,9 +367,123 @@ Filled in — this layer exists today.
 
 ### 6.4 Adding a test for an API route
 
-TBD — see §3 Phase 4, which delivers the ownership pattern: request as one
-user for another user's resource, assert refusal, and assert the response's
-cache headers.
+Filled in by §3 Phase 4.
+
+- **Location**: co-located beside the route module —
+  `src/pages/api/entries/[id].test.ts` sits next to
+  `src/pages/api/entries/[id].ts`. The bracketed filename is fine: it is a
+  literal name on disk, not a glob, and `src/**/*.test.ts` matches it. In a
+  `describe` title write the route as it is served
+  (`"PATCH /api/entries/[id]"`), not as a filesystem path.
+- **Naming**: `<route>.test.ts`, mirroring the route file exactly —
+  `index.test.ts` for `index.ts`, `[id].test.ts` for `[id].ts`.
+- **Shared fixture**: `src/lib/services/__fixtures__/route-context.ts`. It
+  supplies the two things `supabase-fake.ts` deliberately does not, because
+  they belong to the route boundary rather than the service boundary:
+  - `createRouteClient(methods, responses, user)` — the recording fake from
+    §6.2 narrowed to the methods a route's service actually calls
+    (`"from"`, `"rpc"`), plus an `auth.getUser` surface, because every route
+    checks it before it touches a service. Carry the methods over
+    **selectively**; spreading the whole fake brings its `then` with it and
+    makes the client itself thenable.
+  - `routeContext({ url, method, body, params })` — the slice of `APIContext`
+    the routes read. **`params` is the piece that unblocked ownership testing
+    at all**: `src/pages/api/entries/[id].ts:21` and
+    `src/pages/api/categories/[id].ts:20` both read `context.params.id`, and
+    no hand-rolled context had it, so "A requests B's id" could not be
+    expressed. Bridge the returned object at the call site —
+    `routeContext({ … }) as unknown as Parameters<typeof PATCH>[0]` — because
+    the target type is derived per route and is not knowable in the fixture.
+    The client bridge, by contrast, lives inside the fixture; that collapse of
+    four identical casts is the file's reason to exist.
+- **The two identities are the pgTAP seed users.** `USER_A` and `USER_B` are
+  copied character for character from `supabase/seed.sql`, so a reader moving
+  between `supabase/tests/entries_rls_test.sql` and a route test holds one set
+  of uuids, not two. Interpolate them into the test title —
+  `` `answers 404 when ${USER_A.id} patches an entry owned by ${USER_B.id}` ``
+  — so a failure names the actors rather than saying "the other user".
+- **Reachability is the same question as §6.1's**, and every route so far has
+  the same answer. A route value-imports `@/lib/supabase`, which value-imports
+  `astro:env/server`; `vi.mock("@/lib/supabase", …)` displaces it before it
+  evaluates, so the virtual module is never resolved and no config change is
+  needed. The working shape is the §6.1 one: module-scope mutable holder,
+  `vi.mock` factory that reads the holder, then the handlers pulled off an
+  `await import("./[id]")` **after** it. `Request`/`Response` are native in
+  Node 22 — default `node` environment, no jsdom.
+- **Run**: `npm run test`. No Docker, no database, no network.
+- **The ownership pattern — this is the deliverable.** Drive the route as user
+  A, naming user B's id, and assert the refusal:
+  1. Queue the responses the **service** will await, in order — a route test
+     drives the real service, so §6.2's "queued in call order, not keyed by
+     table" rule governs here too. For "not yours" that means queueing what a
+     caller-scoped client returns for a row it cannot see: an empty result, or
+     PostgREST's `PGRST116` from `.single()`.
+  2. Assert the **status and the body**, never the status alone. The body is
+     where the leak would be.
+  3. Pair it with the owned-resource case in the same file. A refusal test that
+     never sees a success cannot distinguish "correctly refused" from
+     "broken for everyone".
+
+  Two verbs can refuse by two different mechanisms and then need two tests that
+  cannot be merged — `PATCH /api/categories/[id]` keys on `PGRST116` from
+  `.single()` (`src/lib/services/categories.ts:131-133`), `DELETE` on a
+  zero-length `.select("id")` result (`:150-152`). The DELETE shape is the one
+  that goes silently wrong: without the length check the route answers a
+  cheerful 204 for a row it never touched. Assert **404, not 204** by name.
+
+- **The anti-enumeration rule.** The 404 body for "absent" and the 404 body for
+  "not yours" must be byte-identical, so a caller cannot use the response to
+  discover which of another user's ids exist. `"Nie znaleziono wpisu"` and
+  `"Nie znaleziono kategorii"` are that shared string, and
+  `src/pages/api/entries/index.ts:65-68` states the reason in the source.
+  **Changing one of those strings is a security change, not a copy change** —
+  the tests assert them literally, and a route test going red on a string edit
+  is the guard working. The counterpart contrast is worth testing in the same
+  file: a category the caller _does_ own but of the wrong kind answers a
+  specific 400 (`"Kategoria nie pasuje do typu wpisu"`), because there is
+  nothing to hide about a row they demonstrably own. Testing the pair is what
+  shows the ambiguity is a decision rather than an accident.
+- **Reference tests**: `src/pages/api/categories/[id].test.ts` for the simplest
+  two-verb ownership shape; `src/pages/api/entries/[id].test.ts` for the same
+  plus the foreign-key case (A re-pointing A's own entry at B's category);
+  `src/pages/api/entries/index.test.ts` for the 404-vs-400 contrast above.
+  `src/pages/api/receipts/entries.test.ts` shows the batch variant — one
+  foreign `categoryId` among several must refuse the **whole** batch.
+- **The limit that matters most — a route test cannot prove RLS.** The fake has
+  no caller identity and no row store; it resolves queued responses in call
+  order, whoever is asking. Passing `USER_B` instead of `USER_A` changes
+  nothing about what the client returns. So the honest claim of every test here
+  is _given a client that returns nothing for B's id, A gets a refusal whose
+  body does not confirm B's row exists_ — never _RLS returned nothing_. The
+  second half is pgTAP's (§6.3) and is already done. State this in the file's
+  header comment; every route test in the repo carries it.
+
+  **One case has no pgTAP to defer to, and it is the exception to read
+  carefully.** `entries.category_id` is a plain foreign key, and Postgres FK
+  checks are **not** subject to RLS on the referenced table — the migration says
+  so in its own words
+  (`supabase/migrations/20260815164539_create_entries_table.sql:31-36`), and
+  `supabase/tests/entries_rls_test.sql:8-17` excludes the case in writing. The
+  only thing refusing A's entry under B's category is the RLS-scoped lookup in
+  `assertCategoryUsable` (`src/lib/services/entries.ts:154-181`). For that
+  invariant the route tests are the **only** automated guard, at the app layer,
+  and a green suite must not be read as covering the database.
+
+- **Middleware is a route-adjacent target, and it is reachable too.**
+  `src/middleware.test.ts` mocks `astro:middleware` directly with a factory —
+  Vitest 4's mock registry intercepts the specifier before Vite's resolver is
+  consulted, so it never reaches resolution (this corrects §6.1; see there).
+  `defineMiddleware` is a runtime identity helper, so replacing it with
+  `(fn) => fn` leaves the real `onRequest` body as the subject. Use it as the
+  reference for asserting **response headers** rather than payloads.
+- **Same oracle rule as §6.1 and §6.2**, and it is easy to violate here:
+  expectations come from the route source read as a contract, the service read
+  for which PostgREST result each refusal keys on, and `supabase/seed.sql` for
+  the identities — never from running the route and recording what it said.
+  Name the oracles in the header comment. Same teeth rule too: the Phase 4
+  checks were dropping `.select("id")` from `deleteEntry` (turns the DELETE
+  case red) and short-circuiting `assertCategoryUsable` (turns the
+  foreign-`categoryId` cases red), each reverted after.
 
 ### 6.5 Adding a React island test and a viewport check
 
@@ -472,6 +607,53 @@ place than expected, a mocking decision that should be copied.)
   predicates agree — that half is the pgTAP suites'. Any future pair of
   aggregates over one population deserves the same treatment.
 
+**Phase 4 — Isolation beyond the database** (`testing-cross-user-isolation`):
+
+- **The pgTAP half of this phase was already done, and the brief was wrong to
+  assume otherwise.** Both aggregates are `security invoker` with
+  `set search_path = ''`, take **no user-id parameter**, and are `revoke`d from
+  `public`/`anon` — so there is no channel through which a caller can even name
+  another user's uuid, and RLS on `entries` keeps applying inside the function.
+  Both summary suites already assert the cross-user negative _through the RPC_,
+  not merely on the base table (`entries_summary_test.sql:192-220`,
+  `entries_category_summary_test.sql`). The phase therefore added **no
+  migration and no pgTAP**, and spent its budget on the layer that had nothing:
+  the route boundary. Check what the existing suites assert before planning an
+  "extension" to them.
+- **One ownership invariant is now guarded only at the app layer, on purpose,
+  and the record of why is in the database.**
+  `supabase/migrations/20260815164539_create_entries_table.sql:31-36` states
+  that `entries.category_id` is a plain foreign key and that Postgres FK checks
+  are **not** subject to RLS on the referenced table;
+  `supabase/tests/entries_rls_test.sql:8-17` excludes the case in writing. So a
+  raw SQL insert by A naming B's category id is legal and succeeds, and the only
+  refusal is `assertCategoryUsable`'s RLS-scoped lookup
+  (`src/lib/services/entries.ts:154-181`). Its automated guards are the three
+  route tests (`entries/index.test.ts`, `entries/[id].test.ts`,
+  `receipts/entries.test.ts`) and nothing else. A green pgTAP run is not
+  evidence here — see §6.4.
+- **`Cache-Control` coverage is path-blind, and for API responses it rests on
+  one disjunct.** `src/middleware.test.ts` proves what the middleware attaches
+  to a response it is _handed_; it does not prove that any particular page or
+  route reaches the middleware, and it cannot — the paths are strings the test
+  supplies. `PROTECTED_ROUTES` deliberately lists pages only, so every
+  `/api/**` response depends solely on `context.locals.user` being truthy. Drop
+  that disjunct and only the signed-in `/api/**` case goes red (verified). The
+  third disjunct, `isRedirect`, exists for one specific hole: anonymous
+  `GET /` is not protected and has no user, yet `src/pages/index.astro` picks
+  its `Location` from `locals.user`, and that redirect is built by the **page**
+  and arrives through `next()`, so no branch above sees it.
+- **The honest limit of every route test here: changing the fake's identity
+  constant breaks nothing.** The Phase 1 teeth check swapped `USER_A` for
+  `USER_B` in `__fixtures__/route-context.ts` and the suite stayed green,
+  because the fake has no caller identity and no row store — it resolves queued
+  responses in call order, whoever is asking. That is not a defect to fix; it is
+  the statement of what these tests claim. They prove _a route refuses correctly
+  given a client that returns nothing_, and the refusal body does not confirm
+  B's row exists. That RLS is what returns nothing stays pgTAP's, and only
+  pgTAP's. Any future test built on this fixture inherits the same ceiling and
+  must say so in its header comment.
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5) plus two
@@ -542,7 +724,12 @@ these unless the underlying assumption changes.
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-08-22 (§3 Phase 3 marked complete —
+- Strategy (§1–§5) last reviewed: 2026-08-22 (§3 Phase 4 marked complete —
+  risk #3 now has automated coverage at the route and middleware layers: six
+  ownership surfaces assert A being refused B's id, and five middleware cases
+  pin `Cache-Control: private, no-store` on authenticated and auth-varying
+  responses. The database half needed no new work — see §6.6 Phase 4. Earlier:
+  2026-08-22, §3 Phase 3 marked complete —
   risk #2 now has automated coverage at the unit, service, and route layers;
   §4's `API mocking` row re-dated for the fake's RPC extension. Earlier:
   2026-08-21, §3 Phase 1 complete and four §5 gates flipped from planned to

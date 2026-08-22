@@ -748,31 +748,31 @@ window.
 
 #### Automated
 
-- [x] 3.1 Full suite green: `npm run test`
-- [x] 3.2 `src/middleware.test.ts` contributes 5 passing cases
-- [x] 3.3 Lint passes: `npm run lint`
-- [x] 3.4 Typecheck passes: `npm run typecheck`
-- [x] 3.5 No change to `vitest.config.ts` and no new dependency
+- [x] 3.1 Full suite green: `npm run test` — 823a74c
+- [x] 3.2 `src/middleware.test.ts` contributes 5 passing cases — 823a74c
+- [x] 3.3 Lint passes: `npm run lint` — 823a74c
+- [x] 3.4 Typecheck passes: `npm run typecheck` — 823a74c
+- [x] 3.5 No change to `vitest.config.ts` and no new dependency — 823a74c
 
 #### Manual
 
-- [x] 3.6 The `/` case was observed red before `src/middleware.ts` was edited
-- [x] 3.7 `/dashboard` and `/api/entries/summary` show `private, no-store` signed in
-- [x] 3.8 Signed out, `GET /` shows the 302 carrying the header
-- [x] 3.9 The middleware comment no longer claims coverage the code does not provide
-- [x] 3.10 Teeth check: dropping the `locals.user` disjunct turns the signed-in `/api/**` case red
+- [x] 3.6 The `/` case was observed red before `src/middleware.ts` was edited — 823a74c
+- [x] 3.7 `/dashboard` and `/api/entries/summary` show `private, no-store` signed in — 823a74c
+- [x] 3.8 Signed out, `GET /` shows the 302 carrying the header — 823a74c
+- [x] 3.9 The middleware comment no longer claims coverage the code does not provide — 823a74c
+- [x] 3.10 Teeth check: dropping the `locals.user` disjunct turns the signed-in `/api/**` case red — 823a74c
 
 ### Phase 4: Cookbook and plan sync
 
 #### Automated
 
-- [ ] 4.1 Full suite still green: `npm run test`
-- [ ] 4.2 Lint and format pass: `npm run lint` and `npm run format`
-- [ ] 4.3 No `TBD` remains in §6.4
-- [ ] 4.4 §3's Phase 4 Status cell reads `complete`
+- [x] 4.1 Full suite still green: `npm run test`
+- [x] 4.2 Lint and format pass: `npm run lint` and `npm run format`
+- [x] 4.3 No `TBD` remains in §6.4
+- [x] 4.4 §3's Phase 4 Status cell reads `complete`
 
 #### Manual
 
-- [ ] 4.5 §6.4 read cold answers "how do I add an ownership test for a new route?"
-- [ ] 4.6 §6.1's false clause is gone and `src/middleware.ts` is off the unreachable list
-- [ ] 4.7 §1–§5 are otherwise byte-identical to their pre-phase state
+- [x] 4.5 §6.4 read cold answers "how do I add an ownership test for a new route?"
+- [x] 4.6 §6.1's false clause is gone and `src/middleware.ts` is off the unreachable list
+- [x] 4.7 §1–§5 are otherwise byte-identical to their pre-phase state
