@@ -516,14 +516,14 @@ proves flaky in practice.
 
 #### Automated
 
-- [ ] 2.1 Prettier clean on every edited markdown file
-- [ ] 2.2 No document still asserts the e2e suite is CI-less
-- [ ] 2.3 Full local gate passes from a clean install
+- [x] 2.1 Prettier clean on every edited markdown file
+- [x] 2.2 No document still asserts the e2e suite is CI-less
+- [x] 2.3 Full local gate passes from a clean install
 - [ ] 2.4 `ci` and `e2e` both pass on the pull request carrying these edits
 
 #### Manual
 
-- [ ] 2.5 §5's and §4's e2e rows agree with what the workflow actually runs
-- [ ] 2.6 §5's `db-test` paragraph carries the measured figures and leaves its trigger question open
-- [ ] 2.7 §6.6's Running-in-CI bullet is legible to someone who did not write it
-- [ ] 2.8 `CLAUDE.md`'s job count and `deploy` `needs:` list match the file
+- [x] 2.5 §5's and §4's e2e rows agree with what the workflow actually runs
+- [x] 2.6 §5's `db-test` paragraph carries the measured figures and leaves its trigger question open
+- [x] 2.7 §6.6's Running-in-CI bullet is legible to someone who did not write it
+- [x] 2.8 `CLAUDE.md`'s job count and `deploy` `needs:` list match the file

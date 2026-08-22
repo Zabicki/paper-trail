@@ -73,8 +73,33 @@ npm ci && npx supabase start -x vector
 
 Port 4321 must be free — `reuseExistingServer: false` is a deliberate
 sibling-worktree guard (see the comment in `playwright.config.ts`). Set
-`E2E_PORT` to move out of the way of a dev server you want to keep.
+`E2E_PORT` to move out of the way of a dev server you want to keep. Both of
+those are local concerns only: a runner starts with nothing else on the box, so
+there is no port to contend for and no server worth reusing.
 
 Credentials default to the local-only seed user from `supabase/seed.sql` and are
 overridable via `E2E_EMAIL` / `E2E_PASSWORD`. Never point them at the demo
 account: it exists in production.
+
+### In CI
+
+The suite also runs in CI, in the **`e2e` job** of `.github/workflows/ci.yml`,
+on pushes **and** pull requests — so a red spec blocks a merge, and `deploy`
+waits on it. The job provisions its own Supabase stack and needs no secrets: it
+scrapes the local stack's `SUPABASE_URL` / `SUPABASE_KEY` out of
+`npx supabase status -o env`, and `astro dev` picks them up from the process
+environment because a checkout has neither `.dev.vars` nor `.env`.
+
+A failure uploads `playwright-report/` and `test-results/` as the
+`playwright-report` artifact (7-day retention). Download it from the run summary
+rather than reading the log — it carries the HTML report, the first-retry trace
+(`retries: 2` is on under CI) and the failure screenshots.
+
+Nothing in `playwright.config.ts` is CI-specific beyond the `process.env.CI`
+branches already there. A spec that passes locally and fails only in CI is far
+more likely to be a real ordering or timing bug than an environment difference.
+
+The job costs 211–237 s, of which about 140 s is `supabase start` + `db reset`
+and only 25–30 s is the suite. Because `workers: 1` is load-bearing, that last
+number grows linearly with every spec added — see
+`context/foundation/test-plan.md` §6.7.

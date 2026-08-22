@@ -100,17 +100,17 @@ releases**, not verified selections. Rows resolved by a shipped phase carry a
 real version instead; as of §3 Phase 1 those are `unit + integration`,
 `typecheck`, and `database / RLS`.
 
-| Layer                     | Tool                                                                   | Version                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| API mocking               | none — hand-rolled fake + `vi.mock`                                    | — (no dependency)                                 | Resolved by §3 Phase 2. The Supabase client is the boundary worth faking; internal service modules are not. A recording fake in `src/lib/services/__fixtures__/supabase-fake.ts` covers the service layer, and Vitest's built-in `vi.mock` covers the route layer. **No MSW, no `getViteConfig`, and no alias stub were needed** — see §6.2 and §6.1's corrected limit. Extended by §3 Phase 3 with `limit` and a **terminal** `rpc`, so the fake now reaches RPC-based paths (both reports aggregates) as well as builder chains; `checked: 2026-08-22`                                                                                                                                                                                                                                                                                                                                                                                                   |
-| database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| typecheck                 | `@astrojs/check` (`astro check`)                                       | per `package.json`                                | Wired by §3 Phase 1: `npm run typecheck`, and a CI step in the `ci` job after `astro sync` and before `build`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| e2e                       | Playwright (`@playwright/test`)                                        | `1.62.1` (pinned exact)                           | **Reverses this row's earlier "none — deliberate".** Two reviewed specs exist plus a `setup` project that signs in and writes `storageState`: `tests/e2e/seed.spec.ts` (risk #5, the reference test) and `tests/e2e/expense-reaches-reports.spec.ts` (risks #2 and #5 — one expense read back through both the day list and the category report, i.e. the aggregate path no component test reaches). Nothing is mocked: it drives a real `astro dev` server on workerd against a real local Supabase stack, because the risk lives in the seams between middleware, hydration, the API and RLS — faking any of them would test the fake. Serial by necessity (`workers: 1`): every spec signs in as the one seed user from `supabase/seed.sql` and shares that account's rows. Local only — no CI step; whether that changes is now an open change of its own, `context/changes/e2e-ci-gate/`. See §6.6 and the reversal note in §7; `checked: 2026-08-22` |
-| AI-native                 | none — deferred                                                        | —                                                 | An offline receipt-classification eval was proposed and cut by decision. See §7                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Layer                     | Tool                                                                   | Version                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| API mocking               | none — hand-rolled fake + `vi.mock`                                    | — (no dependency)                                 | Resolved by §3 Phase 2. The Supabase client is the boundary worth faking; internal service modules are not. A recording fake in `src/lib/services/__fixtures__/supabase-fake.ts` covers the service layer, and Vitest's built-in `vi.mock` covers the route layer. **No MSW, no `getViteConfig`, and no alias stub were needed** — see §6.2 and §6.1's corrected limit. Extended by §3 Phase 3 with `limit` and a **terminal** `rpc`, so the fake now reaches RPC-based paths (both reports aggregates) as well as builder chains; `checked: 2026-08-22`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| typecheck                 | `@astrojs/check` (`astro check`)                                       | per `package.json`                                | Wired by §3 Phase 1: `npm run typecheck`, and a CI step in the `ci` job after `astro sync` and before `build`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| e2e                       | Playwright (`@playwright/test`)                                        | `1.62.1` (pinned exact)                           | **Reverses this row's earlier "none — deliberate".** Two reviewed specs exist plus a `setup` project that signs in and writes `storageState`: `tests/e2e/seed.spec.ts` (risk #5, the reference test) and `tests/e2e/expense-reaches-reports.spec.ts` (risks #2 and #5 — one expense read back through both the day list and the category report, i.e. the aggregate path no component test reaches). Nothing is mocked: it drives a real `astro dev` server on workerd against a real local Supabase stack, because the risk lives in the seams between middleware, hydration, the API and RLS — faking any of them would test the fake. Serial by necessity (`workers: 1`): every spec signs in as the one seed user from `supabase/seed.sql` and shares that account's rows. **Runs in CI** since `e2e-ci-gate` (`context/changes/e2e-ci-gate/`), which answered the open cost question with a measurement: the `e2e` job in `.github/workflows/ci.yml` runs on pushes **and** pull requests, provisions its own Supabase stack, needs no secrets, and costs 211–237 s. Like `db-test` it provisions a database, so it is on the local side of the CLI/grants divide. See §5, §6.6, §6.7 and the reversal note in §7; `checked: 2026-08-22` |
+| AI-native                 | none — deferred                                                        | —                                                 | An offline receipt-classification eval was proposed and cut by decision. See §7                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 **Stack grounding tools (current session):**
 
@@ -134,31 +134,57 @@ phase lands; before that, the gate is planned.
 | from-scratch migration apply      | CI (`db-test` job)      | required — wired; runs on `master` pushes, **not** pull requests | a migration that cannot be applied to a clean database                    |
 | component tests                   | local + CI              | required after §3 Phase 5                                        | list-state and inline-edit regressions in React islands                   |
 | narrow-viewport overflow check    | CI on PR                | required after §3 Phase 5                                        | document-level horizontal scroll at phone widths                          |
-| e2e (Playwright)                  | local only              | **not required — not wired in CI**; see `e2e-ci-gate`            | cross-boundary regressions: hydration, session, API and RLS in one flow   |
+| e2e (Playwright)                  | local + CI (`e2e` job)  | required — wired; runs on pushes **and** pull requests           | cross-boundary regressions: hydration, session, API and RLS in one flow   |
 | post-edit hook                    | local (agent loop)      | recommended after §3 Phase 5                                     | the overflow and unit checks at edit time, before review                  |
 
-The two `db-test` gates run on `master` pushes only, because the wall-clock
-cost of `supabase start` on a runner was unmeasured when they were wired.
-Production is still protected — `deploy` declares `needs: [ci, db-test]`, so a
-red database gate leaves the hosted schema untouched — but a bad migration is
-discovered _after_ merge rather than in the pull request that introduced it.
-Widening the trigger to pull requests is a cost decision, not a correctness
-one.
+The two `db-test` gates run on `master` pushes only. That trigger was chosen
+because the wall-clock cost of `supabase start` on a runner was unmeasured when
+they were wired; it no longer is. On run `32489937016` (`master`, 2026-08-21)
+`npx supabase start -x vector` took **134 s** and the whole `db-test` job
+**195 s**. Since `e2e-ci-gate`, the `e2e` job pays that same provisioning cost on
+every pull request already, and it runs 211–237 s, so widening `db-test` to pull
+requests would add **no wall-clock to the critical path** — it would add
+runner-minutes and a second Docker-dependent job per PR. **That decision is
+deliberately still open**; `e2e-ci-gate` supplied the numbers and explicitly did
+not make it. Until it is made, production is still protected — `deploy` declares
+`needs: [ci, db-test, e2e]`, so a red database gate leaves the hosted schema
+untouched — but a bad migration is discovered _after_ merge rather than in the
+pull request that introduced it.
 
-The e2e gate is deliberately listed as **not required**, and the honest
-reason is that it is not wired: `.github/workflows/ci.yml` has no Playwright
-step, so nothing enforces it on a pull request. Wiring it is not free — the
-runner would need `npx playwright install --with-deps chromium` **and** a live
-Supabase stack, which is the same `supabase start` cost that already keeps the
-two `db-test` gates off pull requests. Until that cost is paid, a green CI run
-is not evidence the e2e suite passes; run `npm run test:e2e` locally before
-merging anything that touches the day view or the reports boards. Promoting this
-row to required is a cost decision, and it now has a change of its own —
-`context/changes/e2e-ci-gate/` — which must answer it with a measured number
-rather than inherit `db-test`'s unmeasured one, and must land in a defined order
-against §3 Phase 5's own browser-install step. That change is also where "stays
-local-only, deliberately" is a legitimate outcome; what is not legitimate is
-this row staying silent about which it is.
+The e2e gate is **wired and enforced** since `e2e-ci-gate`
+(`context/changes/e2e-ci-gate/`). `.github/workflows/ci.yml` carries a fourth
+job, `e2e`, with **no `if:` guard**, so it inherits the workflow's push _and_
+pull-request triggers: a red suite blocks a merge as well as a release, and
+`deploy` now declares `needs: [ci, db-test, e2e]`. The job provisions its own
+stack (`npm ci` → `npx supabase start -x vector` → `npx supabase db reset`),
+installs Chromium in a step of its own, and runs `npm run test:e2e` against a
+real `astro dev` server; on failure it uploads `playwright-report/` and
+`test-results/` as an artifact.
+
+It is a **separate job, not steps appended to `db-test`**, which duplicates
+roughly 140 s of stack provisioning per push. That is the deliberate price of a
+red gate that names its own cause: a browser flake inside `db-test` would block
+`deploy` under a job name that says "db-test", and would muddy that job's
+`if: failure()` docker-logs dump, which today has exactly one meaning. Being a
+database-provisioning job puts `e2e` on the local side of the same CLI/grants
+divide — `npm ci` then `npx supabase`, never `supabase/setup-cli@v1`
+(`lessons.md`).
+
+It needs **no secrets and no `environment:`**, which was the change's one open
+question and is now settled empirically: `astro dev` on workerd resolves
+`.dev.vars`, then `.env`, then the process environment, and with neither file in
+a checkout the third is enough. The app's two variables come out of the job's own
+stack via `npx supabase status -o env`, so their values are the _local_ stack's
+and never the hosted project's.
+
+Measured on pull requests, 2026-08-22 (runs `32591458225`, `32591965510`,
+`32592444333`): the `e2e` job takes **211–237 s** end to end against a `ci` job
+of ~100 s, so it is the critical path and pull-request feedback went from ~100 s
+to about four minutes — under the ~285 s projected. Because the suite is serial
+by necessity (`workers: 1`: every spec signs in as the one seed user from
+`supabase/seed.sql` and shares that account's rows), its wall-clock grows
+linearly with spec count, so this trigger decision has a shelf life. Per-step
+figures and the caching verdict are in §6.7.
 
 The post-edit hook is a **recommended local** convenience, never a CI
 substitute. Configuration of hooks is out of scope for this plan.
@@ -586,10 +612,30 @@ form submissions are forbidden`; a browser sends `Origin` itself, an
   Both breaks turned exactly the reports step red while the day-list steps
   stayed green, which is also how you know the two halves are not coupled.
 
-- **Reach for this layer last.** E2E earns its place only when a risk crosses
-  several boundaries or exists only in the rendered, hydrated UI. If §6.1–§6.4
-  can prove it, use those — they are faster, less flaky, and gated in CI, which
-  this layer is not.
+- **Running in CI.** The suite runs in the **`e2e` job** of
+  `.github/workflows/ci.yml`, on pushes _and_ pull requests, so a red spec blocks
+  a merge. The job provisions its own Supabase stack and needs **no secrets**:
+  `astro dev` on workerd falls back to the process environment when `.dev.vars`
+  and `.env` are both absent, and the job feeds it `SUPABASE_URL` /
+  `SUPABASE_KEY` scraped out of `npx supabase status -o env` — the local stack's
+  values, never the hosted project's. A failing run uploads `playwright-report/`
+  and `test-results/` as the `playwright-report` artifact (7-day retention),
+  which is where the HTML report, the first-retry trace and the failure
+  screenshots are; download it from the run's summary page rather than reading
+  the log. Nothing in `playwright.config.ts` needed changing for any of this —
+  its `process.env.CI` branches (`forbidOnly`, `retries: 2`, the `github`
+  reporter) were written for it.
+
+- **Reach for this layer last — for cost, not for lack of enforcement.** E2E
+  earns its place only when a risk crosses several boundaries or exists only in
+  the rendered, hydrated UI. If §6.1–§6.4 can prove it, use those: they are
+  faster and less flaky, and the difference is now measured rather than
+  rhetorical. The `e2e` job costs 211–237 s of which ~140 s is stack
+  provisioning, against a `ci` job of ~100 s that carries lint, typecheck, the
+  whole Vitest suite and a build — so `e2e` is the critical path on every pull
+  request, and each spec added to it lengthens that path for everyone
+  (`workers: 1` is load-bearing, so the suite cannot absorb a new spec in
+  parallel).
 
 ### 6.7 Per-rollout-phase notes
 
@@ -754,6 +800,64 @@ place than expected, a mocking decision that should be copied.)
   pgTAP's. Any future test built on this fixture inherits the same ceiling and
   must say so in its header comment.
 
+**Out of phase — E2E wired into CI** (`e2e-ci-gate`, 2026-08-22). Not a §3
+rollout phase: it added no test, only enforcement of the two specs that already
+existed.
+
+- **The measurement the change was opened for.** Per-step durations of the `e2e`
+  job, read from the Actions API across the three pull-request runs on
+  2026-08-22 — `32591458225` (first green), `32591965510` (the teeth check, red),
+  `32592444333` (green after revert). Seconds:
+
+  | Step                                          | 458225 | 965510 (red) | 444333 |
+  | --------------------------------------------- | ------ | ------------ | ------ |
+  | `npm ci`                                      | 28     | 15           | 13     |
+  | `npx supabase start -x vector`                | 106    | 104          | 114    |
+  | `npx supabase db reset`                       | 32     | 30           | 28     |
+  | export URL + anon key                         | <1     | 1            | 1      |
+  | `npx playwright install --with-deps chromium` | 30     | 23           | 21     |
+  | `npm run test:e2e`                            | 30     | 49           | 25     |
+  | **job total**                                 | 237    | 229          | 211    |
+
+  The red run's suite step is long because `retries: 2` is on under CI. Compare
+  `db-test` on run `32489937016` (`master`, 2026-08-21): `supabase start -x
+vector` 134 s, whole job 195 s.
+
+- **The suite itself is not the cost; provisioning is.** 25–30 s on a runner
+  against 23.7 s for the same three tests locally, i.e. runner hardware costs
+  almost nothing here. ~140 s of every run — two thirds of the job — is
+  `supabase start` + `db reset`, duplicated from `db-test` by design (§5).
+- **Caching verdict: not yet.** `npx playwright install --with-deps chromium` is
+  21–30 s, 9–13% of the job and a fifth of `supabase start`. `actions/cache` on
+  `~/.cache/ms-playwright` keyed on the pinned `@playwright/test` version is the
+  follow-up if that ratio moves — with `install-deps` kept separate, since apt
+  packages are not cacheable. Caching it today would optimise the small term.
+- **`astro dev` on workerd reads the process environment, and that is a fact
+  about the whole app, not only about CI.** Precedence is `.dev.vars` → `.env` →
+  process env; the dev server prints `Using secrets defined in .dev.vars` when it
+  used the file and prints no such line when it fell through to the environment.
+  Verified by moving both files aside and exporting the pair into the shell: a
+  real password sign-in completed. This is what lets the `e2e` job carry no
+  `secrets.*` and no `environment:`.
+- **The quote strip in the export step is load-bearing.** `supabase status -o env`
+  emits `SUPABASE_URL="http://127.0.0.1:54321"` with the double quotes as
+  _literal characters_, and `$GITHUB_ENV` does not interpret them. A URL whose
+  first character is `"` still passes `createClient()`'s null-check in
+  `src/lib/supabase.ts`, so the break would surface much later as a fetch failure
+  during sign-in rather than as a config error. The same `grep` that strips the
+  quotes also filters to two variables, keeping the service-role key and the JWT
+  secret out of the app's environment.
+- **This trigger decision has a shelf life.** `workers: 1` is a necessity, not a
+  default — every spec signs in as the one seed user and shares that account's
+  rows — so suite wall-clock grows _linearly_ with spec count. Three specs cost
+  25–30 s inside a 211–237 s job today; the provisioning floor hides the growth
+  until it does not. Revisit the trigger, or the serial constraint, when the
+  suite's own step approaches the provisioning cost.
+- **The gate was seen red before it was trusted.** Forcing `GET /api/entries` to
+  return `[]` — the break §6.6 records for `seed.spec.ts` — turned `e2e` red on
+  the pull request while `ci` stayed green, and the artifact carried the trace.
+  The `deploy` edge (`needs: [ci, db-test, e2e]`) was only added afterwards.
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5) plus two
@@ -835,15 +939,27 @@ these unless the underlying assumption changes.
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-08-22 (§4's `e2e` row and §5's `e2e`
+- Strategy (§1–§5) last reviewed: 2026-08-22 (§5's `e2e` gate row flipped from
+  **not required — not wired** to **required — wired**, and §4's `e2e` row with
+  it: `e2e-ci-gate` added a fourth CI job that runs the Playwright suite on
+  pushes _and_ pull requests, and `deploy` now declares
+  `needs: [ci, db-test, e2e]`. The change was opened to answer a cost question
+  with a number and did: 211–237 s per job, of which ~140 s is stack
+  provisioning and 21–30 s is the browser install — see §6.7 for the per-step
+  table and the not-yet caching verdict. §5's `db-test` paragraph was amended in
+  the same pass to carry the measured figures it previously called unmeasured;
+  widening that job to pull requests is now wall-clock-free and deliberately
+  left open. §6.6 gained a Running-in-CI bullet and lost the clause that said
+  this layer is ungated. Earlier the same day: §4's `e2e` row and §5's `e2e`
   gate row re-dated for a second reviewed spec,
   `tests/e2e/expense-reaches-reports.spec.ts` — risks #2 and #5, the first
   automated cover the reports **rendering** path has at any layer, and the first
   spec written outside a rollout phase. It changes no §3 row: risk #2's phase
   shipped its unit/service/route cover and stays `complete`, and this is added
-  cover for the same risk one layer up, not a reopening. §5's row still reads
-  not-required, and the cost decision behind that now belongs to
-  `context/changes/e2e-ci-gate/`. Earlier the same day: §3 Phase 4 marked complete —
+  cover for the same risk one layer up, not a reopening. At that point §5's row
+  still read not-required, and the cost decision behind it was handed to
+  `context/changes/e2e-ci-gate/` — the change recorded above. Earlier the same
+  day: §3 Phase 4 marked complete —
   risk #3 now has automated coverage at the route and middleware layers: six
   ownership surfaces assert A being refused B's id, and five middleware cases
   pin `Cache-Control: private, no-store` on authenticated and auth-varying

@@ -38,15 +38,51 @@ plus a `setup` project:
 chromium` actually cost on a runner? `db-test`'s trigger was narrowed on an
    _unmeasured_ number (`CLAUDE.md`, §5); repeating that mistake here would
    re-litigate the same unknown a third time.
+
+   → **Answered (2026-08-22).** The whole `e2e` job is **211–237 s** across
+   three pull-request runs (`32591458225`, `32591965510`, `32592444333`), under
+   the ~285 s projected. `npx supabase start -x vector` 104–114 s and
+   `npx supabase db reset` 28–32 s, i.e. ~140 s of provisioning; the browser
+   install is only **21–30 s** and the suite itself 25–30 s against 23.7 s
+   locally. Caching Chromium would optimise the small term, so it was not done.
+   The `db-test` figures the change also needed: 134 s / 195 s
+   (run `32489937016`). Per-step table in `test-plan.md` §6.7.
+
 2. Push-only (the `db-test` precedent) or pull-request (what a merge gate
    means)? These are different products: push-only catches a break after merge
    and before deploy; PR catches it in review. §5's e2e row asks for the latter,
    `db-test`'s existing shape delivers the former.
+
+   → **Answered.** Pull request **and** push. The job carries no `if:` guard, so
+   it inherits the workflow triggers; that is what makes it a merge gate and what
+   §5's row asked for. At ~211 s against a ~100 s `ci` job it becomes the PR
+   critical path, which was judged affordable.
+
 3. Does `deploy` gain `needs: e2e`? Today it is `needs: [ci, db-test]`.
+
+   → **Answered.** Yes — `needs: [ci, db-test, e2e]`. The edge was added only
+   _after_ the teeth check was observed red (forced `GET /api/entries` → `[]`,
+   run `32591965510`: `e2e` red, `ci` green, trace in the artifact). Rollback is
+   a one-line revert of that list, which leaves the job reporting without
+   holding a release.
+
 4. Serial-by-necessity is a real constraint: `workers: 1`, because every spec
    signs in as the one seed user from `supabase/seed.sql` and shares that
    account's rows. Suite wall-clock grows linearly with spec count, so the
    trigger decision has a shelf life.
+
+   → **Answered: acknowledged, not solved.** `workers: 1` is unchanged — making
+   the suite parallel is a fixtures problem, not a CI one. Three specs cost
+   25–30 s inside a 211–237 s job, so the provisioning floor hides the growth for
+   now. Recorded as a shelf-life note in `test-plan.md` §6.7 and
+   `tests/e2e/README.md`; revisit when the suite's own step approaches the
+   provisioning cost.
+
+A fifth question surfaced and was answered along the way: **does the job need
+secrets?** No. `astro dev` on workerd resolves `.dev.vars` → `.env` → process
+environment, and a checkout has neither file, so `npx supabase status -o env`
+piped into `$GITHUB_ENV` is enough. The job references no `secrets.*` and
+declares no `environment:`.
 
 **Constraints inherited from documents, not to be re-derived:**
 
