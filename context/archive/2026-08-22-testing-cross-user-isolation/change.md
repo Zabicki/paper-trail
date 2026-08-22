@@ -1,10 +1,10 @@
 ---
 change_id: testing-cross-user-isolation
 title: Prove one user's financial data is unreachable by another, on every path
-status: implemented
+status: archived
 created: 2026-08-22
 updated: 2026-08-22
-archived_at: null
+archived_at: 2026-08-22T10:46:09Z
 ---
 
 ## Notes
