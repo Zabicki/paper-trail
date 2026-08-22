@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createSupabaseFake, type FakeResponse } from "@/lib/services/__fixtures__/supabase-fake";
+import { createRouteClient, routeContext, USER_A, type Identity } from "@/lib/services/__fixtures__/route-context";
+import type { FakeResponse } from "@/lib/services/__fixtures__/supabase-fake";
 import type { createClient } from "@/lib/supabase";
 
 // Board A's endpoint, asserted at its own boundary: an HTTP request in, an HTTP
@@ -61,33 +62,25 @@ const { GET } = await import("./summary");
 
 type RouteContext = Parameters<typeof GET>[0];
 
-const SIGNED_IN = { id: "00000000-0000-4000-8000-000000000001" };
+const SIGNED_IN = USER_A;
 
 /**
  * The recording fake plus the `auth.getUser` surface the route checks before it
  * touches the service.
  *
- * Only `rpc` is carried across: it is the single method `getEntriesSummary`
- * calls on the client, and copying the whole fake would drag its `then` along
- * and make the client itself thenable.
+ * The method selection stays LOCAL: `rpc` is the single method
+ * `getEntriesSummary` calls on the client, and it is a property of this route,
+ * not of the shared helper. Carrying methods across selectively is what keeps
+ * the fake's `then` off the client and stops the client itself being thenable.
  */
-function fakeClient(responses: FakeResponse[], user: { id: string } | null) {
-  const fake = createSupabaseFake(responses);
-  const client = {
-    rpc: fake.client.rpc,
-    auth: { getUser: () => Promise.resolve({ data: { user } }) },
-  };
-  return { client: client as unknown as NonNullable<MaybeClient>, calls: fake.calls };
+function fakeClient(responses: FakeResponse[], user: Identity | null) {
+  return createRouteClient(["rpc"], responses, user);
 }
 
 function getRequest(search: string): RouteContext {
-  const url = new URL(`https://papertrail.test/api/entries/summary${search}`);
-  const request = new Request(url, { method: "GET" });
-  // The route reads exactly three things off the context — `url`, `request`
-  // and `cookies`, the latter two only to hand to `createClient`, which is
-  // mocked. A full APIContext would be several hundred lines of Astro
-  // internals for no added signal.
-  return { request, cookies: {}, url } as unknown as RouteContext;
+  return routeContext({
+    url: `https://papertrail.test/api/entries/summary${search}`,
+  }) as unknown as RouteContext;
 }
 
 /** A well-formed query; individual tests override one parameter at a time. */

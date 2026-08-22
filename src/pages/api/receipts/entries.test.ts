@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createSupabaseFake, type FakeResponse } from "@/lib/services/__fixtures__/supabase-fake";
+import { createRouteClient, routeContext, USER_A, type Identity } from "@/lib/services/__fixtures__/route-context";
+import type { FakeResponse } from "@/lib/services/__fixtures__/supabase-fake";
 import type { createClient } from "@/lib/supabase";
 
 // The receipt-confirm route, asserted at its own boundary: an HTTP request in,
@@ -79,33 +80,25 @@ function storedRow(id: number, amount: number, description: string | null) {
  * The recording fake plus the `auth.getUser` surface the route checks before it
  * touches the service.
  *
- * Only `from` is carried across from the fake: it is the single method the
- * service calls on the top-level client, and copying the whole object would drag
- * the fake's `then` along and make the client itself thenable.
+ * The `from`-only method selection stays LOCAL: it is the single method the
+ * service calls on the top-level client, and it is a property of this route
+ * rather than of the shared helper. Carrying methods across selectively is what
+ * keeps the fake's `then` off the client and stops the client itself being
+ * thenable.
  */
-function fakeClient(responses: FakeResponse[], user: { id: string } | null) {
-  const fake = createSupabaseFake(responses);
-  const client = {
-    from: fake.client.from,
-    auth: { getUser: () => Promise.resolve({ data: { user } }) },
-  };
-  return { client: client as unknown as NonNullable<MaybeClient>, calls: fake.calls };
+function fakeClient(responses: FakeResponse[], user: Identity | null) {
+  return createRouteClient(["from"], responses, user);
 }
 
 function postRequest(body: unknown): RouteContext {
-  const request = new Request("https://papertrail.test/api/receipts/entries", {
+  return routeContext({
+    url: "https://papertrail.test/api/receipts/entries",
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  // The route reads exactly two things off the context — `request` and
-  // `cookies`, the latter only to hand to `createClient`, which is mocked. A
-  // full APIContext would be several hundred lines of Astro internals for no
-  // added signal.
-  return { request, cookies: {} } as unknown as RouteContext;
+    body,
+  }) as unknown as RouteContext;
 }
 
-const SIGNED_IN = { id: "00000000-0000-4000-8000-000000000001" };
+const SIGNED_IN = USER_A;
 
 describe("POST /api/receipts/entries", () => {
   it("answers 500 when Supabase is not configured", async () => {

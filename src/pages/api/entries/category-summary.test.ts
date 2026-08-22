@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createSupabaseFake, type FakeResponse } from "@/lib/services/__fixtures__/supabase-fake";
+import { createRouteClient, routeContext, USER_A, type Identity } from "@/lib/services/__fixtures__/route-context";
+import type { FakeResponse } from "@/lib/services/__fixtures__/supabase-fake";
 import type { createClient } from "@/lib/supabase";
 
 // Board B's endpoint, asserted at its own boundary. The twin of
@@ -43,22 +44,23 @@ const { GET } = await import("./category-summary");
 
 type RouteContext = Parameters<typeof GET>[0];
 
-const SIGNED_IN = { id: "00000000-0000-4000-8000-000000000001" };
+const SIGNED_IN = USER_A;
 
-/** The recording fake plus the `auth.getUser` surface the route checks first. */
-function fakeClient(responses: FakeResponse[], user: { id: string } | null) {
-  const fake = createSupabaseFake(responses);
-  const client = {
-    rpc: fake.client.rpc,
-    auth: { getUser: () => Promise.resolve({ data: { user } }) },
-  };
-  return { client: client as unknown as NonNullable<MaybeClient>, calls: fake.calls };
+/**
+ * The recording fake plus the `auth.getUser` surface the route checks first.
+ *
+ * The `rpc`-only method selection stays local — it is a property of this route,
+ * not of the shared helper. See the summary twin for why the fake is never
+ * spread wholesale.
+ */
+function fakeClient(responses: FakeResponse[], user: Identity | null) {
+  return createRouteClient(["rpc"], responses, user);
 }
 
 function getRequest(search: string): RouteContext {
-  const url = new URL(`https://papertrail.test/api/entries/category-summary${search}`);
-  const request = new Request(url, { method: "GET" });
-  return { request, cookies: {}, url } as unknown as RouteContext;
+  return routeContext({
+    url: `https://papertrail.test/api/entries/category-summary${search}`,
+  }) as unknown as RouteContext;
 }
 
 function search(overrides: Record<string, string> = {}): string {
