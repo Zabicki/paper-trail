@@ -6,15 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **RLS on day one.** Every new table gets row-level security enabled in the same migration that creates it, with granular per-operation, per-role policies. Per the tech-stack doc, the PRD's per-user data isolation guarantee **fails silently** otherwise — nothing errors, the data just leaks across users. See [Data layer](#data-layer).
 - **`createClient()` can return `null`.** `src/lib/supabase.ts` returns `null` when either Supabase env var is missing. Every caller must null-check — see `src/pages/api/auth/signin.ts` (redirects with an error) and `src/middleware.ts` (falls back to `locals.user = null`). Follow this pattern for any new Supabase-backed code path. See [Env vars](#env-vars-are-optional-by-design).
-- **Never add `export const prerender = false`.** It is a no-op under `output: "server"`. Use `prerender = true` only to opt a specific page *into* static generation.
-- **`Cache-Control: private, no-store` on every authenticated response.** `src/middleware.ts` sets it for protected routes and for any request with a signed-in user; keep it that way. RLS guards the *database* — it does nothing about a rendered SSR page cached at Cloudflare's edge and served to a different user. This is a second, independent path to the same isolation guarantee failing, and like the RLS failure it is **silent**. See [Deployment](#deployment).
-- **`Astro.locals.runtime` does not exist.** `@astrojs/cloudflare` v13 removed it; access bindings directly. Nearly every Astro-on-Cloudflare tutorial and snippet predates this, so it is the most likely wrong thing to reach for — and it fails at *runtime inside workerd*, not at type-check.
+- **Never add `export const prerender = false`.** It is a no-op under `output: "server"`. Use `prerender = true` only to opt a specific page _into_ static generation.
+- **`Cache-Control: private, no-store` on every authenticated response.** `src/middleware.ts` sets it for protected routes and for any request with a signed-in user; keep it that way. RLS guards the _database_ — it does nothing about a rendered SSR page cached at Cloudflare's edge and served to a different user. This is a second, independent path to the same isolation guarantee failing, and like the RLS failure it is **silent**. See [Deployment](#deployment).
+- **`Astro.locals.runtime` does not exist.** `@astrojs/cloudflare` v13 removed it; access bindings directly. Nearly every Astro-on-Cloudflare tutorial and snippet predates this, so it is the most likely wrong thing to reach for — and it fails at _runtime inside workerd_, not at type-check.
 - **No native modules on workerd.** `sharp` and friends cannot run. For image work use the Cloudflare Images binding (`env.IMAGES`, already bound — see `astro.config.mjs`) or resize client-side before upload.
 - **Use `astro dev`, never `wrangler dev`.** At adapter v13 `astro dev` already runs on workerd via the Cloudflare Vite plugin. Mixing the two produces confusing env-var behaviour, since workerd reads `.dev.vars` and not `.env`.
 
 ## What this project is
 
-**PaperTrail** — a multi-user personal expense/income tracker replacing a sprawling Google Sheet. The binding product constraint is *input friction*: logging a day's spending must take minimal taps. Core scope: user-defined categories, day-contextualized entry with back-dating, date-range and category-distribution charts, a filter that excludes large recurring costs (rent, car payments) so day-to-day patterns become visible, and AI receipt parsing that assigns line items into the *user's own* categories.
+**PaperTrail** — a multi-user personal expense/income tracker replacing a sprawling Google Sheet. The binding product constraint is _input friction_: logging a day's spending must take minimal taps. Core scope: user-defined categories, day-contextualized entry with back-dating, date-range and category-distribution charts, a filter that excludes large recurring costs (rent, car payments) so day-to-day patterns become visible, and AI receipt parsing that assigns line items into the _user's own_ categories.
 
 Read `context/foundation/prd.md` before non-trivial feature work — it holds the numbered functional requirements (FR-xxx), non-goals, and success criteria. `context/foundation/tech-stack.md` records why this stack was chosen.
 
@@ -26,10 +26,18 @@ Read `context/foundation/prd.md` before non-trivial feature work — it holds th
 - `npm run build` — production build (SSR via `@astrojs/cloudflare`)
 - `npm run preview` — preview production build
 - `npm run lint` / `npm run lint:fix` — ESLint with type-checked rules
+- `npm run typecheck` — `astro check`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach. Needs `npx astro sync` first.
+- `npm run test` — Vitest, single pass (`vitest run`). Use this, not bare `vitest`, anywhere that must terminate.
+- `npm run test:watch` — Vitest in watch mode.
+- `npm run test:e2e` / `npm run test:e2e:ui` — Playwright. Needs a free port 4321 and a running local Supabase stack; it drives the real app, nothing is mocked. Also runs in CI — the `e2e` job gates pushes **and** pull requests, so a red spec blocks a merge; see [CI/CD](#cicd) and `tests/e2e/README.md`.
 - `npm run format` — Prettier (prettier-plugin-astro + prettier-plugin-tailwindcss)
-- `npx astro sync` — regenerates `.astro/types.d.ts`. **Run this after a fresh clone or after changing the `env.schema` in `astro.config.mjs`**, otherwise `astro:env/server` imports fail to type-check and lint errors out.
+- `npx astro sync` — regenerates `.astro/types.d.ts`. **Run this after a fresh clone or after changing the `env.schema` in `astro.config.mjs`**, otherwise `astro:env/server` imports fail to type-check and lint errors out. It is _not_ needed for `npm run test` — Vitest resolves `astro:*` (or fails to) at config time, not from `.astro/`.
 
-**There is no test framework installed.** No vitest/playwright/jest, no test script, no test files. If tests are wanted, that's a setup decision to raise with the user rather than assume.
+**Tests: Vitest for JS, pgTAP for the database, Playwright for browser-level flows.** Unit tests are co-located as `<module>.test.ts` beside the module (`src/lib/text.test.ts` is the reference); `vitest.config.ts` discovers `src/**/*.test.ts`. Read `context/foundation/test-plan.md` §6.1 before adding one — it carries the oracle rule (expectations hand-written from an external source, never derived by calling the code under test) and the resolution limits below. Component, API-route, and viewport layers do not exist yet; §3 of the same document sequences them.
+
+**E2E lives in `tests/e2e/`, and its rules live in `tests/e2e/README.md` — read that before writing or generating a spec.** `tests/e2e/seed.spec.ts` is the reference test every other spec is modelled on; point generation prompts at it by path rather than pasting it. Three rules bite hardest here: `test`/`expect` are imported from `./fixtures` and never from `@playwright/test`; `await waitForHydration(page)` follows every `goto` and `reload` before an island is touched, because Astro serves fillable inputs before React hydrates and hydration silently discards what was typed in the gap; and `page.locator()` is reserved for that one hydration check, which is the suite's only structural selector. The rules block below is the toolkit's generic version and is regenerated by the 10x CLI — `tests/e2e/README.md` is the durable copy.
+
+**`vitest.config.ts` resolves `@/*` but NOT `astro:*`.** It is standalone by necessity: Astro's sanctioned `getViteConfig` cannot be used here, because with `adapter: cloudflare()` loaded `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets on its `ssr` environment and Vitest dies at startup — with an error that names neither Astro nor `astro:env`, so it reads as a config mistake. Consequences: a module that _value_-imports an Astro virtual module (`src/lib/supabase.ts`, `src/lib/config-status.ts`, `src/lib/services/receipts.ts`, `src/middleware.ts`, `src/pages/api/receipts/parse.ts`) or `cloudflare:workers` (`src/lib/receipt-image.ts`) is not unit-testable as it stands — extract the pure logic or alias-stub the module. `import type` is unaffected. The config also inherits none of `astro.config.mjs`'s Vite settings, including the `resolve.dedupe: ["react", "react-dom"]` hydration fix — restate it when React component tests arrive.
 
 Pre-commit (husky + lint-staged): `eslint --fix` on `*.{ts,tsx,astro}`, `prettier --write` on `*.{json,css,md}`.
 
@@ -60,9 +68,9 @@ Both vars are `context: "server", access: "secret"` — never reachable from cli
 
 `supabase/migrations/` holds one migration per schema change, named `YYYYMMDDHHmmss_short_description.sql` (e.g. `20260815125827_create_categories_table.sql`, the `categories` table from F-01). Every new table's migration enables RLS in that same file — never a follow-up migration — with four granular per-operation policies scoped `to authenticated`, keyed on `(select auth.uid()) = user_id`. The `(select ...)` wrapping matters: it evaluates `auth.uid()` once per statement instead of once per row. `user_id` columns default to plain `auth.uid()` at the column level (no subquery wrapper there — Postgres column defaults can't contain one) and reference `auth.users(id) on delete cascade`. See `categories`' migration for the reference shape every later table copies.
 
-RLS is verified by an actual pgTAP suite (`supabase/tests/*_test.sql`, run via `npx supabase test db`), not assumed. Tests impersonate the two fixed seed users in `supabase/seed.sql` via `set local role authenticated; set local request.jwt.claim.sub = '<uuid>';` — a superuser session otherwise bypasses RLS entirely. This verification is local-only; it does not run in CI.
+RLS is verified by an actual pgTAP suite (`supabase/tests/*_test.sql`, run via `npx supabase test db`), not assumed. Tests impersonate the two fixed seed users in `supabase/seed.sql` via `set local role authenticated; set local request.jwt.claim.sub = '<uuid>';` — a superuser session otherwise bypasses RLS entirely. Run it locally before pushing; since the `db-test` job it also runs in CI, on `master` pushes only — see [CI/CD](#cicd).
 
-**Migrations reach the hosted database only through the `deploy` job.** `supabase/migrations/*.sql` are applied locally by `supabase start` / `supabase db reset`; nothing else in the pipeline touches the hosted schema. `.github/workflows/ci.yml` runs `supabase link` + `supabase db push` between the build and `wrangler deploy` — schema before code, so every migration must be backward-compatible with the *previous* Worker version. This gap is what broke the first deploy: the Worker shipped against an empty `public` schema, auth worked (the `auth.*` schema is Supabase's, not ours), and every data route 500'd with `Could not find the table 'public.categories' in the schema cache`. **A green deploy is not evidence the schema matches the code.** Never pass `--include-seed` — `supabase/seed.sql` inserts fixed test users into `auth.users`. See `context/deployment/deploy-plan.md` Phase 4 for the manual catch-up commands and the required secrets.
+**Migrations reach the hosted database only through the `deploy` job.** `supabase/migrations/*.sql` are applied locally by `supabase start` / `supabase db reset`; nothing else in the pipeline touches the hosted schema. `.github/workflows/ci.yml` runs `supabase link` + `supabase db push` between the build and `wrangler deploy` — schema before code, so every migration must be backward-compatible with the _previous_ Worker version. This gap is what broke the first deploy: the Worker shipped against an empty `public` schema, auth worked (the `auth.*` schema is Supabase's, not ours), and every data route 500'd with `Could not find the table 'public.categories' in the schema cache`. **A green deploy is not evidence the schema matches the code.** Never pass `--include-seed` — `supabase/seed.sql` inserts fixed test users into `auth.users`. See `context/deployment/deploy-plan.md` Phase 4 for the manual catch-up commands and the required secrets.
 
 ## Conventions
 
@@ -81,7 +89,7 @@ RLS is verified by an actual pgTAP suite (`supabase/tests/*_test.sql`, run via `
 - Node v22.14.0 (`.nvmrc`) — `nvm use` before building; CI pins Node 22 too.
 - Local dev secrets: `.env` for Node tooling, **`.dev.vars` for Cloudflare workerd** (what `npm run dev` actually reads). Both gitignored; copy from `.env.example`.
 - Local Supabase: `npx supabase start -x vector` (needs Docker, ~7 GB RAM); Studio at `http://localhost:54323`. Turn off Authentication → Email → Confirm email locally to sign in immediately after signup. The `vector` log-shipper container fails its health check and **aborts the whole `start`** — excluding it costs only local log aggregation.
-- **Run `npm ci` before any `npx supabase` command.** The CLI is pinned to `2.98.2` in `devDependencies`, but with no `node_modules` present `npx` silently falls back to whatever is in the npx cache. That is not cosmetic: **CLI ≥ 2.114.0 stops granting `select/insert/update/delete` to `anon` / `authenticated` on new `public` tables**, so `supabase db reset` produces a database whose own app role cannot read its own tables. Same Postgres image (`17.6.1.106`) either way — the divergence is in the CLI's init step. Symptom: every pgTAP file fails with `permission denied for table …` before a single assertion runs, and `npm run dev` 403s on every data route. CI's `supabase/setup-cli@v1` pin of `2.114.0` is unaffected, because CI only does `link` + `db push` against hosted, where the grants already exist. Do NOT "fix" this with a grants migration — use the pinned CLI.
+- **Run `npm ci` before any `npx supabase` command.** The CLI is pinned to exactly `2.98.2` in `devDependencies` — no caret, so `npm install`, `npm update supabase`, and a Dependabot bump all have to produce a visible diff to move it. But with no `node_modules` present `npx` silently falls back to whatever is in the npx cache. That is not cosmetic: **CLI ≥ 2.114.0 stops granting `select/insert/update/delete` to `anon` / `authenticated` on new `public` tables**, so `supabase db reset` produces a database whose own app role cannot read its own tables. Same Postgres image (`17.6.1.106`) either way — the divergence is in the CLI's init step. Symptom: every pgTAP file fails with `permission denied for table …` before a single assertion runs, and `npm run dev` 403s on every data route. The `deploy` job's `supabase/setup-cli@v1` pin of `2.114.0` is unaffected, because it only does `link` + `db push` against hosted, where the grants already exist. **The `db-test` job must never adopt that block** — it runs `supabase start` / `db reset`, i.e. it _provisions_ a database, which puts it on the local side of this divide; it runs `npm ci` then `npx supabase` for exactly this reason. Do NOT "fix" this with a grants migration — use the pinned CLI.
 - **Sibling worktrees share this machine.** Each needs its own Supabase stack — set a distinct `project_id` in `supabase/config.toml` and distinct ports, or two worktrees will `db reset` each other's schema and you will chase a phantom "column X does not exist". Check with `docker ps --format '{{.Names}}'` before trusting a local database. `astro dev` auto-increments off `4321` when a sibling holds it, so **read the port out of the dev-server banner rather than assuming 4321**.
 - Deploy: pushes to `master` deploy automatically via the `deploy` job in `.github/workflows/ci.yml`, gated by a required-reviewer approval on the `production` GitHub Environment — nothing reaches Cloudflare until that approval is given. Manual `npm run build` + `npx wrangler deploy` remains available for out-of-band fixes and rollback. Set Worker secrets via `npx wrangler secret put` — CI deploys never touch these; they're set once and persist across deploys.
 
@@ -90,13 +98,19 @@ RLS is verified by an actual pgTAP suite (`supabase/tests/*_test.sql`, run via `
 - **`assets.directory` must stay `./dist/client`.** The adapter writes its own config to `dist/server/wrangler.json`; wrangler bridges the two through the gitignored `.wrangler/deploy/config.json` that only a local build produces. Setting it to `./dist` would publish `dist/server/.dev.vars` as a public asset.
 - **A deploy with unset secrets succeeds and serves a silently auth-disabled site.** Both env vars are `optional: true` and `createClient()` returns `null`, so `/dashboard` just redirects forever with only the red config banner as a signal. A green deploy is not evidence that secrets resolved.
 
-**Receipt parsing (S-06) adds a third instance of that same trap.** `CF_AI_TOKEN` / `CF_ACCOUNT_ID` are also `optional: true`; unset, `/api/receipts/parse` answers 503 and the banner names the Gateway. Set them with `npx wrangler secret put` — CI never touches them, and `CF_ACCOUNT_ID` is *not* the build-time `CLOUDFLARE_ACCOUNT_ID` repo variable, which the Worker cannot read. The gateway id is hardcoded as `RECEIPT_GATEWAY_ID` in `src/lib/services/receipts.ts` and must name a real gateway with third-party (Unified Billing) credit funded on it; the auto-created `default` gateway has that switched off, and omitting the `cf-aig-gateway-id` header falls back to it.
+**Receipt parsing (S-06) adds a third instance of that same trap.** `CF_AI_TOKEN` / `CF_ACCOUNT_ID` are also `optional: true`; unset, `/api/receipts/parse` answers 503 and the banner names the Gateway. Set them with `npx wrangler secret put` — CI never touches them, and `CF_ACCOUNT_ID` is _not_ the build-time `CLOUDFLARE_ACCOUNT_ID` repo variable, which the Worker cannot read. The gateway id is hardcoded as `RECEIPT_GATEWAY_ID` in `src/lib/services/receipts.ts` and must name a real gateway with third-party (Unified Billing) credit funded on it; the auto-created `default` gateway has that switched off, and omitting the `cf-aig-gateway-id` header falls back to it.
 
 ## CI/CD
 
-`.github/workflows/ci.yml` has two jobs. `ci` runs `npm ci` → `npx astro sync` → lint → build on every push and PR to `master` (the working branch); it's the merge gate. `deploy` runs only on pushes to `master` (`needs: ci`), targets the `production` GitHub Environment, rebuilds, applies pending Supabase migrations (`supabase/setup-cli@v1` pinned to `2.114.0` → `supabase link` → `supabase db push`, using the `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` / `SUPABASE_PROJECT_REF` environment secrets), then runs `cloudflare/wrangler-action@v3` (`wrangler deploy`) using `CLOUDFLARE_API_TOKEN` (environment secret) and `CLOUDFLARE_ACCOUNT_ID` (repo variable). Because the job targets `environment: production`, GitHub pauses it for a required-reviewer approval in the Actions UI before the secrets are injected and the deploy runs. Migrations are deliberately placed after the build (a compile failure must not leave production migrated with no matching code) and before the deploy (the Worker must never serve against a schema it expects to exist). Nothing validates migrations on PRs — that needs Docker; correctness is still only proven locally via `supabase db reset` and `npx supabase test db`. Remote: `github.com/Zabicki/paper-trail`.
+`.github/workflows/ci.yml` has four jobs. `ci` runs `npm ci` → `npx astro sync` → lint → typecheck → test → build on every push and PR to `master` (the working branch); it's the merge gate. Typecheck and test sit before `build` so a type or logic failure surfaces without paying for a full build, and after `astro sync` because `astro check` needs the types it generates. `ci` is secret-free apart from the build step's existing `SUPABASE_URL`/`SUPABASE_KEY` pair.
 
-The workflow passes `SUPABASE_URL` / `SUPABASE_KEY` from repo secrets to both jobs' build steps, but **they are not required for the build** — both are `optional: true`, so the build passes with them unset. They matter at runtime, not build time; the actual Worker-side values are set once via `wrangler secret put` and are untouched by CI.
+`db-test` runs only on pushes to `master`, needs no secrets and no `environment:`, and therefore no approval gate: `npm ci` → `npx supabase start -x vector` → `npx supabase db reset` → `npx supabase test db`, plus an `if: failure()` step dumping `docker logs supabase_db_paper-trail`. It applies the **merged** migration set to an empty database from scratch and runs every pgTAP assertion — the gap that per-branch local runs structurally cannot close. Two things about it are load-bearing rather than stylistic. **It must never adopt the `deploy` job's `supabase/setup-cli@v1` / `2.114.0` block**: this job provisions a database, so it needs the lockfile's `2.98.2` via `npm ci` + `npx supabase`, and the wrong CLI fails every suite with `permission denied for table …` in a way that looks exactly like a broken migration (see _Environment & deploy_ above). And `-x vector` is required because `[analytics] enabled = true` in `supabase/config.toml` spawns a log-shipper whose failing health check aborts the whole `start`; there is no config block to disable it. The failure-log dump exists because a documented Postgres segfault (`supabase/tests/entries_summary_test.sql:225-249`) drops every connection, so later files fail with connection errors and the real cause never reaches the pgTAP output.
+
+`e2e` runs on pushes **and** pull requests — it carries no `if:` guard, which is what makes it a merge gate rather than a post-merge check: `npm ci` → `npx supabase start -x vector` → `npx supabase db reset` → export the stack's URL/anon key → `npx playwright install --with-deps chromium` → `npm run test:e2e`, plus an `if: failure()` `actions/upload-artifact@v4` step publishing `playwright-report/` and `test-results/`. It drives the real app in a browser (`astro dev` on workerd) against a Supabase stack it provisions itself, with nothing mocked. **It needs no secrets and no `environment:`**: `astro dev` resolves `.dev.vars`, then `.env`, then the process environment, and a checkout has neither file — so the job scrapes `SUPABASE_URL` / `SUPABASE_KEY` out of `npx supabase status -o env` into `$GITHUB_ENV`, which are the _local_ stack's values and never the hosted project's. That export step strips the literal double quotes the CLI emits: `$GITHUB_ENV` does not interpret them, a URL beginning with `"` still passes `createClient()`'s null-check, and the break would then surface as a fetch failure during sign-in. Because the job provisions a database it sits on the **same CLI/grants divide as `db-test` and must never adopt `deploy`'s `supabase/setup-cli@v1` block** — `npm ci` then `npx supabase`, for exactly the reason spelled out above. `db reset` is not redundant with `start`: it is what applies `supabase/seed.sql`, and `tests/e2e/auth.setup.ts` signs in as a user that exists nowhere else. It is a separate job rather than steps bolted onto `db-test` so a browser flake cannot block `deploy` under a job name that says "db-test"; the price is ~140 s of duplicated stack provisioning per push. Measured 2026-08-22: 211–237 s per run against a ~100 s `ci` job, so `e2e` is the pull-request critical path. `playwright.config.ts` needed no change — its `process.env.CI` branches were written for this.
+
+`deploy` runs only on pushes to `master` (`needs: [ci, db-test, e2e]` — so a red database gate or a red browser gate leaves the hosted schema untouched), targets the `production` GitHub Environment, rebuilds, applies pending Supabase migrations (`supabase/setup-cli@v1` pinned to `2.114.0` → `supabase link` → `supabase db push`, using the `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` / `SUPABASE_PROJECT_REF` environment secrets), then runs `cloudflare/wrangler-action@v3` (`wrangler deploy`) using `CLOUDFLARE_API_TOKEN` (environment secret) and `CLOUDFLARE_ACCOUNT_ID` (repo variable). Because the job targets `environment: production`, GitHub pauses it for a required-reviewer approval in the Actions UI before the secrets are injected and the deploy runs. Migrations are deliberately placed after the build (a compile failure must not leave production migrated with no matching code) and before the deploy (the Worker must never serve against a schema it expects to exist). **Nothing validates migrations on pull requests** — `db-test` is `master`-push-only, a trigger chosen when the wall-clock cost of `supabase start` on a runner was unmeasured. It no longer is (134 s for `start`, 195 s for the whole job, run `32489937016`), and since `e2e` pays that same provisioning cost on every PR already, widening `db-test` would cost runner-minutes but no critical-path time; the decision is open and deliberately not settled by the change that measured it (`context/foundation/test-plan.md` §5). So a bad migration is caught after merge, before deploy, rather than in the PR that introduced it; on a PR, correctness is still only proven locally via `supabase db reset` and `npx supabase test db`. `db-test` also proves _from-scratch_ apply only — not that the next incremental `db push` onto the existing production schema succeeds. Remote: `github.com/Zabicki/paper-trail`.
+
+The workflow passes `SUPABASE_URL` / `SUPABASE_KEY` from repo secrets to the `ci` and `deploy` build steps (the two jobs that build; `db-test` and `e2e` reference no secret at all), but **they are not required for the build** — both are `optional: true`, so the build passes with them unset. They matter at runtime, not build time; the actual Worker-side values are set once via `wrangler secret put` and are untouched by CI.
 
 ## Working docs (`context/`)
 
@@ -104,93 +118,32 @@ The workflow passes `SUPABASE_URL` / `SUPABASE_KEY` from repo secrets to both jo
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## 10xDevs AI Toolkit - Module 3, Lesson 3
+## 10xDevs AI Toolkit - Module 3, Lesson 4 (E2E Tests)
 
-Lesson 3 is about **hooks** — turning the quality gates from Lesson 1 and the tests from Lesson 2 into automatic, deterministic checks that fire while the agent works. A hook runs outside the model, so it survives context compression, instruction changes, and the model "forgetting". The payoff for agentic hooks specifically: a `PostToolUse` check can feed its result back into the agent's context, so the agent fixes trivial errors (formatting, a missing import, a wrong type) on its own in the next iteration instead of you discovering them minutes later.
+**For E2E tests, use the `/10x-e2e` skill.** It is the single source of truth
+for the workflow — risk → seed test + rules → generate → review against the five
+anti-patterns → re-prompt → verify. The skill's `references/` carry the full
+rules, anti-patterns, seed pattern, and prompt-template.
 
-```
-context/foundation/test-plan.md  (§4 Quality Gates: which check, required when)
-        │
-        ▼  (assign each gate to the cheapest layer that still gives signal)
-   per-edit (agent hooks)  →  pre-commit (git hooks)  →  pre-push  →  CI
-        │ lint, format, scoped tests          │ staged       │ heavier    │ integration
-        ▼
-   exit code + stdout  →  additionalContext  →  agent reacts next turn
-```
+A few hard rules that hold even before you invoke the skill:
 
-### Task Router — Which layer for this check
+- **Locators:** `getByRole` / `getByLabel` / `getByText` first; `getByTestId`
+  only when accessibility attributes are ambiguous. Never CSS selectors, XPath,
+  or DOM structure.
+- **Never `page.waitForTimeout()`.** Wait for state: `toBeVisible()`,
+  `waitForURL()`, `waitForResponse()`.
+- **Test independence + cleanup.** Each test runs standalone — its own setup,
+  action, assertion, and cleanup; unique ids (timestamp suffix) so parallel runs
+  and re-runs don't collide.
 
-| You want to | Do this |
-| --- | --- |
-| React the instant the agent edits a file | A per-edit hook (`PostToolUse` matcher `Write\|Edit` in Claude Code). Right for fast checks: lint/format, and scoped tests on risk-area files. This is the **only** layer that can hand feedback to the agent mid-session. |
-| Run only the tests that depend on the edited file | Parse the path from the hook's stdin (`jq -r .tool_input.file_path`) and run your runner's related-tests mode (`vitest related "$FILE" --run`, `jest --findRelatedTests $FILE`). Gate it on whether the file is a risk area in `test-plan.md`; don't run tests on every helper or config edit. |
-| Catch changes that bypassed the agent (manual edits, a teammate's commit) | A pre-commit git hook (Lefthook or Husky+lint-staged) over staged files: lint + typecheck, and tests on staged risk files. |
-| Run heavier checks before code leaves the machine | Pre-push: full typecheck or a broader test set. Anything too slow for per-edit moves here. |
-| Decide where a given gate belongs | Ask: is it fast enough (a few seconds) for per-edit, or should it wait for commit/push/CI? Slow checks block the agent loop on every edit — push them up a layer. |
-| Use the same hook across tools | The trigger → matcher → handler → signal pattern is the same in Cursor, Codex, Windsurf, and Copilot; only the config file and event names change. See the cross-tool table below. |
+Two boundaries to keep straight:
 
-### Hook lifecycle — the universal pattern
-
-Every tool's hooks follow four steps:
-
-1. **Trigger** — an event in the tool (e.g. the agent just saved a file: `PostToolUse`).
-2. **Matcher** — a filter deciding whether this hook runs (tool name like `Write`/`Edit`, file type, or a name pattern).
-3. **Handler** — the action that runs, usually a shell command.
-4. **Signal** — the result returns to the tool. The exit code says pass/fail; stdout can flow into the agent's context as feedback.
-
-### Exit codes and the feedback loop
-
-- **0** — success; the hook passed, continue.
-- **2** — blocking error; the agent sees the feedback and should react.
-- **anything else** — non-blocking error; logged, but does not interrupt work.
-
-On a blocking failure, stdout flows into the agent's context (in Claude Code via `additionalContext`, capped at 10,000 characters; other tools have similar mechanisms with their own limits). That is why the agent can self-correct: it sees the concrete message — missing type, unimported module, badly formatted line — not just "something failed".
-
-The boundary: the agent reliably fixes **trivial** corrections on its own. When a test fails because of wrong business logic, the hook surfaces it but the agent may not diagnose the real cause — it says "something is off" and tries a trivial fix. If that does not resolve in one or two tries, the signal comes back to you, and the problem may deserve its own change-id with the full `/10x-new → /10x-research → /10x-plan → /10x-implement` workflow.
-
-### Three local layers (plus CI)
-
-| Layer | Catches | Timing |
-| --- | --- | --- |
-| Per-edit (agent hooks) | Formatting, simple type errors, failing unit tests on risk files. Only layer that feeds the agent mid-work. | ms–s |
-| Pre-commit (git hooks) | What slipped past per-edit: manual edits, files changed outside the hook, checks too slow for per-edit. Operates on staged files. | s |
-| Pre-push | Heavier checks before pushing to remote (full typecheck, broader test set). | s–min |
-| CI | Integration problems, cross-module dependencies, checks needing infra unavailable locally. | min |
-
-Local layers do **not** replace CI — CI stays the key verification for shared repo state and environments you don't control. But each local layer that catches an error is one fewer CI round-trip. You don't need all layers from day one: start with one per-edit hook (lint) and one commit gate, add layers as you see what escapes. The quality gates in `test-plan.md §4` decide which checks are worth automating and when; a plan may legitimately defer per-edit hooks if the cost/signal ratio isn't there yet.
-
-### Key rules
-
-- Keep per-edit hooks fast. If a check takes more than a few seconds, move it to commit, push, or CI — a slow per-edit hook blocks the agent loop on every edit. Lint/format are ideal per-edit; full typecheck is often a commit gate in larger projects.
-- Run scoped tests, not the whole suite, per edit — only tests related to the edited file, and only when that file is a risk area in `test-plan.md`.
-- `related` is a subcommand, not a flag (`vitest related`, not `--related`). Use `--run` so the hook terminates instead of entering watch mode.
-- `PostToolUse` fires once per tool use; three edits in one turn fire it three times independently — there is no built-in aggregation.
-- The git hook tool (Lefthook vs Husky+lint-staged) is an implementation detail; the rule is the same — run checks on staged files before commit. If Husky already works, don't migrate.
-- **Context injection is not universal.** Claude Code, Cursor, Codex, and Copilot (in VS Code) can pass a hook's result to the agent; Windsurf cannot — it can block (exit 2) but can't tell the agent what went wrong.
-
-### The same pattern in every tool
-
-| Tool | Events | Handlers | Context injection | Config |
-| --- | --- | --- | --- | --- |
-| Claude Code | ~30 | command, http, mcp_tool, prompt, agent | yes | `.claude/settings.json` |
-| Cursor | ~18 | command, prompt | yes | `.cursor/hooks.json` |
-| Codex | 10 | command | yes | `.codex/hooks.json` |
-| Windsurf | 12 | command | **no** | `.windsurf/hooks.json` |
-| Copilot | ~13 | command, http, prompt | yes (VS Code) | `.github/hooks/*.json` |
-
-### Lesson boundaries
-
-- This lesson configures hooks and local quality layers only. The hook JSON, `lefthook.yml`, and the per-edit/commit/push layering are the scope.
-- Do not write E2E tests, configure Playwright/MCP, or run browser scenarios. That is Lesson 4.
-- Do not run the bug-to-fix-to-regression-test debugging workflow. That is Lesson 5.
-- Do not change the risk strategy or quality-gate definitions. That is Lesson 1 (`/10x-test-plan`); read current state with `/10x-test-plan --status`.
-- Do not write unit/integration test code from scratch here. That is Lesson 2 — hooks only *run* the tests those lessons produced.
-- Do not author CI/CD pipelines. That is Module 1 Lesson 5 / Module 2 Lesson 5; hooks are the local layers in front of CI.
-
-### Paths used by this lesson
-
-- `.claude/settings.json` — hook configuration (`~/.claude/settings.json` global, `.claude/settings.json` project, `.claude/settings.local.json` local overrides). Other tools use their own config file (see the table).
-- `lefthook.yml` — pre-commit git hook config (lint + typecheck + tests on `{staged_files}`).
-- `context/foundation/test-plan.md` — §4 quality gates decide which checks to automate and at which layer; risk areas decide which edits warrant scoped tests.
+- **DOM (snapshot) is the default.** Vision (`--caps=vision`) is a supplement for
+  visual-only risks (layout, z-index, animation); for pixel regression prefer
+  deterministic tools (`toMatchSnapshot`, Argos, Lost Pixel). VLM model
+  selection/cost is a debugging topic (Lesson 5), not testing.
+- **Healer helps on selectors, harms on logic.** A changed selector → healer
+  re-finds it (route through PR review). A changed business behavior → healer
+  masks the bug; that failing-test-to-fix case is Lesson 5.
 
 <!-- END @przeprogramowani/10x-cli -->

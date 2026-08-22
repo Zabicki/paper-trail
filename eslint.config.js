@@ -59,6 +59,20 @@ const reactConfig = tseslint.config({
   },
 });
 
+// Playwright hands the test body to a fixture callback conventionally named
+// `use` (tests/e2e/fixtures.ts). react-hooks reads that as React's `use` hook
+// being called outside a component and errors. Renaming the parameter would
+// silence it, but tests/e2e/seed.spec.ts and fixtures.ts are the exemplars every
+// generated spec is copied from, so they have to show the idiomatic Playwright
+// shape. There is no React in tests/ — it drives a real browser — so the rule
+// has nothing to protect here.
+const e2eConfig = tseslint.config({
+  files: ["tests/**/*.ts"],
+  rules: {
+    "react-hooks/rules-of-hooks": "off",
+  },
+});
+
 const astroConfig = tseslint.config({
   files: ["**/*.astro"],
   rules: {
@@ -89,5 +103,6 @@ export default tseslint.config(
   eslintPluginAstro.configs["flat/recommended"],
   ...eslintPluginAstro.configs["flat/jsx-a11y-recommended"],
   astroConfig,
+  e2eConfig,
   eslintPluginPrettier,
 );

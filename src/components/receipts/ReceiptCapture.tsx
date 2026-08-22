@@ -4,7 +4,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { parseErrorBody } from "@/lib/api-error";
 import { downscaleImage } from "./image-downscale";
-import ReceiptReview, { type ConfirmItem } from "./ReceiptReview";
+import ReceiptReview from "./ReceiptReview";
+import type { ConfirmItem } from "./review-model";
 import type { Category, Entry, ParsedReceipt } from "@/types";
 
 interface ReceiptCaptureProps {

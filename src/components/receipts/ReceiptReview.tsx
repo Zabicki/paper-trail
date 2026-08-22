@@ -8,19 +8,21 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import CategoryPicker from "@/components/entries/CategoryPicker";
 import CategoryIcon from "@/components/categories/CategoryIcon";
-import { composeGroupedDescription } from "@/lib/entry-description";
 import { formatCurrency } from "@/lib/format";
-import { roundToCents } from "@/lib/money";
 import { sumItems, totalDelta } from "./receipt-total";
+import {
+  evaluateConfirmGate,
+  evaluateRows,
+  groupByCategory,
+  isReceiptDateRejected,
+  resolveSaveDate,
+  seedReviewRows,
+  toConfirmItems,
+  wholeReceiptItem,
+  type ConfirmItem,
+  type ReviewRow,
+} from "./review-model";
 import type { Category, ParsedReceipt } from "@/types";
-
-// The wire shape of one confirmed line, matching createEntriesBatchSchema's
-// item. `type` is absent on purpose: receipt items are always expenses.
-export interface ConfirmItem {
-  amount: number;
-  categoryId: number;
-  description: string | null;
-}
 
 interface ReceiptReviewProps {
   parsed: ParsedReceipt;
@@ -41,54 +43,6 @@ interface ReceiptReviewProps {
   onDiscard: () => void;
 }
 
-// One saved entry's worth of reviewed lines. Review itself stays one row per
-// printed line — this is only what the confirm folds them into.
-interface CategoryGroup {
-  categoryId: number;
-  amount: number;
-  items: { name: string; amount: number }[];
-}
-
-// Groups the reviewed rows by category, preserving FIRST-APPEARANCE order so the
-// saved order tracks the order things were printed on the paragon.
-//
-// Rows that cannot be stored (no category, unusable amount) are skipped rather
-// than grouped: they are separately hard-blocking, and including them would make
-// the preview promise a write that cannot happen.
-function groupByCategory(rows: { row: ReviewRow; amount: number; amountValid: boolean }[]): CategoryGroup[] {
-  const groups: { categoryId: number; items: { name: string; amount: number }[] }[] = [];
-  const indexByCategory = new Map<number, number>();
-
-  for (const { row, amount, amountValid } of rows) {
-    if (row.categoryId === null || !amountValid) {
-      continue;
-    }
-    const existing = indexByCategory.get(row.categoryId);
-    if (existing === undefined) {
-      indexByCategory.set(row.categoryId, groups.length);
-      groups.push({ categoryId: row.categoryId, items: [{ name: row.name, amount }] });
-    } else {
-      groups[existing].items.push({ name: row.name, amount });
-    }
-  }
-
-  // sumItems, not a bare reduce: it is the same function — and therefore the
-  // same single rounding, applied once to the sum — that produces the panel's
-  // `Suma pozycji`. Rounding per item and again on the total can drift by a cent
-  // and turn a sum the user saw match into a stored mismatch.
-  return groups.map((group) => ({ ...group, amount: sumItems(group.items) }));
-}
-
-interface ReviewRow {
-  // Assigned once from the parse order and never reused. Not the index: rows
-  // can be removed, and an index key would make React reuse a removed row's
-  // input state for its successor.
-  key: number;
-  name: string;
-  amountText: string;
-  categoryId: number | null;
-}
-
 export default function ReceiptReview({
   parsed,
   imageUrl,
@@ -97,35 +51,16 @@ export default function ReceiptReview({
   onConfirm,
   onDiscard,
 }: ReceiptReviewProps) {
-  const [rows, setRows] = useState<ReviewRow[]>(() =>
-    parsed.items.map((item, index) => ({
-      key: index,
-      name: item.name,
-      // Seeds a text input, so a bare number — formatCurrency's "12,50 zł"
-      // would land in the field and fail the amount parse, exactly as
-      // DayEntriesList's startEdit notes.
-      amountText: item.amount.toFixed(2),
-      categoryId: item.categoryId,
-    })),
-  );
-  // Prefer the paragon's own date — the model reads header fields far more
-  // reliably than line items — but NEVER adopt one in the future. A misread year
-  // is the failure that files a receipt somewhere the calendar cannot casually
-  // reach, which is the risk S-06's hint-only guard was protecting against.
-  //
-  // `occurredOn` stands in for "today" because the calendar cannot select a
-  // future day. Do NOT "fix" this into a `new Date()` call — that would
-  // reintroduce the timezone question date-utils.ts already settled.
-  //
-  // A lazy initialiser, so it runs once per mount (i.e. once per parse) and
-  // moving the calendar mid-review cannot clobber a date already chosen here.
-  const [saveDate, setSaveDate] = useState(() =>
-    parsed.receiptDate !== null && parsed.receiptDate <= occurredOn ? parsed.receiptDate : occurredOn,
-  );
+  const [rows, setRows] = useState<ReviewRow[]>(() => seedReviewRows(parsed.items));
+  // A lazy initialiser, so resolveSaveDate runs once per mount (i.e. once per
+  // parse) and moving the calendar mid-review cannot clobber a date already
+  // chosen here. Why the printed date is preferred, and why it is never adopted
+  // from the future, is documented on resolveSaveDate itself.
+  const [saveDate, setSaveDate] = useState(() => resolveSaveDate(parsed.receiptDate, occurredOn));
   // Whether the initialiser REJECTED the printed date, decided once at mount for
   // the same reason: derived live, it would start claiming the date was rejected
   // simply because the user later moved the calendar backwards.
-  const [receiptDateRejected] = useState(() => parsed.receiptDate !== null && parsed.receiptDate > occurredOn);
+  const [receiptDateRejected] = useState(() => isReceiptDateRejected(parsed.receiptDate, occurredOn));
   // Only one picker is open at a time: expanding several at once turns the
   // panel into a wall of chips with no visible line items left.
   const [expandedKey, setExpandedKey] = useState<number | null>(null);
@@ -138,14 +73,7 @@ export default function ReceiptReview({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [photoOpen, setPhotoOpen] = useState(false);
 
-  const evaluated = rows.map((row) => {
-    const amount = Number(row.amountText.replace(",", "."));
-    return {
-      row,
-      amount,
-      amountValid: row.amountText.trim().length > 0 && Number.isFinite(amount) && amount > 0,
-    };
-  });
+  const evaluated = evaluateRows(rows);
 
   const sum = sumItems(evaluated.filter((entry) => entry.amountValid).map((entry) => ({ amount: entry.amount })));
   const delta = totalDelta(sum, parsed.total);
@@ -156,19 +84,13 @@ export default function ReceiptReview({
   // the cheaper shape.
   const groups = groupByCategory(evaluated);
 
-  const missingCategory = rows.some((row) => row.categoryId === null);
-  const invalidAmount = evaluated.some((entry) => !entry.amountValid);
-
-  // Two structurally different blocks, and conflating them would be wrong.
-  //
-  // Hard: entries.category_id is NOT NULL and amount is `check (amount > 0)`.
-  // There is nothing to acknowledge — the row literally cannot be stored.
-  const hardBlocked = rows.length === 0 || missingCategory || invalidAmount;
-  // Soft: a sum that disagrees with the paragon is suspicious, not impossible.
-  // The checkbox is what turns bad data into a deliberate choice rather than
-  // an accident.
-  const deltaMismatch = delta !== null && delta !== 0;
-  const canConfirmItems = !hardBlocked && !(deltaMismatch && !acknowledged) && !submitting;
+  const { missingCategory, invalidAmount, deltaMismatch, canConfirmItems } = evaluateConfirmGate({
+    rows,
+    evaluated,
+    delta,
+    acknowledged,
+    submitting,
+  });
 
   async function submit(items: ConfirmItem[]) {
     setSubmitting(true);
@@ -201,19 +123,10 @@ export default function ReceiptReview({
 
   function handleConfirmItems() {
     if (!canConfirmItems) return;
-    // One entry per CATEGORY, not per printed line. The reduce happens here,
-    // immediately before the POST, which is what keeps FR-012's per-line
-    // correction and the accuracy log's per-line columns intact — review above
-    // is still one row per line.
-    //
-    // createEntriesBatch assigns batch_seq from this array's index, so the
-    // idempotency key stays well-defined over the grouped array and a replay
-    // still dedupes. No server change is needed for any of this.
-    const items: ConfirmItem[] = groups.map((group) => ({
-      amount: group.amount,
-      categoryId: group.categoryId,
-      description: composeGroupedDescription(group.items),
-    }));
+    // The SAME `groups` the preview above renders — that is the property this
+    // panel exists to hold, so the fold happens exactly once and both sides read
+    // it. toConfirmItems only reshapes it into the wire body.
+    const items = toConfirmItems(groups);
     // hardBlocked already guarantees a non-empty result, but the batch schema's
     // .min(1) is the thing that would 400 and the check is one line.
     if (items.length === 0) return;
@@ -222,16 +135,7 @@ export default function ReceiptReview({
 
   function handleConfirmTotal() {
     if (parsed.total === null || totalCategoryId === null || submitting) return;
-    void submit([
-      {
-        amount: roundToCents(parsed.total),
-        categoryId: totalCategoryId,
-        // An honest name for what this row is. The column exists so a wrong
-        // categorisation stays diagnosable, and "one entry for a whole
-        // receipt" is precisely the thing worth being able to recognise later.
-        description: "Paragon",
-      },
-    ]);
+    void submit(wholeReceiptItem(parsed.total, totalCategoryId));
   }
 
   return (

@@ -66,11 +66,83 @@ jobs:
       - if: failure()
         run: docker logs supabase_db_paper-trail --tail 200
 
+  # Drives the real app in a browser: `astro dev` on workerd against a Supabase
+  # stack this job provisions itself, with nothing mocked. Runs on pushes AND
+  # pull requests — unlike db-test — because a regression that only shows up
+  # across the auth -> routing -> API -> RLS seams should be caught in review,
+  # not after merge.
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      ASTRO_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # npm ci FIRST, and `npx supabase` throughout — the same grants divide
+      # db-test sits on. This job PROVISIONS a database, so it must resolve the
+      # lockfile's 2.98.2. Do NOT reuse the supabase/setup-cli@v1 2.114.0 block
+      # from the deploy job below: that CLI stops granting
+      # select/insert/update/delete to anon/authenticated on new public tables,
+      # and every data route then fails in a way that reads exactly like a
+      # broken migration. See context/foundation/lessons.md.
+      - run: npm ci
+      # -x vector, as in db-test: [analytics] enabled = true
+      # (supabase/config.toml:371-372) spawns a log-shipper whose failing health
+      # check aborts the whole start. There is no vector block to disable.
+      - run: npx supabase start -x vector
+      # Not redundant with `start`. `db reset` is what applies supabase/seed.sql,
+      # and tests/e2e/auth.setup.ts signs in as rls-test-user-a@example.com,
+      # which exists nowhere else.
+      - run: npx supabase db reset
+      # This job needs NO secrets and no `environment:`. `astro dev` on workerd
+      # resolves .dev.vars, then .env, then the process environment; with
+      # neither file in the checkout the third is enough, and the values below
+      # are the LOCAL stack's — never the hosted project's.
+      #
+      # The quote strip is load-bearing: `supabase status -o env` emits
+      # KEY="value" with the double quotes as literal characters, and
+      # $GITHUB_ENV does not interpret them. A URL whose first character is `"`
+      # still passes createClient()'s null-check in src/lib/supabase.ts, so the
+      # break would surface much later as a fetch failure during sign-in. The
+      # grep also keeps the service-role key and the JWT secret out of the app's
+      # environment.
+      - name: Export the local stack's URL and anon key
+        run: |
+          set -euo pipefail
+          npx supabase status -o env \
+            --override-name api.url=SUPABASE_URL \
+            --override-name auth.anon_key=SUPABASE_KEY \
+            | grep -E '^SUPABASE_(URL|KEY)="' \
+            | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' \
+            >> "$GITHUB_ENV"
+      # Its own step, so `npm ci` stays byte-identical across all four jobs and
+      # so the install's duration reads off the step timings on its own.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      # Same failure class as db-test's docker-logs dump: a red run is opaque
+      # without it. playwright.config.ts already records a trace on first retry
+      # and a screenshot on failure; this step is what makes them reachable from
+      # a runner.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
   deploy:
     if: github.event_name == 'push'
-    # db-test gates the one step that reaches production. Both jobs are
-    # push-only, so pull requests skip both and this edge is never exercised there.
-    needs: [ci, db-test]
+    # db-test and e2e both gate the one step that reaches production: a red
+    # database suite or a red browser suite must leave the hosted schema and the
+    # Worker untouched. deploy stays push-only, so on a pull request ci and e2e
+    # both run and this edge is never evaluated — db-test is skipped there too.
+    needs: [ci, db-test, e2e]
     runs-on: ubuntu-latest
     environment: production
     steps:

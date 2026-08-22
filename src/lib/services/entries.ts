@@ -4,18 +4,34 @@ import type { Category, CategoryIconName, CategoryKind, Entry, EntryType } from 
 
 type SupabaseClient = NonNullable<ReturnType<typeof createClient>>;
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
 // Mirrors the `char_length(description) <= 200` check added by
 // 20260816140000_add_entry_description.sql. Both bounds exist on purpose: the
 // database's is the hallucination backstop, this one is what turns an
 // over-long value into a 400 instead of a 500.
 const DESCRIPTION_MAX = 200;
 
+// z.iso.date(), not a /^\d{4}-\d{2}-\d{2}$/ shape check. The regex accepts
+// 2026-02-30 and 2026-13-45; `occurred_on date not null`
+// (20260815164539_create_entries_table.sql:12) then rejects the value, and the
+// resulting PostgREST error is neither CategoryNotFoundError nor
+// CategoryKindMismatchError, so it is rethrown into an Astro error page — a 500
+// with a non-JSON body the client can only degrade to "Coś poszło nie tak".
+// z.iso.date() does full calendar validation (leap years included), so it
+// accepts exactly the old set minus the dates Postgres would have refused
+// anyway: strictly narrowing, no client can produce a value it now turns away.
+//
+// Reachable because the receipt parser's own date check is shape-only too, so a
+// misread printed date arrives at the panel and is adopted as the save date.
+// Three other modules carried the same shape-only regex when this was written.
+// services/reports.ts has since been converted too (rollout Phase 3 of
+// `context/foundation/test-plan.md`, where the regex was letting the bucket
+// ceiling be computed over a different window than the one queried). Two
+// survive and are deliberately left alone: services/receipts.ts is parse-side,
+// and api/entries/index.ts guards a GET query parameter with no write behind it.
 export const createEntrySchema = z.object({
   amount: z.number().positive().max(999999.99),
   categoryId: z.number().int().positive(),
-  occurredOn: z.string().regex(DATE_PATTERN),
+  occurredOn: z.iso.date(),
   type: z.enum(["expense", "income"]).default("expense"),
   description: z.string().trim().min(1).max(DESCRIPTION_MAX).nullish(),
 });
@@ -39,7 +55,10 @@ export const updateEntrySchema = createEntrySchema
 // The 100-item cap matches the service-layer cap in the receipts parser — a
 // paragon longer than that is a garbled parse, not a big shop.
 export const createEntriesBatchSchema = z.object({
-  occurredOn: z.string().regex(DATE_PATTERN),
+  // Calendar-validated, for the reason spelled out above createEntrySchema.
+  // Both schemas change together: leaving two copies of one defect thirty lines
+  // apart in a single file is exactly the drift shape lessons.md names.
+  occurredOn: z.iso.date(),
   // The idempotency key, minted once per parsed receipt by the client and
   // resent unchanged on every retry of the same confirm. REQUIRED, not
   // optional: an optional key degrades silently to the non-idempotent behaviour
