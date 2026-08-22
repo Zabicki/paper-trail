@@ -897,12 +897,12 @@ behaviour it relied on. No migration ordering concern and nothing for the
 
 #### Automated
 
-- [x] 5.1 Full suite passes: `npm run test`
-- [x] 5.2 Type checking passes: `npm run typecheck`
-- [x] 5.3 Linting passes: `npm run lint`
-- [x] 5.4 Full build passes: `npm run build`
+- [x] 5.1 Full suite passes: `npm run test` — 875fa20
+- [x] 5.2 Type checking passes: `npm run typecheck` — 875fa20
+- [x] 5.3 Linting passes: `npm run lint` — 875fa20
+- [x] 5.4 Full build passes: `npm run build` — 875fa20
 
 #### Manual
 
-- [x] 5.5 §6.2's `rpc`-is-terminal rule understandable without opening the fixture
-- [x] 5.6 §3 row 3 reads `complete` and `/10x-test-plan --status` advances to Phase 4
+- [x] 5.5 §6.2's `rpc`-is-terminal rule understandable without opening the fixture — 875fa20
+- [x] 5.6 §3 row 3 reads `complete` and `/10x-test-plan --status` advances to Phase 4 — 875fa20
