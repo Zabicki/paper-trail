@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-08-21
+> Last updated: 2026-08-22
 
 ## 1. Strategy
 
@@ -74,13 +74,13 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status        | Change folder                                                   |
-| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ------------- | --------------------------------------------------------------- |
-| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete      | `context/changes/testing-runner-bootstrap/`                     |
-| 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | complete      | `context/archive/2026-08-21-testing-receipt-confirm-integrity/` |
-| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | change opened | `context/changes/testing-reports-aggregation-truth/`            |
-| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | not started   | —                                                               |
-| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started   | —                                                               |
+| #   | Phase name                          | Goal (one line)                                                                                             | Risks covered | Test types                                                    | Status      | Change folder                                                   |
+| --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
+| 1   | Runner bootstrap + CI test floor    | Prove a schema change or a broken build cannot reach production unnoticed, and stand up a real test harness | #4            | unit, CI gate, pgTAP on merged migrations                     | complete    | `context/changes/testing-runner-bootstrap/`                     |
+| 2   | Receipt confirm integrity           | Prove that what the user confirms is what persists, exactly once                                            | #1            | unit, service integration                                     | complete    | `context/archive/2026-08-21-testing-receipt-confirm-integrity/` |
+| 3   | Reports aggregation truth           | Prove a displayed figure is correct or absent, never plausibly wrong                                        | #2            | unit, integration with oversized fixture                      | complete    | `context/changes/testing-reports-aggregation-truth/`            |
+| 4   | Isolation beyond the database       | Prove A cannot reach B's data through any path, and no authenticated page is edge-cacheable                 | #3            | pgTAP extension, route integration, response-header assertion | not started | —                                                               |
+| 5   | Client state + viewport regressions | Prove the day list tells the truth and no page overflows a phone                                            | #5, #6        | component tests, headless overflow check                      | not started | —                                                               |
 
 Order rationale: Phase 1 first because nothing else can land without a
 runner, and because #4 is the cheapest high-impact risk with a loaded
@@ -100,17 +100,17 @@ releases**, not verified selections. Rows resolved by a shipped phase carry a
 real version instead; as of §3 Phase 1 those are `unit + integration`,
 `typecheck`, and `database / RLS`.
 
-| Layer                     | Tool                                                                   | Version                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`             |
-| component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                  |
-| API mocking               | none — hand-rolled fake + `vi.mock`                                    | — (no dependency)                                 | Resolved by §3 Phase 2. The Supabase client is the boundary worth faking; internal service modules are not. A recording fake in `src/lib/services/__fixtures__/supabase-fake.ts` covers the service layer, and Vitest's built-in `vi.mock` covers the route layer. **No MSW, no `getViteConfig`, and no alias stub were needed** — see §6.2 and §6.1's corrected limit; `checked: 2026-08-21`                                                           |
-| database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`) |
-| narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                              |
-| lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| typecheck                 | `@astrojs/check` (`astro check`)                                       | per `package.json`                                | Wired by §3 Phase 1: `npm run typecheck`, and a CI step in the `ci` job after `astro sync` and before `build`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach                                                                                                                                                                                                                                       |
-| e2e                       | none — deliberate                                                      | —                                                 | Every risk in §2 has a cheaper layer that reaches it. See §7                                                                                                                                                                                                                                                                                                                                                                                            |
-| AI-native                 | none — deferred                                                        | —                                                 | An offline receipt-classification eval was proposed and cut by decision. See §7                                                                                                                                                                                                                                                                                                                                                                         |
+| Layer                     | Tool                                                                   | Version                                           | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| unit + integration        | Vitest                                                                 | `4.1.11` (pinned exact)                           | Wired by §3 Phase 1. Standalone `vitest.config.ts` — **not** routed through `getViteConfig`, which is unusable here: `@cloudflare/vite-plugin` rejects the `resolve.external` list Vitest sets, so Vitest fails at startup with the adapter loaded. Consequence: the config resolves `@/*` (explicit alias) but **not** `astro:*` virtual modules, and inherits none of `astro.config.mjs`'s Vite settings. See §6.1; `checked: 2026-08-21`                                                                                                              |
+| component (React islands) | none yet — see §3 Phase 5                                              | —                                                 | Candidate: React Testing Library on the Phase 1 runner; asserts rendered output rather than component internals; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| API mocking               | none — hand-rolled fake + `vi.mock`                                    | — (no dependency)                                 | Resolved by §3 Phase 2. The Supabase client is the boundary worth faking; internal service modules are not. A recording fake in `src/lib/services/__fixtures__/supabase-fake.ts` covers the service layer, and Vitest's built-in `vi.mock` covers the route layer. **No MSW, no `getViteConfig`, and no alias stub were needed** — see §6.2 and §6.1's corrected limit. Extended by §3 Phase 3 with `limit` and a **terminal** `rpc`, so the fake now reaches RPC-based paths (both reports aggregates) as well as builder chains; `checked: 2026-08-22` |
+| database / RLS            | pgTAP via Supabase CLI                                                 | CLI pinned `2.98.2` (exact, in `devDependencies`) | Exists today: 6 suites in `supabase/tests/`, run by `npx supabase test db`. Since §3 Phase 1, also runs in CI in the `db-test` job on `master` pushes, against the **merged** migration set replayed into an empty database. That job must invoke `npx supabase` after `npm ci`, never `supabase/setup-cli@v1` — it provisions a database, so it is on the local side of the grants divide (`lessons.md`). Cannot reach application code (`lessons.md`)                                                                                                  |
+| narrow-viewport overflow  | none yet — see §3 Phase 5                                              | —                                                 | Candidate: headless Chromium asserting document scroll width against client width at 320/360/390, against built CSS; `checked: 2026-08-21`                                                                                                                                                                                                                                                                                                                                                                                                               |
+| lint                      | ESLint (`strictTypeChecked` + `stylisticTypeChecked` + react-compiler) | per `package.json`                                | Wired and enforced in CI today                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| typecheck                 | `@astrojs/check` (`astro check`)                                       | per `package.json`                                | Wired by §3 Phase 1: `npm run typecheck`, and a CI step in the `ci` job after `astro sync` and before `build`. Chosen over `tsc --noEmit` because it also checks `.astro` frontmatter, which `tsc` does not reach                                                                                                                                                                                                                                                                                                                                        |
+| e2e                       | none — deliberate                                                      | —                                                 | Every risk in §2 has a cheaper layer that reaches it. See §7                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| AI-native                 | none — deferred                                                        | —                                                 | An offline receipt-classification eval was proposed and cut by decision. See §7                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 **Stack grounding tools (current session):**
 
@@ -210,6 +210,23 @@ Filled in by §3 Phase 1.
     the pure logic away from the import, or alias-stub the virtual module in
     `vitest.config.ts`.
 
+  **Third data point, from §3 Phase 3: `src/components/` is not automatically
+  the component layer.** `src/components/reports/range.ts` and
+  `src/components/reports/distribution.ts` are plain modules that happen to live
+  beside the islands that consume them — the co-location convention is about
+  **feature ownership, not about React**. Both are pure: no JSX, no hooks, no
+  `astro:*`, no network. They are ordinary §6.1 unit targets and need no mocking
+  at all, which the text above did not anticipate. Before concluding that
+  something under `src/components/` has to wait for §3 Phase 5's component
+  runner, check what it actually imports.
+
+  What makes `range.ts` reachable this cheaply is one design choice worth
+  copying: `resolveRange(preset, today, allTimeStart)` takes `today` as a
+  **required parameter** rather than reading the clock. So the whole module is
+  deterministic under Vitest with no clock faking and no `vi.setSystemTime`. A
+  module that resolves "now" internally would not be — that is the difference
+  between a pure unit target and a test that has to fake the environment.
+
   Still genuinely unreachable as they stand, all for the direct-import reason:
   `src/lib/supabase.ts`, `src/lib/config-status.ts` and
   `src/lib/services/receipts.ts` (`astro:env/server`),
@@ -240,10 +257,10 @@ Filled in by §3 Phase 2.
   modules are not a boundary worth faking — faking one would only assert that
   the test's own stub was called.
 - **The fake**: `createSupabaseFake(responses)` returns `{ client, calls }`.
-  Every builder method (`from`, `select`, `in`, `is`, `eq`, `order`, `upsert`,
-  `insert`, `update`, `delete`, `maybeSingle`, `single`) returns the same
-  chainable object and appends `{ method, args }` to `calls`; `then` makes the
-  chain awaitable. Bridge it to a service's client parameter with a single
+  Every builder method (`from`, `select`, `in`, `is`, `eq`, `order`, `limit`,
+  `upsert`, `insert`, `update`, `delete`, `maybeSingle`, `single`) returns the
+  same chainable object and appends `{ method, args }` to `calls`; `then` makes
+  the chain awaitable. Bridge it to a service's client parameter with a single
   `as unknown as` **at the call site** — that keeps `any` out of both files,
   which matters because `eslint.config.js` applies `strictTypeChecked` to test
   files with no override (see the caveat at the end of this sub-section).
@@ -254,6 +271,20 @@ Filled in by §3 Phase 2.
   (3) the re-select — the third **only** on a replay. So a happy-path test
   queues two responses and a replay test queues three. Run the queue dry and the
   fake throws naming how many builder calls it had recorded and which.
+- **`rpc` is TERMINAL, and it is the one exception to the rule above.** Added by
+  §3 Phase 3, alongside `limit`. Every other method is a chain link that returns
+  the chainable object, and `then` pulls from the queue when the chain is
+  awaited. `supabase.rpc(…)` is not a chain link — services `await` it directly,
+  so the fake's `rpc` both **records and resolves**, returning a promise instead
+  of the chainable object. It therefore consumes its queued response at **call**
+  time rather than at await time. The practical consequence, and the reason this
+  is worth spelling out: a `Promise.all([rpc(a), rpc(b)])` consumes **two** queue
+  entries in **array order**, because both calls are made synchronously before
+  either is awaited. `getEntriesSummary` is exactly that shape — current range
+  first, previous range second — and `reports.test.ts` pins the order with an
+  assertion on the recorded `rpc` arguments rather than assuming it. If you add
+  a fake method for anything else a service awaits directly, copy `rpc`'s shape,
+  not `order`'s.
 - **Reference test**: `src/lib/services/entries.test.ts`, scoped to
   `createEntriesBatch`. Its four oracles are named in a header comment: the
   `unique (user_id, batch_id, batch_seq)` migration for the `onConflict` string,
@@ -386,6 +417,61 @@ place than expected, a mocking decision that should be copied.)
   reason. Until §3 Phase 5 stands up a component layer, the extracted module's
   own tests are the only regression guard on that file.
 
+**Phase 3 — Reports aggregation truth** (`testing-reports-aggregation-truth`):
+
+- **PostgREST, not Postgres, is where the silence lives.** `max_rows` is applied
+  by the API layer and TRUNCATES rather than erroring; pgTAP talks to Postgres
+  directly and never crosses it, so **no fixture size** reproduces the failure
+  there. That is the structural reason both pgTAP suites on this path carried a
+  "therefore manual forever" disclaimer
+  (`supabase/tests/entries_summary_test.sql:17-22`,
+  `entries_category_summary_test.sql:20-25`) — and the reason the disclaimer was
+  wrong past its first half. The guard is a plain `array.length` comparison in
+  TypeScript, so a 1000-row synthetic response reaches it exactly, in
+  milliseconds. When a suite disclaims something as out of reach, check whether
+  it is out of reach for _that layer_ or out of reach at all (`lessons.md`,
+  first entry).
+- **A guard that errors correctly can still fail the user.** The truncation
+  tripwire raises a 400 with a specific Polish message and a `field` hint — and
+  both boards then discard the response body and render a generic "could not
+  load" (`OverviewBoard.tsx:101-113`, `CategoriesBoard.tsx:109-121`). The figure
+  is correctly absent, which is the guarantee risk #2 asks for; the _reason_ is
+  lost, which is not. Left as-is deliberately: surfacing it is a UI change that
+  needs the component layer §3 Phase 5 delivers. Do not read the green route
+  tests as evidence the user is told anything useful.
+- **The shape-regex class has two survivors.** Phase 2 fixed the two copies in
+  `services/entries.ts`; Phase 3 fixed the two in `services/reports.ts`.
+  `src/lib/services/receipts.ts:57` and `src/pages/api/entries/index.ts:11`
+  still carry `/^\d{4}-\d{2}-\d{2}$/` and still accept `2026-02-30`. Both were
+  left alone because neither is on the reports path — named here so the next
+  phase touching either one knows the swap is already proven against the
+  installed zod `4.4.3` and costs one line.
+- **Hosted `max_rows`, as observed: 1000, `checked: 2026-08-22`.** Read from the
+  Supabase console for the linked project, so `POSTGREST_MAX_ROWS`
+  (`src/lib/services/reports.ts`) is a correct mirror as of that date. The check
+  matters because `supabase/config.toml:18` governs the **local** stack only and
+  the `deploy` job does `link` + `db push` without ever touching hosted API
+  settings — nothing in CI keeps the two in step. If they diverge the guard is
+  wrong in both directions: too low truncates before the check fires, too high
+  rejects valid ranges.
+- **Route tests borrowed the Phase 2 pattern; §6.4 is still not delivered.**
+  `summary.test.ts` and `category-summary.test.ts` reuse the `vi.mock` +
+  module-scope-holder + `await import()` shape from
+  `src/pages/api/receipts/entries.test.ts`, composed with a small
+  `auth.getUser` surface, and drive the **real** service against the recording
+  fake so the `instanceof RangeTooLargeError` → 400 mapping proves actual
+  wiring. That is a status-and-body pattern, not an ownership one: §6.4's
+  deliverable — request as A for B's resource, assert refusal, assert cache
+  headers — remains §3 Phase 4's.
+- **The one check no single board can make.** Board A's expense total and Board
+  B's donut centre are two independent SQL aggregates of the same population,
+  and each can be individually correct while jointly wrong. The cross-board case
+  in `reports.test.ts` projects **one hand-written population** into both RPC
+  response shapes and asserts the two agree. It proves the two _reshaping paths_
+  agree given consistent inputs; it does not prove the two SQL functions'
+  predicates agree — that half is the pgTAP suites'. Any future pair of
+  aggregates over one population deserves the same treatment.
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5) plus two
@@ -456,8 +542,11 @@ these unless the underlying assumption changes.
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-08-21 (§3 Phase 1 marked complete;
-  four §5 gates flipped from planned to wired)
+- Strategy (§1–§5) last reviewed: 2026-08-22 (§3 Phase 3 marked complete —
+  risk #2 now has automated coverage at the unit, service, and route layers;
+  §4's `API mocking` row re-dated for the fake's RPC extension. Earlier:
+  2026-08-21, §3 Phase 1 complete and four §5 gates flipped from planned to
+  wired)
 - Stack versions last verified: 2026-08-21 — `unit + integration`
   (Vitest `4.1.11`), `typecheck` (`astro check`) and `database / RLS`
   (Supabase CLI `2.98.2`) resolved against the installed tree by §3 Phase 1.

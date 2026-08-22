@@ -60,6 +60,17 @@ export type SummaryQueryInput = z.infer<typeof summaryQuerySchema>;
 // would silently return a partial aggregate that still looks like a valid
 // answer.
 //
+// ⚠ THIS CONSTANT IS A MIRROR OF A SETTING THIS REPO DOES NOT CONTROL.
+// `supabase/config.toml:18` configures the **local** stack only; the `deploy`
+// job does `link` + `db push` and never touches hosted API settings, so nothing
+// in CI keeps the two in step. The hosted project's API row limit was read
+// directly from the Supabase console and observed to be **1000, checked:
+// 2026-08-22** — i.e. the mirror is correct as of that date. Re-check it if the
+// truncation guard below starts firing on ranges that ought to fit, or stops
+// firing on ranges that plainly do not: too low truncates before the check can
+// see it, too high rejects valid ranges. Treat the date the way §4 of
+// `context/foundation/test-plan.md` treats its `checked:` dates.
+//
 // ⚠ MAX_BUCKETS bounds BUCKETS, not ROWS, and the two callers have very
 // different row widths. entries_summary returns 2 rows per bucket, so 400
 // buckets is ~802 rows — comfortably clear of the cap while far beyond any

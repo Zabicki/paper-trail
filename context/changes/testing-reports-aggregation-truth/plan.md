@@ -881,28 +881,28 @@ behaviour it relied on. No migration ordering concern and nothing for the
 
 #### Automated
 
-- [x] 4.1 Suite passes: `npm run test`
-- [x] 4.2 Type checking passes: `npm run typecheck`
-- [x] 4.3 Linting passes: `npm run lint`
-- [x] 4.4 Full build passes: `npm run build`
+- [x] 4.1 Suite passes: `npm run test` — 2154746
+- [x] 4.2 Type checking passes: `npm run typecheck` — 2154746
+- [x] 4.3 Linting passes: `npm run lint` — 2154746
+- [x] 4.4 Full build passes: `npm run build` — 2154746
 
 #### Manual
 
-- [x] 4.5 `/reports` exercised across presets and both toggle positions; figures unchanged
-- [x] 4.6 `?from=2026-02-30` returns a 400 with a JSON body naming `from`
-- [x] 4.7 Teeth check: revert one route's `instanceof` branch, confirm only that route's 400 case fails, restore
-- [x] 4.8 Teeth check: drop one Polish message, confirm the exact-message assertion fails, restore
+- [x] 4.5 `/reports` exercised across presets and both toggle positions; figures unchanged — 2154746
+- [x] 4.6 `?from=2026-02-30` returns a 400 with a JSON body naming `from` — 2154746
+- [x] 4.7 Teeth check: revert one route's `instanceof` branch, confirm only that route's 400 case fails, restore — 2154746
+- [x] 4.8 Teeth check: drop one Polish message, confirm the exact-message assertion fails, restore — 2154746
 
 ### Phase 5: Cookbook and Plan Sync
 
 #### Automated
 
-- [ ] 5.1 Full suite passes: `npm run test`
-- [ ] 5.2 Type checking passes: `npm run typecheck`
-- [ ] 5.3 Linting passes: `npm run lint`
-- [ ] 5.4 Full build passes: `npm run build`
+- [x] 5.1 Full suite passes: `npm run test`
+- [x] 5.2 Type checking passes: `npm run typecheck`
+- [x] 5.3 Linting passes: `npm run lint`
+- [x] 5.4 Full build passes: `npm run build`
 
 #### Manual
 
-- [ ] 5.5 §6.2's `rpc`-is-terminal rule understandable without opening the fixture
-- [ ] 5.6 §3 row 3 reads `complete` and `/10x-test-plan --status` advances to Phase 4
+- [x] 5.5 §6.2's `rpc`-is-terminal rule understandable without opening the fixture
+- [x] 5.6 §3 row 3 reads `complete` and `/10x-test-plan --status` advances to Phase 4
